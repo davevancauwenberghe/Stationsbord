@@ -1,5 +1,4 @@
-// server/src/stationIndex.js
-
+// stationIndex.js
 function normalizeStation(s) {
   // iRail uses both "id" and "@id", and sometimes name/standardname
   return {
