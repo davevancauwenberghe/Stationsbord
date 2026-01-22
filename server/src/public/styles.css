@@ -305,11 +305,71 @@ button:hover{background:rgba(47,125,255,.25)}
   margin-top:-4px;
 }
 
-.delay{
+/* --- Delay tiers (liveboard) --- */
+
+/* Keep legacy .delay as "bad" (red) so nothing breaks */
+.delay,
+.delayBad{
   color:var(--danger);
   font-weight:1000;
   border:1px solid rgba(255,59,48,.45);
   background:rgba(255,59,48,.12);
+}
+
+/* Orange (1–5 min) */
+.delayWarn{
+  color:rgba(255,255,255,.90);
+  font-weight:1000;
+  border:1px solid rgba(255,159,10,.55);
+  background:rgba(255,159,10,.14);
+}
+
+/* Green pulse (0 min) */
+.delayOk{
+  color:rgba(255,255,255,.90);
+  font-weight:1000;
+  border:1px solid rgba(52,199,89,.55);
+  background:rgba(52,199,89,.14);
+  animation: delayPulse 1.2s ease-in-out infinite;
+}
+
+/* --- Delay tiers (vehicle overlay mini pills) --- */
+
+.miniDelayBad{
+  color:var(--danger);
+  border-color:rgba(255,59,48,.45);
+  background:rgba(255,59,48,.12);
+  font-weight:1000;
+}
+
+.miniDelayWarn{
+  color:rgba(255,255,255,.90);
+  border-color:rgba(255,159,10,.55);
+  background:rgba(255,159,10,.14);
+  font-weight:1000;
+}
+
+.miniDelayOk{
+  color:rgba(255,255,255,.90);
+  border-color:rgba(52,199,89,.55);
+  background:rgba(52,199,89,.14);
+  font-weight:1000;
+  animation: delayPulse 1.2s ease-in-out infinite;
+}
+
+/* Pulse animation used by delayOk + miniDelayOk */
+@keyframes delayPulse{
+  0%   { box-shadow: 0 0 0 0 rgba(52,199,89,.0); }
+  50%  { box-shadow: 0 0 0 6px rgba(52,199,89,.18); }
+  100% { box-shadow: 0 0 0 0 rgba(52,199,89,.0); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .delayOk,
+  .miniDelayOk{
+    animation:none;
+  }
 }
 
 .occ-low{
