@@ -1,4 +1,4 @@
-/* public/app.js */
+// app.js
 
 (function () {
   const q = document.getElementById("q");
@@ -227,6 +227,11 @@
     return Math.round(abs / 60);
   }
 
+  // tier for delay minutes
+  // ok: 0
+  // warn: 1..5
+  // bad: 6+ OR cancelled
+  // null: no info
   function delayTier(mins, cancelled) {
     if (cancelled) return "bad";
     if (mins == null) return null; // no info
@@ -235,6 +240,9 @@
     return "bad";
   }
 
+  // Liveboard pill (uses .delayOk / .delayWarn / .delayBad)
+  // - If no delay info => no pill
+  // - If cancelled => handled separately by caller
   function delayPillHtml(delaySeconds, cancelled) {
     if (cancelled) return "";
 
@@ -243,14 +251,11 @@
     if (!tier) return ""; // no info
 
     if (tier === "ok") {
-      // green pulse "0"
-      return '<span class="pill delayOk pulse">0</span>';
+      return '<span class="pill delayOk">0</span>';
     }
     if (tier === "warn") {
-      // orange
       return '<span class="pill delayWarn">+' + mins + "m</span>";
     }
-    // red
     return '<span class="pill delayBad">+' + mins + "m</span>";
   }
 
@@ -485,17 +490,21 @@
     return '<span class="' + cls + '">occupancy: ' + o.label + "</span>";
   }
 
+  // Vehicle overlay delay pill (uses .miniDelayOk / .miniDelayWarn / .miniDelayBad)
+  // - cancelled => red "cancelled"
+  // - no info => no pill
   function delayMini(delaySeconds, cancelled) {
-    if (cancelled) return "";
+    if (cancelled) return '<span class="miniPill miniDelayBad">cancelled</span>';
+
     const mins = delayMinutesFromSeconds(delaySeconds);
     if (mins == null) return ""; // no info => no pill
 
     const tier = delayTier(mins, false);
     if (!tier) return "";
 
-    if (tier === "ok") return '<span class="miniPill miniOk pulse">0</span>';
-    if (tier === "warn") return '<span class="miniPill miniWarn">+' + mins + "m</span>';
-    return '<span class="miniPill miniDelay">+' + mins + "m</span>'; // red
+    if (tier === "ok") return '<span class="miniPill miniDelayOk">0</span>';
+    if (tier === "warn") return '<span class="miniPill miniDelayWarn">+' + mins + "m</span>';
+    return '<span class="miniPill miniDelayBad">+' + mins + "m</span>';
   }
 
   function extraStopMini(flag) {
@@ -598,13 +607,8 @@
       const depCan = String(s.departureCanceled || "0") === "1";
       const arrCan = String(s.arrivalCanceled || "0") === "1";
 
-      const depBadges =
-        (depCan ? '<span class="miniPill miniDelay">cancelled</span>' : "") +
-        delayMini(depDelay, depCan);
-
-      const arrBadges =
-        (arrCan ? '<span class="miniPill miniDelay">cancelled</span>' : "") +
-        delayMini(arrDelay, arrCan);
+      const depBadges = delayMini(depDelay, depCan);
+      const arrBadges = delayMini(arrDelay, arrCan);
 
       const occ =
         s.occupancy && (s.occupancy.name || s.occupancy["@id"])
