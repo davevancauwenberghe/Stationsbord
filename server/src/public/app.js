@@ -1,5 +1,4 @@
-/* public/app.js */
-
+// app.js
 (function () {
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
@@ -210,6 +209,53 @@
     if (n.includes("medium")) return { label: "medium", cls: "occ-med" };
     if (n.includes("high")) return { label: "high", cls: "occ-high" };
     return { label: "unknown", cls: "occ-unk" };
+  }
+
+  /* ---- Delay tier helpers (liveboard + vehicle overlay) ---- */
+
+  // returns minutes OR null if delay info missing
+  // rule: if delay seconds is 1..59 => show 1 minute (clarity)
+  function delayMinutesFromSeconds(delaySeconds) {
+    if (delaySeconds == null) return null; // no info => remove pill
+    const s = Number(delaySeconds);
+    if (!Number.isFinite(s)) return null;
+
+    const abs = Math.abs(s);
+
+    if (abs > 0 && abs < 60) return 1;
+    return Math.round(abs / 60);
+  }
+
+  // tier for delay minutes
+  // ok: 0
+  // warn: 1..5
+  // bad: 6+ OR cancelled
+  // null: no info
+  function delayTier(mins, cancelled) {
+    if (cancelled) return "bad";
+    if (mins == null) return null; // no info
+    if (mins <= 0) return "ok";
+    if (mins <= 5) return "warn";
+    return "bad";
+  }
+
+  // Liveboard pill (uses .delayOk / .delayWarn / .delayBad)
+  // - If no delay info => no pill
+  // - If cancelled => handled separately by caller
+  function delayPillHtml(delaySeconds, cancelled) {
+    if (cancelled) return "";
+
+    const mins = delayMinutesFromSeconds(delaySeconds);
+    const tier = delayTier(mins, false);
+    if (!tier) return ""; // no info
+
+    if (tier === "ok") {
+      return '<span class="pill delayOk">0</span>';
+    }
+    if (tier === "warn") {
+      return '<span class="pill delayWarn">+' + mins + "m</span>";
+    }
+    return '<span class="pill delayBad">+' + mins + "m</span>";
   }
 
   /* ---- Pretty input formatting ---- */
@@ -443,10 +489,21 @@
     return '<span class="' + cls + '">occupancy: ' + o.label + "</span>";
   }
 
-  function delayMini(seconds) {
-    const mins = Math.round(Number(seconds || 0) / 60);
-    if (!mins) return "";
-    return '<span class="miniPill miniDelay">+' + mins + "m</span>";
+  // Vehicle overlay delay pill (uses .miniDelayOk / .miniDelayWarn / .miniDelayBad)
+  // - cancelled => red "cancelled"
+  // - no info => no pill
+  function delayMini(delaySeconds, cancelled) {
+    if (cancelled) return '<span class="miniPill miniDelayBad">cancelled</span>';
+
+    const mins = delayMinutesFromSeconds(delaySeconds);
+    if (mins == null) return ""; // no info => no pill
+
+    const tier = delayTier(mins, false);
+    if (!tier) return "";
+
+    if (tier === "ok") return '<span class="miniPill miniDelayOk">0</span>';
+    if (tier === "warn") return '<span class="miniPill miniDelayWarn">+' + mins + "m</span>';
+    return '<span class="miniPill miniDelayBad">+' + mins + "m</span>';
   }
 
   function extraStopMini(flag) {
@@ -542,18 +599,15 @@
         : "Dep —";
       const arrLine = arrT ? "Arr " + escapeHtml(arrT) : "Arr —";
 
-      const depDelay = s.departureDelay != null ? s.departureDelay : 0;
-      const arrDelay = s.arrivalDelay != null ? s.arrivalDelay : 0;
+      // IMPORTANT: pass through as provided; helper handles null vs jitter
+      const depDelay = s.departureDelay;
+      const arrDelay = s.arrivalDelay;
 
       const depCan = String(s.departureCanceled || "0") === "1";
       const arrCan = String(s.arrivalCanceled || "0") === "1";
 
-      const depBadges =
-        (depCan ? '<span class="miniPill miniDelay">cancelled</span>' : "") +
-        delayMini(depDelay);
-      const arrBadges =
-        (arrCan ? '<span class="miniPill miniDelay">cancelled</span>' : "") +
-        delayMini(arrDelay);
+      const depBadges = delayMini(depDelay, depCan);
+      const arrBadges = delayMini(arrDelay, arrCan);
 
       const occ =
         s.occupancy && (s.occupancy.name || s.occupancy["@id"])
@@ -679,11 +733,13 @@
       html += '<div class="deps">';
       for (const d of deps.slice(0, 24)) {
         const when = fmtTime(d.time);
-        const delayMin = Math.round((d.delay || 0) / 60);
-        const delayPill =
-          delayMin > 0
-            ? '<span class="pill delay">+' + delayMin + "m</span>"
-            : "";
+
+        const cancelled = String(d.canceled || "0") === "1";
+        const cancelledPill = cancelled
+          ? '<span class="pill delayBad">cancelled</span>'
+          : "";
+
+        const delayPill = delayPillHtml(d.delay, cancelled);
 
         const platform = d.platform != null ? String(d.platform) : "?";
 
@@ -703,11 +759,6 @@
             ? d.occupancy.name || ""
             : "unknown";
         const occ = normalizeOccName(occName);
-
-        const cancelled = String(d.canceled || "0") === "1";
-        const cancelledPill = cancelled
-          ? '<span class="pill delay">cancelled</span>'
-          : "";
 
         html +=
           '<div class="dep">' +
