@@ -1,12 +1,9 @@
+[![CodeQL (Stationsbord)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml/badge.svg)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml)
+
 # Stationbord
-## find it on the board
+*find it on the board*
 
 Tiny Belgian train station departure board using iRail API.
-
-## Run locally
-
-docker compose up --build
-Open: http://localhost:8080
 
 ## Notes
 
