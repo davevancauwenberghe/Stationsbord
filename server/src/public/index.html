@@ -3,19 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>stationbord</title>
+  <title>Stationsbord</title>
 
   <!-- Cache-busted assets -->
   <link rel="stylesheet" href="/styles.css?v=0.1.0" />
 </head>
 
 <body>
-  <h1>stationbord</h1>
+  <h1>Stationsbord</h1>
+
+  <!-- Offline / stale cache banner -->
+  <div class="banner" id="offlineBanner" hidden></div>
 
   <div class="row">
     <div class="autocomplete">
       <div class="stationRow">
-        <input id="q" placeholder="Type a station (e.g. Gent, Ghent, Bruxelles)" autocomplete="off" />
+        <input
+          id="q"
+          placeholder="Type a station (e.g. Gent, Ghent, Bruxelles)"
+          autocomplete="off"
+        />
         <button id="searchBtn" title="Search liveboard">Search</button>
       </div>
       <div class="dropdown" id="dropdown"></div>
@@ -36,12 +43,22 @@
 
     <label>
       Date (DD/MM/YYYY)
-      <input class="small" id="datePretty" placeholder="DD/MM/YYYY" inputmode="numeric" />
+      <input
+        class="small"
+        id="datePretty"
+        placeholder="DD/MM/YYYY"
+        inputmode="numeric"
+      />
     </label>
 
     <label>
       Time (HH:MM)
-      <input class="small" id="timePretty" placeholder="HH:MM" inputmode="numeric" />
+      <input
+        class="small"
+        id="timePretty"
+        placeholder="HH:MM"
+        inputmode="numeric"
+      />
     </label>
 
     <button class="btn-ghost" id="btnNow" title="Set to current time (local)">Now</button>
@@ -51,7 +68,9 @@
   </div>
 
   <div class="board" id="board">
-    <div class="muted">Start typing a station name. Pick from the dropdown. Then hit Search.</div>
+    <div class="muted">
+      Start typing a station name. Pick from the dropdown. Then hit Search.
+    </div>
   </div>
 
   <!-- Overlay -->
@@ -60,7 +79,12 @@
       <div class="modalHeader">
         <div class="modalTitle" id="modalTitle">Train details</div>
         <span class="pill" id="modalPill">vehicle</span>
-        <button class="closeBtn" id="overlayClose" type="button" aria-label="Close">✕</button>
+        <button
+          class="closeBtn"
+          id="overlayClose"
+          type="button"
+          aria-label="Close"
+        >✕</button>
       </div>
       <div class="modalBody" id="modalBody">
         <div class="muted">Loading…</div>

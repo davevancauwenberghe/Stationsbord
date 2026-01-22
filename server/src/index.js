@@ -32,6 +32,18 @@ let stationIndex = buildSearchIndex([]);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/* Helpers */
+function isTransientUpstreamError(e) {
+  const status = Number(e?.status || 0);
+  const msg = String(e?.message || "").toLowerCase();
+  return (
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    msg.includes("timeout")
+  );
+}
+
 /* Health */
 app.get("/health", (_req, res) =>
   res.json({ ok: true, name: APP_NAME, version: APP_VERSION })
@@ -67,6 +79,8 @@ async function getStationsFresh() {
 
 app.get("/api/stations/refresh", async (_req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
+
     const stations = await getStationsFresh();
     res.json({ count: stations.length });
   } catch (e) {
@@ -76,6 +90,8 @@ app.get("/api/stations/refresh", async (_req, res) => {
 
 app.get("/api/stations/search", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
+
     if (!stationIndex.all.length) await getStationsFresh();
     const q = req.query.q || "";
     const limit = Math.min(50, Number(req.query.limit || 15));
@@ -88,6 +104,8 @@ app.get("/api/stations/search", async (req, res) => {
 /* Liveboard proxy (cached) */
 app.get("/api/liveboard", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
+
     const {
       id,
       station,
@@ -99,9 +117,13 @@ app.get("/api/liveboard", async (req, res) => {
     } = req.query;
 
     if (id && station)
-      return res.status(400).json({ error: "Use either id OR station, not both." });
+      return res
+        .status(400)
+        .json({ error: "Use either id OR station, not both." });
     if (!id && !station)
-      return res.status(400).json({ error: "Missing required parameter: id or station" });
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: id or station" });
 
     const params = new URLSearchParams();
     params.set("format", "json");
@@ -126,7 +148,6 @@ app.get("/api/liveboard", async (req, res) => {
 
     const etag = peek?.etag;
     if (!takeToken()) {
-      // If we’re locally rate-limited but have stale data, serve it.
       if (peek?.value) {
         res.setHeader("X-Cache", "STALE(local-rate-limit)");
         return res.json(peek.value);
@@ -138,17 +159,11 @@ app.get("/api/liveboard", async (req, res) => {
     try {
       out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
     } catch (e) {
-      const status = Number(e?.status || 0);
-
-      // Treat these as transient upstream problems: serve stale if we can.
-      const transient = status === 502 || status === 503 || status === 504;
-
-      if (transient && peek?.value) {
+      if (isTransientUpstreamError(e) && peek?.value) {
+        const status = Number(e?.status || 0);
         res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
         return res.json(peek.value);
       }
-
-      // No stale available
       throw e;
     }
 
@@ -171,6 +186,8 @@ app.get("/api/liveboard", async (req, res) => {
 /* Disturbances proxy (cached) */
 app.get("/api/disturbances", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
+
     const lang = String(req.query.lang || "en");
     const lineBreakCharacter = String(req.query.lineBreakCharacter ?? "");
 
@@ -203,10 +220,8 @@ app.get("/api/disturbances", async (req, res) => {
     try {
       out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
     } catch (e) {
-      const status = Number(e?.status || 0);
-      const transient = status === 502 || status === 503 || status === 504;
-
-      if (transient && peek?.value) {
+      if (isTransientUpstreamError(e) && peek?.value) {
+        const status = Number(e?.status || 0);
         res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
         return res.json(peek.value);
       }
@@ -232,12 +247,19 @@ app.get("/api/disturbances", async (req, res) => {
 /* Vehicle proxy (cached, on-demand) */
 app.get("/api/vehicle", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
+
     const { id, date, lang = "en", alerts = "false" } = req.query;
 
-    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: id" });
 
     if (date && !/^\d{6}$/.test(String(date))) {
-      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Expected DDMMYY." });
     }
 
     const params = new URLSearchParams();
@@ -269,12 +291,15 @@ app.get("/api/vehicle", async (req, res) => {
 
     let out;
     try {
-      out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
+      // Vehicle is often slower: give it extra time.
+      out = await fetchIRailJSON(pathQ, {
+        userAgent: USER_AGENT,
+        etag,
+        timeoutMs: 25000,
+      });
     } catch (e) {
-      const status = Number(e?.status || 0);
-      const transient = status === 502 || status === 503 || status === 504;
-
-      if (transient && peek?.value) {
+      if (isTransientUpstreamError(e) && peek?.value) {
+        const status = Number(e?.status || 0);
         res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
         return res.json(peek.value);
       }

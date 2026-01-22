@@ -19,23 +19,40 @@
   const modalPill = document.getElementById("modalPill");
   const modalBody = document.getElementById("modalBody");
 
+  // Offline/stale banner (sticky under header)
+  const offlineBanner = document.getElementById("offlineBanner");
+
   let selected = null;
   let lastResults = [];
   let activeIdx = -1;
   let typingTimer = null;
   let inFlight = null;
 
+  // Banner “don’t lie yet” state
+  let bannerWaitingForFresh = false;
+
   // vehicle overlay fetch controller (abort on close)
   let vehicleController = null;
 
   // Body scroll lock while overlay open
-  let prevOverflow = "";
+  let prevOverflowBody = "";
+  let prevOverflowHtml = "";
+
   function lockScroll() {
-    prevOverflow = document.body.style.overflow || "";
+    prevOverflowBody = getComputedStyle(document.body).overflow;
+    prevOverflowHtml = getComputedStyle(document.documentElement).overflow;
+
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
   }
+
   function unlockScroll() {
-    document.body.style.overflow = prevOverflow;
+    // Reset inline styles so CSS can take over again
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+
+    prevOverflowBody = "";
+    prevOverflowHtml = "";
   }
 
   function setStatus(text, kind = "normal") {
@@ -45,6 +62,82 @@
     else if (kind === "error") statusPill.style.borderColor = "rgba(255,59,48,.55)";
     else statusPill.style.borderColor = "var(--line)";
   }
+
+  /* ---- Offline/stale banner based on X-Cache ---- */
+  function hideBanner() {
+    if (!offlineBanner) return;
+    offlineBanner.hidden = true;
+    offlineBanner.textContent = "";
+  }
+
+  function showBanner(message) {
+    if (!offlineBanner) return;
+    offlineBanner.hidden = false;
+    offlineBanner.textContent = message;
+  }
+
+  // Bonus tiny improvement:
+  // - Case-insensitive matching (headers often come back uppercase/mixed)
+  // - If header missing, hide banner so it won't get "stuck"
+  function updateBannerFromXCache(xcache) {
+    const raw = String(xcache || "").trim();
+    if (!raw) {
+      // If there is no X-Cache header, don't keep stale banner hanging around.
+      // (This can happen if some intermediate strips headers.)
+      hideBanner();
+      return;
+    }
+
+    const v = raw.toLowerCase();
+
+    if (v.startsWith("stale")) {
+      let reason = "Offline mode: showing cached results.";
+      if (v.includes("local-rate-limit")) reason = "Offline mode: showing cached results (rate limited).";
+      else if (v.includes("upstream-502")) reason = "Offline mode: showing cached results (gateway error).";
+      else if (v.includes("upstream-503")) reason = "Offline mode: showing cached results (service unavailable).";
+      else if (v.includes("upstream-504")) reason = "Offline mode: showing cached results (timeout).";
+      else if (v.includes("upstream-err")) reason = "Offline mode: showing cached results (error).";
+
+      showBanner(reason);
+      return;
+    }
+
+    if (v === "hit" || v === "miss" || v.startsWith("revalidated")) {
+      hideBanner();
+    }
+  }
+
+  // When we come back online, don't immediately hide the banner.
+  // Only hide it after we see a *fresh* (non-STALE) response.
+  function noteFreshResponseIfAny(xcache) {
+    const raw = String(xcache || "").trim();
+    if (!raw) return;
+
+    const v = raw.toLowerCase();
+    if (bannerWaitingForFresh && !v.startsWith("stale")) {
+      bannerWaitingForFresh = false;
+      hideBanner();
+    }
+  }
+
+  function updateBannerFromNavigator() {
+    if (!offlineBanner) return;
+
+    if (navigator && navigator.onLine === false) {
+      bannerWaitingForFresh = true;
+      showBanner("Offline: no network connection.");
+      return;
+    }
+
+    // We're back online, but don't lie yet — wait for a fresh (non-STALE) response.
+    // Keep any existing banner until the next request confirms freshness.
+    if (bannerWaitingForFresh) {
+      showBanner("Back online — verifying live data…");
+    }
+  }
+
+  window.addEventListener("offline", updateBannerFromNavigator);
+  window.addEventListener("online", updateBannerFromNavigator);
 
   function openDropdown() {
     dropdown.classList.add("open");
@@ -329,6 +422,7 @@
       } catch (_e) {}
       vehicleController = null;
     }
+
     unlockScroll();
   }
 
@@ -384,8 +478,13 @@
     if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
 
     const r = await fetch(url, { signal: vehicleController.signal });
-    const data = await r.json();
 
+    // Read X-Cache (vehicle)
+    const xcache = r.headers.get("X-Cache");
+    updateBannerFromXCache(xcache);
+    noteFreshResponseIfAny(xcache);
+
+    const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Vehicle request failed");
 
     const vinfo = data.vehicleinfo || {};
@@ -424,7 +523,6 @@
         "Unknown";
       const platform = s.platform != null ? String(s.platform) : "?";
 
-      // Departure first (more user-friendly)
       const depT = s.scheduledDepartureTime
         ? fmtTime(s.scheduledDepartureTime)
         : s.departuretime
@@ -529,6 +627,12 @@
       if (timeIRail) url += "&time=" + encodeURIComponent(timeIRail);
 
       const r = await fetch(url);
+
+      // Read X-Cache (liveboard) — once
+      const xcache = r.headers.get("X-Cache");
+      updateBannerFromXCache(xcache);
+      noteFreshResponseIfAny(xcache);
+
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Liveboard failed");
 
@@ -583,7 +687,6 @@
 
         const platform = d.platform != null ? String(d.platform) : "?";
 
-        // Destination “feel”: prefer direction.name
         const to =
           d.direction && d.direction.name ? d.direction.name : d.station || "";
 
@@ -674,4 +777,5 @@
   /* ---- Init ---- */
   setNow();
   setStatus("ready");
+  updateBannerFromNavigator(); // initial check
 })();

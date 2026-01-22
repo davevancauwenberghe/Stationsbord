@@ -9,7 +9,7 @@ if (!IRAIL_BASE) {
 
 const BASE = IRAIL_BASE.replace(/\/+$/, "");
 
-// You can tune this if you want. 10–15s is reasonable for iRail.
+// Default timeout (vehicle can override per-request)
 const IRAIL_TIMEOUT_MS = Number(process.env.IRAIL_TIMEOUT_MS || 12000);
 
 export function buildUserAgent({ appName, appVersion, website, email }) {
@@ -21,7 +21,7 @@ function snippet(text, max = 240) {
   return String(text || "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-export async function fetchIRailJSON(path, { userAgent, etag } = {}) {
+export async function fetchIRailJSON(path, { userAgent, etag, timeoutMs } = {}) {
   const url = `${BASE}${path}`;
 
   const headers = {
@@ -30,16 +30,18 @@ export async function fetchIRailJSON(path, { userAgent, etag } = {}) {
   };
   if (etag) headers["If-None-Match"] = etag;
 
-  // Timeout support
+  // Timeout support (override per-call)
+  const effectiveTimeout = Number(timeoutMs || IRAIL_TIMEOUT_MS);
+
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), IRAIL_TIMEOUT_MS);
+  const t = setTimeout(() => controller.abort(), effectiveTimeout);
 
   let res;
   try {
     res = await fetch(url, { headers, signal: controller.signal });
   } catch (err) {
     if (err?.name === "AbortError") {
-      const e = new Error(`iRail timeout after ${IRAIL_TIMEOUT_MS}ms for ${path}`);
+      const e = new Error(`iRail timeout after ${effectiveTimeout}ms for ${path}`);
       e.status = 504;
       throw e;
     }
@@ -56,7 +58,6 @@ export async function fetchIRailJSON(path, { userAgent, etag } = {}) {
     return { status: 304, etag: resEtag ?? etag, ttlMs, json: null };
   }
 
-  // Non-OK: read as text (could be HTML from a proxy), and return a clean error.
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const ctHint = contentType ? ` (${contentType})` : "";
@@ -67,7 +68,7 @@ export async function fetchIRailJSON(path, { userAgent, etag } = {}) {
     throw e;
   }
 
-  // OK but not JSON? (e.g. upstream returned HTML with 200, it happens)
+  // OK but not JSON (yes, it happens)
   if (!contentType.includes("application/json")) {
     const text = await res.text().catch(() => "");
     const ctHint = contentType ? ` (${contentType})` : "";

@@ -1,15 +1,19 @@
-// server/src/rateLimit.js
+// rateLimit.js
 export function createSimpleRateLimiter({ perSecond = 3, burst = 5 } = {}) {
+  perSecond = Math.max(0, Number(perSecond) || 0);
+  burst = Math.max(0, Number(burst) || 0);
+
   // Token bucket per process (not per IP) to avoid our own service spamming iRail.
-  let tokens = perSecond + burst;
+  const capacity = perSecond + burst;
+  let tokens = capacity;
   let lastRefill = Date.now();
 
   function refill() {
     const now = Date.now();
     const elapsed = (now - lastRefill) / 1000;
     if (elapsed <= 0) return;
-    const add = elapsed * perSecond;
-    tokens = Math.min(perSecond + burst, tokens + add);
+
+    tokens = Math.min(capacity, tokens + elapsed * perSecond);
     lastRefill = now;
   }
 
