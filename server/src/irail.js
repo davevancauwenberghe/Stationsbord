@@ -10,7 +10,7 @@ if (!IRAIL_BASE) {
 const BASE = IRAIL_BASE.replace(/\/+$/, "");
 
 // Default timeout (vehicle can override per-request)
-const IRAIL_TIMEOUT_MS = Number(process.env.IRAIL_TIMEOUT_MS || 12000);
+const IRAIL_TIMEOUT_MS = Number(process.env.IRAIL_TIMEOUT_MS || 25000);
 
 export function buildUserAgent({ appName, appVersion, website, email }) {
   const safe = (s) => String(s || "").replace(/[()]/g, "").trim();
