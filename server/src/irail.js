@@ -1,4 +1,4 @@
-// server/src/irail.js
+// irail.js
 import { ttlFromHeaders } from "./cache.js";
 
 const IRAIL_BASE = process.env.IRAIL_BASE_URL;
