@@ -39,10 +39,10 @@ async function getStationsFresh() {
   const etag = peek?.etag;
   if (!takeToken()) throw Object.assign(new Error("Local rate limit reached"), { status: 429 });
 
-  const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(
-    `/stations/?format=json&lang=en`,
-    { userAgent: USER_AGENT, etag }
-  );
+  const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(`/stations/?format=json&lang=en`, {
+    userAgent: USER_AGENT,
+    etag
+  });
 
   if (status === 304 && peek?.value) {
     cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
@@ -78,15 +78,7 @@ app.get("/api/stations/search", async (req, res) => {
 // ---- Liveboard proxy (cached) ----
 app.get("/api/liveboard", async (req, res) => {
   try {
-    const {
-      id,
-      station,
-      date,
-      time,
-      arrdep = "departure",
-      lang = "en",
-      alerts = "false"
-    } = req.query;
+    const { id, station, date, time, arrdep = "departure", lang = "en", alerts = "false" } = req.query;
 
     if (id && station) return res.status(400).json({ error: "Use either id OR station, not both." });
     if (!id && !station) return res.status(400).json({ error: "Missing required parameter: id or station" });
@@ -127,23 +119,31 @@ app.get("/api/liveboard", async (req, res) => {
   }
 });
 
-// ---- Disturbances proxy (cached) ----
-app.get("/api/disturbances", async (req, res) => {
+// ---- Vehicle proxy (cached, on-demand) ----
+// Request-friendly: ONLY used when user clicks a row in the UI.
+app.get("/api/vehicle", async (req, res) => {
   try {
-    const lang = String(req.query.lang || "en");
-    const lineBreakCharacter = String(req.query.lineBreakCharacter ?? "");
+    const { id, date, lang = "en", alerts = "false" } = req.query;
+
+    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
+
+    // date optional, ddmmyy
+    if (date && !/^\d{6}$/.test(String(date))) {
+      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+    }
 
     const params = new URLSearchParams();
     params.set("format", "json");
-    params.set("lang", lang);
-    params.set("lineBreakCharacter", lineBreakCharacter);
+    params.set("lang", String(lang));
+    params.set("alerts", String(alerts));
+    params.set("id", String(id));
+    if (date) params.set("date", String(date));
 
-    const path = `/disturbances/?${params.toString()}`;
-    const key = `disturbances:${params.toString()}`;
+    const path = `/vehicle/?${params.toString()}`;
+    const key = `vehicle:${params.toString()}`;
 
     const cached = cache.get(key);
     const peek = cache.peek(key);
-
     if (cached?.value) return res.json(cached.value);
 
     const etag = peek?.etag;
@@ -217,20 +217,6 @@ app.get("/", (_req, res) => {
       gap:6px; height:22px;
     }
 
-    /* Disturbance pill polish */
-    .pill.dist{
-      cursor:pointer;
-      user-select:none;
-    }
-    .pill.dist.has{
-      color:rgba(255,255,255,.9);
-      border-color: rgba(255,59,48,.55);
-      background: rgba(255,59,48,.12);
-    }
-    .pill.dist:hover{
-      background: rgba(255,255,255,.08);
-    }
-
     /* Autocomplete */
     .autocomplete{position:relative; min-width:280px; flex:1; max-width:520px;}
     .stationRow{display:flex; gap:10px; align-items:center;}
@@ -297,62 +283,118 @@ app.get("/", (_req, res) => {
     .occ-high{border-color:rgba(255,59,48,.55); background:rgba(255,59,48,.12); color:rgba(255,255,255,.85);}
     .occ-unk{opacity:.7}
 
-    /* Overlay for disturbances */
-    .overlayBack{
+    /* Clickable destination */
+    .toBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:0;
+      border:none;
+      background:transparent;
+      color:var(--text);
+      font:inherit;
+      text-align:left;
+      cursor:pointer;
+    }
+    .toBtn:hover{ text-decoration: underline; }
+    .chev{opacity:.65; font-weight:900}
+
+    /* Overlay modal */
+    .overlay{
       position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
+      background:rgba(0,0,0,.55);
       display:none;
       z-index:200;
       padding:18px;
     }
-    .overlayBack.open{display:block}
-    .overlayCard{
-      max-width: 900px;
-      margin: 30px auto 0 auto;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(15,23,51,.98);
-      box-shadow: 0 18px 60px rgba(0,0,0,.55);
-      overflow: hidden;
+    .overlay.open{display:block}
+    .modal{
+      max-width:820px;
+      margin:0 auto;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(15,23,51,.96);
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      overflow:hidden;
     }
-    .overlayHead{
-      display:flex; justify-content:space-between; align-items:center;
+    .modalHeader{
+      display:flex;
+      align-items:center;
       gap:10px;
-      padding: 12px 12px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
     }
-    .overlayTitle{font-weight:900; letter-spacing:.2px;}
-    .overlayClose{
-      width: 38px; height: 34px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.14);
-      color: var(--text);
+    .modalTitle{
+      font-weight:1000;
+      letter-spacing:.2px;
+    }
+    .closeBtn{
+      margin-left:auto;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
       cursor:pointer;
+      color:var(--text);
+      font:inherit;
     }
-    .overlayClose:hover{background: rgba(255,255,255,.10)}
-    .overlayBody{
-      max-height: min(70vh, 560px);
-      overflow:auto;
-      padding: 12px;
+    .closeBtn:hover{background:rgba(255,255,255,.10)}
+    .modalBody{
+      padding:14px;
     }
-    .distItem{
+    .stops{
+      margin-top:10px;
       border:1px solid rgba(255,255,255,.10);
-      border-radius: 12px;
-      padding: 10px;
-      background: rgba(255,255,255,.04);
-      margin-bottom: 10px;
+      border-radius:14px;
+      overflow:hidden;
+      background:rgba(255,255,255,.03);
     }
-    .distItem:last-child{margin-bottom:0}
-    .distT{font-weight:900; margin-bottom:6px;}
-    .distD{color: var(--muted); line-height: 1.35;}
-    .distMeta{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-    .distLink{
-      color: rgba(255,255,255,.9);
-      text-decoration:none;
-      border-bottom: 1px dashed rgba(255,255,255,.35);
+    .stopRow{
+      display:grid;
+      grid-template-columns:120px 1fr 100px;
+      gap:12px;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      align-items:center;
     }
-    .distLink:hover{border-bottom-color: rgba(255,255,255,.8)}
+    .stopRow:last-child{border-bottom:none}
+    .stopTime{font-weight:1000}
+    .stopStation{font-weight:900}
+    .stopMeta{margin-top:4px; font-size:12px; color:rgba(255,255,255,.65); display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+    .miniPill{
+      padding:1px 8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      height:20px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:rgba(255,255,255,.02);
+    }
+    .miniDelay{
+      color:var(--danger);
+      border-color:rgba(255,59,48,.45);
+      background:rgba(255,59,48,.12);
+      font-weight:1000;
+    }
+    .miniOk{
+      border-color:rgba(52,199,89,.35);
+      background:rgba(52,199,89,.10);
+      color:rgba(255,255,255,.82);
+    }
+    .miniWarn{
+      border-color:rgba(255,159,10,.45);
+      background:rgba(255,159,10,.12);
+      color:rgba(255,255,255,.82);
+    }
+    .miniExtra{
+      border-color:rgba(47,125,255,.45);
+      background:rgba(47,125,255,.12);
+      color:rgba(255,255,255,.88);
+    }
 
     @media (max-width:720px){
       .dep{grid-template-columns:92px 1fr 92px;}
@@ -360,8 +402,7 @@ app.get("/", (_req, res) => {
       .platform-badge{width:56px; height:48px;}
       .platform-badge .num{font-size:22px;}
       .to{font-size:16px;}
-      .overlayBack{padding:12px}
-      .overlayCard{margin-top: 18px}
+      .stopRow{grid-template-columns:90px 1fr 84px;}
     }
   </style>
 </head>
@@ -378,8 +419,6 @@ app.get("/", (_req, res) => {
     </div>
 
     <div class="spacer"></div>
-
-    <span class="pill dist" id="distPill" title="Network disturbances">disturbances: —</span>
     <span class="pill" id="statusPill">ready</span>
   </div>
 
@@ -412,16 +451,16 @@ app.get("/", (_req, res) => {
     <div class="muted">Start typing a station name. Pick from the dropdown. Then hit Search.</div>
   </div>
 
-  <!-- Disturbances overlay -->
-  <div class="overlayBack" id="distOverlayBack" aria-hidden="true">
-    <div class="overlayCard" role="dialog" aria-modal="true" aria-label="Network disturbances">
-      <div class="overlayHead">
-        <div class="overlayTitle">Network disturbances</div>
-        <button class="overlayClose" id="distOverlayClose" aria-label="Close">✕</button>
+  <!-- Overlay -->
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modalHeader">
+        <div class="modalTitle" id="modalTitle">Train details</div>
+        <span class="pill" id="modalPill">vehicle</span>
+        <button class="closeBtn" id="overlayClose" type="button" aria-label="Close">✕</button>
       </div>
-      <div class="overlayBody">
-        <div class="muted" id="distOverlaySub">Loading…</div>
-        <div id="distOverlayList" style="margin-top:10px;"></div>
+      <div class="modalBody" id="modalBody">
+        <div class="muted">Loading…</div>
       </div>
     </div>
   </div>
@@ -433,17 +472,17 @@ const searchBtn = document.getElementById('searchBtn');
 const board = document.getElementById('board');
 const statusPill = document.getElementById('statusPill');
 
-const distPill = document.getElementById('distPill');
-const distOverlayBack = document.getElementById('distOverlayBack');
-const distOverlayClose = document.getElementById('distOverlayClose');
-const distOverlaySub = document.getElementById('distOverlaySub');
-const distOverlayList = document.getElementById('distOverlayList');
-
 const arrdepEl = document.getElementById('arrdep');
 const datePrettyEl = document.getElementById('datePretty'); // DD/MM/YYYY
 const timePrettyEl = document.getElementById('timePretty'); // HH:MM
 const btnNow = document.getElementById('btnNow');
 const btnPlus1h = document.getElementById('btnPlus1h');
+
+const overlay = document.getElementById('overlay');
+const overlayClose = document.getElementById('overlayClose');
+const modalTitle = document.getElementById('modalTitle');
+const modalPill = document.getElementById('modalPill');
+const modalBody = document.getElementById('modalBody');
 
 let selected = null;
 let lastResults = [];
@@ -451,8 +490,8 @@ let activeIdx = -1;
 let typingTimer = null;
 let inFlight = null;
 
-let lastDistItems = [];
-let lastDistCount = null;
+// vehicle overlay fetch controller (abort on close)
+let vehicleController = null;
 
 function setStatus(text, kind = "normal") {
   statusPill.textContent = text;
@@ -696,89 +735,141 @@ q.addEventListener('keydown', (e) => {
   }
 });
 
-/* ---- Disturbances overlay ---- */
-function openDistOverlay() {
-  distOverlayBack.classList.add('open');
-  distOverlayBack.setAttribute('aria-hidden', 'false');
+/* ---- Overlay helpers ---- */
+function openOverlay() {
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
 }
-function closeDistOverlay() {
-  distOverlayBack.classList.remove('open');
-  distOverlayBack.setAttribute('aria-hidden', 'true');
+
+function closeOverlay() {
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  modalTitle.textContent = 'Train details';
+  modalPill.textContent = 'vehicle';
+  modalBody.innerHTML = '<div class="muted">Closed.</div>';
+
+  if (vehicleController) {
+    try { vehicleController.abort(); } catch (_e) {}
+    vehicleController = null;
+  }
 }
-distOverlayClose.addEventListener('click', closeDistOverlay);
-distOverlayBack.addEventListener('mousedown', (e) => {
-  if (e.target === distOverlayBack) closeDistOverlay();
+
+overlayClose.addEventListener('click', closeOverlay);
+overlay.addEventListener('mousedown', (e) => {
+  // click outside modal closes
+  if (e.target === overlay) closeOverlay();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && distOverlayBack.classList.contains('open')) closeDistOverlay();
+  if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay();
 });
 
-function setDistPill(count) {
-  lastDistCount = count;
-  distPill.textContent = 'disturbances: ' + String(count);
-  if (count > 0) distPill.classList.add('has');
-  else distPill.classList.remove('has');
+function occMini(occ) {
+  const o = normalizeOccName(occ);
+  let cls = 'miniPill';
+  if (o.label === 'low') cls += ' miniOk';
+  else if (o.label === 'medium') cls += ' miniWarn';
+  else if (o.label === 'high') cls += ' miniDelay';
+  return '<span class="' + cls + '">occupancy: ' + o.label + '</span>';
 }
 
-function renderDisturbances(items) {
-  distOverlayList.innerHTML = '';
-  if (!items.length) {
-    distOverlaySub.textContent = 'No current disturbances reported.';
+function delayMini(seconds) {
+  const mins = Math.round((Number(seconds || 0)) / 60);
+  if (!mins) return '';
+  return '<span class="miniPill miniDelay">+' + mins + 'm</span>';
+}
+
+function cancelledMini(flag) {
+  return String(flag || '0') === '1' ? '<span class="miniPill miniDelay">cancelled</span>' : '';
+}
+
+function extraStopMini(flag) {
+  return String(flag || '0') === '1' ? '<span class="miniPill miniExtra">extra stop</span>' : '';
+}
+
+async function loadVehicleDetails(vehicleId) {
+  const prettyDate = datePrettyEl.value.trim();
+  const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : '';
+
+  modalTitle.textContent = 'Train details';
+  modalPill.textContent = 'loading…';
+  modalBody.innerHTML = '<div class="muted">Loading…</div>';
+  openOverlay();
+
+  if (vehicleController) {
+    try { vehicleController.abort(); } catch (_e) {}
+  }
+  vehicleController = new AbortController();
+
+  let url = '/api/vehicle?id=' + encodeURIComponent(vehicleId) + '&lang=en&alerts=false';
+  if (dateIRail) url += '&date=' + encodeURIComponent(dateIRail);
+
+  const r = await fetch(url, { signal: vehicleController.signal });
+  const data = await r.json();
+
+  if (!r.ok) {
+    throw new Error(data.error || 'Vehicle request failed');
+  }
+
+  const vinfo = data.vehicleinfo || {};
+  const short = vinfo.shortname || vinfo.name || data.vehicle || vehicleId;
+
+  modalTitle.textContent = short;
+  modalPill.textContent = 'stops';
+
+  const stops = (data.stops && data.stops.stop) ? data.stops.stop : [];
+  if (!stops.length) {
+    modalBody.innerHTML =
+      '<div class="muted">No stop list available for this vehicle.</div>' +
+      '<div class="muted" style="margin-top:6px;">Tip: if you hit an iRail edge case, try a date closer to “now”.</div>';
     return;
   }
-  distOverlaySub.textContent = 'Showing ' + items.length + ' item(s).';
 
-  for (const it of items) {
-    const title = it.title || 'Untitled';
-    const desc = it.description || '';
-    const type = (it.type || '').toLowerCase();
-    const when = it.timestamp ? new Date(Number(it.timestamp) * 1000).toLocaleString() : '';
-    const link = it.link || '';
-    const attachment = it.attachment || '';
-
-    const div = document.createElement('div');
-    div.className = 'distItem';
-
-    let meta = '';
-    if (type) meta += '<span class="pill">' + escapeHtml(type) + '</span>';
-    if (when) meta += '<span class="pill">' + escapeHtml(when) + '</span>';
-    if (link) meta += '<a class="distLink" href="' + escapeHtml(link) + '" target="_blank" rel="noopener">More info</a>';
-    if (attachment) meta += '<a class="distLink" href="' + escapeHtml(attachment) + '" target="_blank" rel="noopener">Attachment</a>';
-
-    div.innerHTML =
-      '<div class="distT">' + escapeHtml(title) + '</div>' +
-      '<div class="distD">' + escapeHtml(desc) + '</div>' +
-      (meta ? '<div class="distMeta">' + meta + '</div>' : '');
-
-    distOverlayList.appendChild(div);
+  let html = '';
+  html += '<div class="row" style="gap:8px; align-items:center;">';
+  html += '<span class="pill">vehicle</span>';
+  html += '<span class="pill">' + escapeHtml(String(stops.length)) + ' stops</span>';
+  if (data.timestamp) {
+    html += '<span class="muted">updated: ' + new Date(data.timestamp * 1000).toLocaleString() + '</span>';
   }
-}
+  html += '</div>';
 
-async function fetchDisturbances() {
-  try {
-    // English, no line breaks. Keep it simple.
-    const r = await fetch('/api/disturbances?lang=en&lineBreakCharacter=' + encodeURIComponent(''));
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Disturbances failed');
+  html += '<div class="stops">';
+  for (const s of stops) {
+    const station = s.station || (s.stationinfo && (s.stationinfo.name || s.stationinfo.standardname)) || 'Unknown';
+    const t = s.time != null ? fmtTime(s.time) : '--:--';
+    const platform = (s.platform != null ? String(s.platform) : '?');
 
-    const items = Array.isArray(data.disturbance) ? data.disturbance : [];
-    lastDistItems = items;
-    setDistPill(items.length);
-    return items;
-  } catch (e) {
-    distPill.textContent = 'disturbances: ?';
-    distPill.classList.remove('has');
-    return [];
+    const arrDelay = s.arrivalDelay != null ? s.arrivalDelay : 0;
+    const depDelay = s.departureDelay != null ? s.departureDelay : 0;
+
+    const anyDelay = Math.max(Number(arrDelay || 0), Number(depDelay || 0));
+
+    const occ = (s.occupancy && (s.occupancy.name || s.occupancy['@id'])) ? (s.occupancy.name || 'unknown') : 'unknown';
+
+    const p = '<span class="miniPill">pl ' + escapeHtml(platform) + '</span>';
+
+    html += '<div class="stopRow">';
+    html +=   '<div>';
+    html +=     '<div class="stopTime">' + escapeHtml(t) + '</div>';
+    html +=     '<div class="stopMeta">';
+    html +=       p + delayMini(anyDelay) + cancelledMini(s.canceled) + cancelledMini(s.arrivalCanceled) + cancelledMini(s.departureCanceled) + extraStopMini(s.isExtraStop);
+    html +=     '</div>';
+    html +=   '</div>';
+
+    html +=   '<div>';
+    html +=     '<div class="stopStation">' + escapeHtml(station) + '</div>';
+    html +=     '<div class="stopMeta">' + occMini(occ) + '</div>';
+    html +=   '</div>';
+
+    html +=   '<div style="justify-self:end; text-align:right;">';
+    html +=     '<span class="miniPill">stop</span>';
+    html +=   '</div>';
+    html += '</div>';
   }
-}
+  html += '</div>';
 
-distPill.addEventListener('click', async () => {
-  openDistOverlay();
-  distOverlaySub.textContent = 'Loading…';
-  distOverlayList.innerHTML = '';
-  const items = lastDistItems.length ? lastDistItems : await fetchDisturbances();
-  renderDisturbances(items);
-});
+  modalBody.innerHTML = html;
+}
 
 /* ---- Search liveboard ---- */
 searchBtn.addEventListener('click', async () => {
@@ -845,9 +936,12 @@ searchBtn.addEventListener('click', async () => {
 
       const platform = (d.platform != null ? String(d.platform) : '?');
       const to = d.station || '';
-      const train = (d.vehicleinfo && (d.vehicleinfo.shortname || d.vehicleinfo.name))
+      const trainShort = (d.vehicleinfo && (d.vehicleinfo.shortname || d.vehicleinfo.name))
         ? (d.vehicleinfo.shortname || d.vehicleinfo.name)
         : (d.vehicle || '');
+
+      // Vehicle id for drill-down
+      const vehicleId = (d.vehicleinfo && d.vehicleinfo.name) ? d.vehicleinfo.name : (d.vehicle || '');
 
       const occName = d.occupancy && (d.occupancy.name || d.occupancy["@id"]) ? (d.occupancy.name || '') : 'unknown';
       const occ = normalizeOccName(occName);
@@ -858,10 +952,14 @@ searchBtn.addEventListener('click', async () => {
       html += '<div class="dep">'
         + '<div>'
         +   '<div class="when">' + escapeHtml(when) + '</div>'
-        +   '<div class="meta">' + escapeHtml(train) + (delayPill ? ' ' + delayPill : '') + (cancelledPill ? ' ' + cancelledPill : '') + '</div>'
+        +   '<div class="meta">' + escapeHtml(trainShort) + (delayPill ? ' ' + delayPill : '') + (cancelledPill ? ' ' + cancelledPill : '') + '</div>'
         + '</div>'
         + '<div>'
-        +   '<div class="to">' + escapeHtml(to) + '</div>'
+        +   '<div class="to">'
+        +     '<button class="toBtn" type="button" data-vehicle="' + escapeHtml(vehicleId) + '" title="Open train details">'
+        +       escapeHtml(to) + ' <span class="chev">›</span>'
+        +     '</button>'
+        +   '</div>'
         +   '<div class="meta"><span class="pill ' + occ.cls + '">occupancy: ' + occ.label + '</span></div>'
         + '</div>'
         + '<div class="right">'
@@ -875,6 +973,23 @@ searchBtn.addEventListener('click', async () => {
     html += '</div>';
 
     board.innerHTML = html;
+
+    // Attach click handlers to destination buttons (request-friendly: one fetch per click)
+    const btns = board.querySelectorAll('.toBtn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          const vid = btn.getAttribute('data-vehicle') || '';
+          if (!vid) return;
+          await loadVehicleDetails(vid);
+        } catch (e) {
+          modalPill.textContent = 'error';
+          modalBody.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + '</div>';
+          openOverlay();
+        }
+      });
+    });
+
     setStatus('ok');
   } catch (e) {
     board.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + '</div>';
@@ -885,8 +1000,6 @@ searchBtn.addEventListener('click', async () => {
 /* ---- Init ---- */
 setNow();
 setStatus('ready');
-setDistPill(0);
-fetchDisturbances();
 </script>
 </body>
 </html>`);
