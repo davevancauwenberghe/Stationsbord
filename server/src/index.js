@@ -199,7 +199,7 @@ app.get("/api/vehicle", async (req, res) => {
 
 // ---- Tiny frontend ----
 app.get("/", (_req, res) => {
-  res.type("html").send(`<!doctype html>
+  const HTML = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -359,10 +359,7 @@ app.get("/", (_req, res) => {
       border-bottom:1px solid rgba(255,255,255,.10);
       background:rgba(255,255,255,.04);
     }
-    .modalTitle{
-      font-weight:1000;
-      letter-spacing:.2px;
-    }
+    .modalTitle{ font-weight:1000; letter-spacing:.2px; }
     .closeBtn{
       margin-left:auto;
       padding:8px 10px;
@@ -848,9 +845,7 @@ async function loadVehicleDetails(vehicleId) {
   const r = await fetch(url, { signal: vehicleController.signal });
   const data = await r.json();
 
-  if (!r.ok) {
-    throw new Error(data.error || 'Vehicle request failed');
-  }
+  if (!r.ok) throw new Error(data.error || 'Vehicle request failed');
 
   const vinfo = data.vehicleinfo || {};
   const short = vinfo.shortname || vinfo.name || data.vehicle || vehicleId;
@@ -862,7 +857,7 @@ async function loadVehicleDetails(vehicleId) {
   if (!stops.length) {
     modalBody.innerHTML =
       '<div class="muted">No stop list available for this vehicle.</div>' +
-      '<div class="muted" style="margin-top:6px;">Tip: if you hit an iRail edge case, try a date closer to “now”.</div>';
+      '<div class="muted" style="margin-top:6px;">Tip: try a date closer to “now”.</div>';
     return;
   }
 
@@ -880,11 +875,9 @@ async function loadVehicleDetails(vehicleId) {
     const station = s.station || (s.stationinfo && (s.stationinfo.name || s.stationinfo.standardname)) || 'Unknown';
     const platform = (s.platform != null ? String(s.platform) : '?');
 
-    // Prefer scheduledDepartureTime/scheduledArrivalTime (Vehicle API)
+    // Departure first (more user-friendly)
     const depT = s.scheduledDepartureTime ? fmtTime(s.scheduledDepartureTime) : (s.departuretime ? fmtTime(s.departuretime) : '');
     const arrT = s.scheduledArrivalTime ? fmtTime(s.scheduledArrivalTime) : (s.arrivaltime ? fmtTime(s.arrivaltime) : '');
-
-    // fallback for older payloads that only provide `time`
     const fallbackT = s.time != null ? fmtTime(s.time) : '';
 
     const depLine = depT ? ('Dep ' + escapeHtml(depT)) : (fallbackT ? ('Dep ' + escapeHtml(fallbackT)) : 'Dep —');
@@ -974,8 +967,7 @@ searchBtn.addEventListener('click', async () => {
       + '</div>';
 
     if (!deps.length) {
-      html += '<div class="muted" style="margin-top:10px;">No ' + modeLabel + ' found for this moment.</div>'
-           + '<div class="muted" style="margin-top:6px;">Tip: if you hit an iRail 500 edge case, try a time closer to “now”.</div>';
+      html += '<div class="muted" style="margin-top:10px;">No ' + modeLabel + ' found for this moment.</div>';
       board.innerHTML = html;
       setStatus('no results');
       return;
@@ -989,7 +981,7 @@ searchBtn.addEventListener('click', async () => {
 
       const platform = (d.platform != null ? String(d.platform) : '?');
 
-      // ✅ RESTORE “destination feel”: prefer direction.name
+      // Destination “feel” like your earlier version: prefer direction.name
       const to = (d.direction && d.direction.name) ? d.direction.name : (d.station || '');
 
       const trainShort = (d.vehicleinfo && (d.vehicleinfo.shortname || d.vehicleinfo.name))
@@ -1056,11 +1048,14 @@ setNow();
 setStatus('ready');
 </script>
 </body>
-</html>`);
+</html>`;
+
+  res.type("html").send(HTML);
 });
 
 app.listen(PORT, () => {
-  console.log(\`[\${APP_NAME}] listening on :\${PORT}\`);
-  console.log(\`[\${APP_NAME}] version: \${APP_VERSION}\`);
-  console.log(\`[\${APP_NAME}] User-Agent: \${USER_AGENT}\`);
+  console.log(`[${APP_NAME}] listening on :${PORT}`);
+  console.log(`[${APP_NAME}] version: ${APP_VERSION}`);
+  console.log(`[${APP_NAME}] User-Agent: ${USER_AGENT}`);
 });
+
