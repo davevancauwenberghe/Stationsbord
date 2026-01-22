@@ -1,5 +1,4 @@
 // app.js
-
 (function () {
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
