@@ -1,4 +1,36 @@
+# Dependencies
 **/node_modules
-**/.DS_Store
+
+# Git / metadata
 .git
+.gitignore
+
+# OS / editor junk
+**/.DS_Store
+**/Thumbs.db
+**/*.swp
+**/*.swo
+
+# Logs
 npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+**/*.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Build artifacts / caches
+dist
+build
+coverage
+.nyc_output
+.cache
+**/.eslintcache
+
+# Docker files themselves (optional)
+Dockerfile
+docker-compose.yml
