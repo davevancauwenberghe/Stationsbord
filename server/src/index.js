@@ -99,13 +99,9 @@ app.get("/api/liveboard", async (req, res) => {
     } = req.query;
 
     if (id && station)
-      return res
-        .status(400)
-        .json({ error: "Use either id OR station, not both." });
+      return res.status(400).json({ error: "Use either id OR station, not both." });
     if (!id && !station)
-      return res
-        .status(400)
-        .json({ error: "Missing required parameter: id or station" });
+      return res.status(400).json({ error: "Missing required parameter: id or station" });
 
     const params = new URLSearchParams();
     params.set("format", "json");
@@ -123,23 +119,49 @@ app.get("/api/liveboard", async (req, res) => {
 
     const cached = cache.get(key);
     const peek = cache.peek(key);
-    if (cached?.value) return res.json(cached.value);
+    if (cached?.value) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached.value);
+    }
 
     const etag = peek?.etag;
-    if (!takeToken())
+    if (!takeToken()) {
+      // If we’re locally rate-limited but have stale data, serve it.
+      if (peek?.value) {
+        res.setHeader("X-Cache", "STALE(local-rate-limit)");
+        return res.json(peek.value);
+      }
       return res.status(429).json({ error: "Local rate limit reached" });
+    }
 
-    const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(pathQ, {
-      userAgent: USER_AGENT,
-      etag,
-    });
+    let out;
+    try {
+      out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
+    } catch (e) {
+      const status = Number(e?.status || 0);
+
+      // Treat these as transient upstream problems: serve stale if we can.
+      const transient = status === 502 || status === 503 || status === 504;
+
+      if (transient && peek?.value) {
+        res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
+        return res.json(peek.value);
+      }
+
+      // No stale available
+      throw e;
+    }
+
+    const { status, etag: newEtag, ttlMs, json } = out;
 
     if (status === 304 && peek?.value) {
       cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
+      res.setHeader("X-Cache", "REVALIDATED(304)");
       return res.json(peek.value);
     }
 
     cache.set(key, { ttlMs, etag: newEtag, value: json });
+    res.setHeader("X-Cache", "MISS");
     return res.json(json);
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
@@ -162,23 +184,45 @@ app.get("/api/disturbances", async (req, res) => {
 
     const cached = cache.get(key);
     const peek = cache.peek(key);
-    if (cached?.value) return res.json(cached.value);
+    if (cached?.value) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached.value);
+    }
 
     const etag = peek?.etag;
-    if (!takeToken())
-      return res.status(429).json({ error: "Local rate limit reached" });
 
-    const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(pathQ, {
-      userAgent: USER_AGENT,
-      etag,
-    });
+    if (!takeToken()) {
+      if (peek?.value) {
+        res.setHeader("X-Cache", "STALE(local-rate-limit)");
+        return res.json(peek.value);
+      }
+      return res.status(429).json({ error: "Local rate limit reached" });
+    }
+
+    let out;
+    try {
+      out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
+    } catch (e) {
+      const status = Number(e?.status || 0);
+      const transient = status === 502 || status === 503 || status === 504;
+
+      if (transient && peek?.value) {
+        res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
+        return res.json(peek.value);
+      }
+      throw e;
+    }
+
+    const { status, etag: newEtag, ttlMs, json } = out;
 
     if (status === 304 && peek?.value) {
       cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
+      res.setHeader("X-Cache", "REVALIDATED(304)");
       return res.json(peek.value);
     }
 
     cache.set(key, { ttlMs, etag: newEtag, value: json });
+    res.setHeader("X-Cache", "MISS");
     return res.json(json);
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
@@ -190,13 +234,10 @@ app.get("/api/vehicle", async (req, res) => {
   try {
     const { id, date, lang = "en", alerts = "false" } = req.query;
 
-    if (!id)
-      return res.status(400).json({ error: "Missing required parameter: id" });
+    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
 
     if (date && !/^\d{6}$/.test(String(date))) {
-      return res
-        .status(400)
-        .json({ error: "Invalid date format. Expected DDMMYY." });
+      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
     }
 
     const params = new URLSearchParams();
@@ -211,23 +252,45 @@ app.get("/api/vehicle", async (req, res) => {
 
     const cached = cache.get(key);
     const peek = cache.peek(key);
-    if (cached?.value) return res.json(cached.value);
+    if (cached?.value) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached.value);
+    }
 
     const etag = peek?.etag;
-    if (!takeToken())
-      return res.status(429).json({ error: "Local rate limit reached" });
 
-    const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(pathQ, {
-      userAgent: USER_AGENT,
-      etag,
-    });
+    if (!takeToken()) {
+      if (peek?.value) {
+        res.setHeader("X-Cache", "STALE(local-rate-limit)");
+        return res.json(peek.value);
+      }
+      return res.status(429).json({ error: "Local rate limit reached" });
+    }
+
+    let out;
+    try {
+      out = await fetchIRailJSON(pathQ, { userAgent: USER_AGENT, etag });
+    } catch (e) {
+      const status = Number(e?.status || 0);
+      const transient = status === 502 || status === 503 || status === 504;
+
+      if (transient && peek?.value) {
+        res.setHeader("X-Cache", `STALE(upstream-${status || "err"})`);
+        return res.json(peek.value);
+      }
+      throw e;
+    }
+
+    const { status, etag: newEtag, ttlMs, json } = out;
 
     if (status === 304 && peek?.value) {
       cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
+      res.setHeader("X-Cache", "REVALIDATED(304)");
       return res.json(peek.value);
     }
 
     cache.set(key, { ttlMs, etag: newEtag, value: json });
+    res.setHeader("X-Cache", "MISS");
     return res.json(json);
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
