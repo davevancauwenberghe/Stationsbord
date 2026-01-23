@@ -307,8 +307,6 @@ button:hover{background:rgba(47,125,255,.25)}
 
 /* --- Delay tiers (liveboard) --- */
 
-/* Keep legacy .delay as "bad" (red) so nothing breaks */
-.delay,
 .delayBad{
   color:var(--danger);
   font-weight:1000;

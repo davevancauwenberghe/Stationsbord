@@ -1,5 +1,8 @@
 // app.js
 (function () {
+  "use strict";
+
+  // ---- DOM ----
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
   const searchBtn = document.getElementById("searchBtn");
@@ -18,9 +21,15 @@
   const modalPill = document.getElementById("modalPill");
   const modalBody = document.getElementById("modalBody");
 
-  // Offline/stale banner (sticky under header)
   const offlineBanner = document.getElementById("offlineBanner");
 
+  // If something essential is missing, bail quietly (prevents half-broken runtime).
+  if (!q || !dropdown || !searchBtn || !board || !statusPill || !arrdepEl || !datePrettyEl || !timePrettyEl) {
+    console.error("[Stationsbord] Missing required DOM elements. Check index.html ids.");
+    return;
+  }
+
+  // ---- State ----
   let selected = null;
   let lastResults = [];
   let activeIdx = -1;
@@ -33,36 +42,28 @@
   // vehicle overlay fetch controller (abort on close)
   let vehicleController = null;
 
-  // Body scroll lock while overlay open
-  let prevOverflowBody = "";
-  let prevOverflowHtml = "";
-
+  // ---- Scroll lock while overlay open ----
   function lockScroll() {
-    prevOverflowBody = getComputedStyle(document.body).overflow;
-    prevOverflowHtml = getComputedStyle(document.documentElement).overflow;
-
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
   }
 
   function unlockScroll() {
-    // Reset inline styles so CSS can take over again
     document.body.style.overflow = "";
     document.documentElement.style.overflow = "";
-
-    prevOverflowBody = "";
-    prevOverflowHtml = "";
   }
 
+  // ---- Status pill ----
   function setStatus(text, kind = "normal") {
     statusPill.textContent = text;
     statusPill.className = "pill";
+
     if (kind === "loading") statusPill.style.borderColor = "rgba(47,125,255,.45)";
     else if (kind === "error") statusPill.style.borderColor = "rgba(255,59,48,.55)";
     else statusPill.style.borderColor = "var(--line)";
   }
 
-  /* ---- Offline/stale banner based on X-Cache ---- */
+  // ---- Offline/stale banner based on X-Cache ----
   function hideBanner() {
     if (!offlineBanner) return;
     offlineBanner.hidden = true;
@@ -75,14 +76,9 @@
     offlineBanner.textContent = message;
   }
 
-  // Bonus tiny improvement:
-  // - Case-insensitive matching (headers often come back uppercase/mixed)
-  // - If header missing, hide banner so it won't get "stuck"
   function updateBannerFromXCache(xcache) {
     const raw = String(xcache || "").trim();
     if (!raw) {
-      // If there is no X-Cache header, don't keep stale banner hanging around.
-      // (This can happen if some intermediate strips headers.)
       hideBanner();
       return;
     }
@@ -106,8 +102,6 @@
     }
   }
 
-  // When we come back online, don't immediately hide the banner.
-  // Only hide it after we see a *fresh* (non-STALE) response.
   function noteFreshResponseIfAny(xcache) {
     const raw = String(xcache || "").trim();
     if (!raw) return;
@@ -128,8 +122,6 @@
       return;
     }
 
-    // We're back online, but don't lie yet — wait for a fresh (non-STALE) response.
-    // Keep any existing banner until the next request confirms freshness.
     if (bannerWaitingForFresh) {
       showBanner("Back online — verifying live data…");
     }
@@ -138,39 +130,14 @@
   window.addEventListener("offline", updateBannerFromNavigator);
   window.addEventListener("online", updateBannerFromNavigator);
 
+  // ---- Dropdown ----
   function openDropdown() {
     dropdown.classList.add("open");
   }
+
   function closeDropdown() {
     dropdown.classList.remove("open");
     activeIdx = -1;
-  }
-
-  function renderDropdown(results) {
-    dropdown.innerHTML = "";
-    if (!results.length) {
-      closeDropdown();
-      return;
-    }
-    for (let i = 0; i < results.length; i++) {
-      const s = results[i];
-      const div = document.createElement("div");
-      div.className = "dd-item";
-      div.dataset.idx = String(i);
-      div.innerHTML =
-        '<div><div class="dd-name">' +
-        escapeHtml(s.name) +
-        "</div></div>" +
-        '<div class="dd-id">' +
-        escapeHtml(s.id) +
-        "</div>";
-      div.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        pickResult(i);
-      });
-      dropdown.appendChild(div);
-    }
-    openDropdown();
   }
 
   function highlightActive() {
@@ -189,6 +156,32 @@
     setStatus("selected");
   }
 
+  function renderDropdown(results) {
+    dropdown.innerHTML = "";
+    if (!results.length) {
+      closeDropdown();
+      return;
+    }
+
+    results.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "dd-item";
+      div.dataset.idx = String(i);
+      div.innerHTML = `
+        <div><div class="dd-name">${escapeHtml(s.name)}</div></div>
+        <div class="dd-id">${escapeHtml(s.id)}</div>
+      `;
+      div.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        pickResult(i);
+      });
+      dropdown.appendChild(div);
+    });
+
+    openDropdown();
+  }
+
+  // ---- Utils ----
   function escapeHtml(str) {
     return String(str || "")
       .replaceAll("&", "&amp;")
@@ -199,7 +192,7 @@
   }
 
   function fmtTime(unixSeconds) {
-    const d = new Date(unixSeconds * 1000);
+    const d = new Date(Number(unixSeconds) * 1000);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
@@ -211,54 +204,57 @@
     return { label: "unknown", cls: "occ-unk" };
   }
 
-  /* ---- Delay tier helpers (liveboard + vehicle overlay) ---- */
-
+  // ---- Delay helpers ----
   // returns minutes OR null if delay info missing
   // rule: if delay seconds is 1..59 => show 1 minute (clarity)
   function delayMinutesFromSeconds(delaySeconds) {
-    if (delaySeconds == null) return null; // no info => remove pill
+    if (delaySeconds == null) return null;
     const s = Number(delaySeconds);
     if (!Number.isFinite(s)) return null;
 
     const abs = Math.abs(s);
-
     if (abs > 0 && abs < 60) return 1;
     return Math.round(abs / 60);
   }
 
-  // tier for delay minutes
-  // ok: 0
-  // warn: 1..5
-  // bad: 6+ OR cancelled
-  // null: no info
+  // ok: 0, warn: 1..5, bad: 6+ or cancelled, null: no info
   function delayTier(mins, cancelled) {
     if (cancelled) return "bad";
-    if (mins == null) return null; // no info
+    if (mins == null) return null;
     if (mins <= 0) return "ok";
     if (mins <= 5) return "warn";
     return "bad";
   }
 
-  // Liveboard pill (uses .delayOk / .delayWarn / .delayBad)
-  // - If no delay info => no pill
-  // - If cancelled => handled separately by caller
+  // Liveboard pill: .delayOk / .delayWarn / .delayBad
   function delayPillHtml(delaySeconds, cancelled) {
-    if (cancelled) return "";
+    if (cancelled) return ""; // cancelled handled by caller
 
     const mins = delayMinutesFromSeconds(delaySeconds);
     const tier = delayTier(mins, false);
-    if (!tier) return ""; // no info
+    if (!tier) return "";
 
-    if (tier === "ok") {
-      return '<span class="pill delayOk">0</span>';
-    }
-    if (tier === "warn") {
-      return '<span class="pill delayWarn">+' + mins + "m</span>";
-    }
-    return '<span class="pill delayBad">+' + mins + "m</span>";
+    if (tier === "ok") return `<span class="pill delayOk">0</span>`;
+    if (tier === "warn") return `<span class="pill delayWarn">+${mins}m</span>`;
+    return `<span class="pill delayBad">+${mins}m</span>`;
   }
 
-  /* ---- Pretty input formatting ---- */
+  // Overlay mini pill: .miniDelayOk / .miniDelayWarn / .miniDelayBad
+  function delayMini(delaySeconds, cancelled) {
+    if (cancelled) return `<span class="miniPill miniDelayBad">cancelled</span>`;
+
+    const mins = delayMinutesFromSeconds(delaySeconds);
+    if (mins == null) return "";
+
+    const tier = delayTier(mins, false);
+    if (!tier) return "";
+
+    if (tier === "ok") return `<span class="miniPill miniDelayOk">0</span>`;
+    if (tier === "warn") return `<span class="miniPill miniDelayWarn">+${mins}m</span>`;
+    return `<span class="miniPill miniDelayBad">+${mins}m</span>`;
+  }
+
+  // ---- Pretty input formatting ----
   function formatDatePrettyOnInput() {
     const digits = datePrettyEl.value.replace(/\D/g, "").slice(0, 8);
     let out = "";
@@ -282,9 +278,7 @@
   function prettyToIRailDate(ddmmyyyy) {
     const m = String(ddmmyyyy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (!m) return "";
-    const dd = m[1],
-      mm = m[2],
-      yyyy = m[3];
+    const dd = m[1], mm = m[2], yyyy = m[3];
     return dd + mm + yyyy.slice(2);
   }
 
@@ -301,7 +295,7 @@
     return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
   }
 
-  /* ---- Now + +1h based on selected moment ---- */
+  // ---- Now + +1h based on selected moment ----
   function getSelectedMomentLocal() {
     const now = new Date();
 
@@ -337,8 +331,8 @@
     const hh = String(d.getHours()).padStart(2, "0");
     const mi = String(d.getMinutes()).padStart(2, "0");
 
-    datePrettyEl.value = dd + "/" + mm + "/" + yyyy;
-    timePrettyEl.value = hh + ":" + mi;
+    datePrettyEl.value = `${dd}/${mm}/${yyyy}`;
+    timePrettyEl.value = `${hh}:${mi}`;
   }
 
   function setNow() {
@@ -348,14 +342,15 @@
   datePrettyEl.addEventListener("input", formatDatePrettyOnInput);
   timePrettyEl.addEventListener("input", formatTimePrettyOnInput);
 
-  btnNow.addEventListener("click", () => setNow());
-  btnPlus1h.addEventListener("click", () => {
-    const base = getSelectedMomentLocal();
-    base.setHours(base.getHours() + 1);
-    setMomentLocal(base);
-  });
+  if (btnNow) btnNow.addEventListener("click", () => setNow());
+  if (btnPlus1h)
+    btnPlus1h.addEventListener("click", () => {
+      const base = getSelectedMomentLocal();
+      base.setHours(base.getHours() + 1);
+      setMomentLocal(base);
+    });
 
-  /* ---- Autocomplete ---- */
+  // ---- Autocomplete ----
   async function searchStationsAuto() {
     const term = q.value.trim();
     selected = null;
@@ -373,10 +368,9 @@
 
     setStatus("searching…", "loading");
 
-    const r = await fetch(
-      "/api/stations/search?q=" + encodeURIComponent(term) + "&limit=12",
-      { signal: controller.signal }
-    ).catch((err) => {
+    const r = await fetch(`/api/stations/search?q=${encodeURIComponent(term)}&limit=12`, {
+      signal: controller.signal,
+    }).catch((err) => {
       if (err && err.name === "AbortError") return null;
       throw err;
     });
@@ -410,10 +404,7 @@
   q.addEventListener("blur", () => setTimeout(() => closeDropdown(), 120));
 
   q.addEventListener("keydown", (e) => {
-    if (
-      !dropdown.classList.contains("open") &&
-      (e.key === "ArrowDown" || e.key === "ArrowUp")
-    ) {
+    if (!dropdown.classList.contains("open") && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       if (lastResults.length) openDropdown();
     }
 
@@ -448,19 +439,22 @@
     }
   });
 
-  /* ---- Overlay helpers ---- */
+  // ---- Overlay helpers ----
   function openOverlay() {
+    if (!overlay) return;
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
     lockScroll();
   }
 
   function closeOverlay() {
+    if (!overlay) return;
     overlay.classList.remove("open");
     overlay.setAttribute("aria-hidden", "true");
-    modalTitle.textContent = "Train details";
-    modalPill.textContent = "vehicle";
-    modalBody.innerHTML = '<div class="muted">Closed.</div>';
+
+    if (modalTitle) modalTitle.textContent = "Train details";
+    if (modalPill) modalPill.textContent = "vehicle";
+    if (modalBody) modalBody.innerHTML = `<div class="muted">Closed.</div>`;
 
     if (vehicleController) {
       try {
@@ -472,12 +466,14 @@
     unlockScroll();
   }
 
-  overlayClose.addEventListener("click", closeOverlay);
-  overlay.addEventListener("mousedown", (e) => {
-    if (e.target === overlay) closeOverlay();
-  });
+  if (overlayClose) overlayClose.addEventListener("click", closeOverlay);
+  if (overlay)
+    overlay.addEventListener("mousedown", (e) => {
+      if (e.target === overlay) closeOverlay();
+    });
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay.classList.contains("open")) closeOverlay();
+    if (e.key === "Escape" && overlay && overlay.classList.contains("open")) closeOverlay();
   });
 
   function occMini(occ) {
@@ -486,39 +482,20 @@
     if (o.label === "low") cls += " miniOk";
     else if (o.label === "medium") cls += " miniWarn";
     else if (o.label === "high") cls += " miniDelay";
-    return '<span class="' + cls + '">occupancy: ' + o.label + "</span>";
-  }
-
-  // Vehicle overlay delay pill (uses .miniDelayOk / .miniDelayWarn / .miniDelayBad)
-  // - cancelled => red "cancelled"
-  // - no info => no pill
-  function delayMini(delaySeconds, cancelled) {
-    if (cancelled) return '<span class="miniPill miniDelayBad">cancelled</span>';
-
-    const mins = delayMinutesFromSeconds(delaySeconds);
-    if (mins == null) return ""; // no info => no pill
-
-    const tier = delayTier(mins, false);
-    if (!tier) return "";
-
-    if (tier === "ok") return '<span class="miniPill miniDelayOk">0</span>';
-    if (tier === "warn") return '<span class="miniPill miniDelayWarn">+' + mins + "m</span>';
-    return '<span class="miniPill miniDelayBad">+' + mins + "m</span>';
+    return `<span class="${cls}">occupancy: ${o.label}</span>`;
   }
 
   function extraStopMini(flag) {
-    return String(flag || "0") === "1"
-      ? '<span class="miniPill miniExtra">extra stop</span>'
-      : "";
+    return String(flag || "0") === "1" ? `<span class="miniPill miniExtra">extra stop</span>` : "";
   }
 
   async function loadVehicleDetails(vehicleId) {
     const prettyDate = datePrettyEl.value.trim();
     const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
 
-    modalTitle.textContent = "Train details";
-    modalPill.textContent = "loading…";
-    modalBody.innerHTML = '<div class="muted">Loading…</div>';
+    if (modalTitle) modalTitle.textContent = "Train details";
+    if (modalPill) modalPill.textContent = "loading…";
+    if (modalBody) modalBody.innerHTML = `<div class="muted">Loading…</div>`;
     openOverlay();
 
     if (vehicleController) {
@@ -528,15 +505,11 @@
     }
     vehicleController = new AbortController();
 
-    let url =
-      "/api/vehicle?id=" +
-      encodeURIComponent(vehicleId) +
-      "&lang=en&alerts=false";
-    if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
+    let url = `/api/vehicle?id=${encodeURIComponent(vehicleId)}&lang=en&alerts=false`;
+    if (dateIRail) url += `&date=${encodeURIComponent(dateIRail)}`;
 
     const r = await fetch(url, { signal: vehicleController.signal });
 
-    // Read X-Cache (vehicle)
     const xcache = r.headers.get("X-Cache");
     updateBannerFromXCache(xcache);
     noteFreshResponseIfAny(xcache);
@@ -547,37 +520,35 @@
     const vinfo = data.vehicleinfo || {};
     const short = vinfo.shortname || vinfo.name || data.vehicle || vehicleId;
 
-    modalTitle.textContent = short;
-    modalPill.textContent = "stops";
+    if (modalTitle) modalTitle.textContent = short;
+    if (modalPill) modalPill.textContent = "stops";
 
     const stops = data.stops && data.stops.stop ? data.stops.stop : [];
     if (!stops.length) {
-      modalBody.innerHTML =
-        '<div class="muted">No stop list available for this vehicle.</div>' +
-        '<div class="muted" style="margin-top:6px;">Tip: try a date closer to “now”.</div>';
+      if (modalBody) {
+        modalBody.innerHTML =
+          `<div class="muted">No stop list available for this vehicle.</div>` +
+          `<div class="muted" style="margin-top:6px;">Tip: try a date closer to “now”.</div>`;
+      }
       return;
     }
 
     let html = "";
-    html += '<div class="row" style="gap:8px; align-items:center;">';
-    html += '<span class="pill">vehicle</span>';
-    html +=
-      '<span class="pill">' + escapeHtml(String(stops.length)) + " stops</span>";
+    html += `<div class="row" style="gap:8px; align-items:center;">`;
+    html += `<span class="pill">vehicle</span>`;
+    html += `<span class="pill">${escapeHtml(String(stops.length))} stops</span>`;
     if (data.timestamp) {
-      html +=
-        '<span class="muted">updated: ' +
-        new Date(data.timestamp * 1000).toLocaleString() +
-        "</span>";
+      html += `<span class="muted">updated: ${new Date(data.timestamp * 1000).toLocaleString()}</span>`;
     }
-    html += "</div>";
+    html += `</div>`;
 
-    html += '<div class="stops">';
+    html += `<div class="stops">`;
     for (const s of stops) {
       const station =
         s.station ||
-        (s.stationinfo &&
-          (s.stationinfo.name || s.stationinfo.standardname)) ||
+        (s.stationinfo && (s.stationinfo.name || s.stationinfo.standardname)) ||
         "Unknown";
+
       const platform = s.platform != null ? String(s.platform) : "?";
 
       const depT = s.scheduledDepartureTime
@@ -585,21 +556,18 @@
         : s.departuretime
         ? fmtTime(s.departuretime)
         : "";
+
       const arrT = s.scheduledArrivalTime
         ? fmtTime(s.scheduledArrivalTime)
         : s.arrivaltime
         ? fmtTime(s.arrivaltime)
         : "";
+
       const fallbackT = s.time != null ? fmtTime(s.time) : "";
 
-      const depLine = depT
-        ? "Dep " + escapeHtml(depT)
-        : fallbackT
-        ? "Dep " + escapeHtml(fallbackT)
-        : "Dep —";
-      const arrLine = arrT ? "Arr " + escapeHtml(arrT) : "Arr —";
+      const depLine = depT ? `Dep ${escapeHtml(depT)}` : fallbackT ? `Dep ${escapeHtml(fallbackT)}` : "Dep —";
+      const arrLine = arrT ? `Arr ${escapeHtml(arrT)}` : "Arr —";
 
-      // IMPORTANT: pass through as provided; helper handles null vs jitter
       const depDelay = s.departureDelay;
       const arrDelay = s.arrivalDelay;
 
@@ -613,43 +581,36 @@
         s.occupancy && (s.occupancy.name || s.occupancy["@id"])
           ? s.occupancy.name || "unknown"
           : "unknown";
-      const p = '<span class="miniPill">pl ' + escapeHtml(platform) + "</span>";
 
-      html += '<div class="stopRow">';
-      html += "<div>";
-      html += '<div class="stopTime">' + depLine + "</div>";
-      html +=
-        '<div class="stopMeta">' +
-        p +
-        depBadges +
-        extraStopMini(s.isExtraStop) +
-        "</div>";
-      html +=
-        '<div class="stopMeta" style="margin-top:6px;">' +
-        '<span class="miniPill">' +
-        arrLine +
-        "</span>" +
-        arrBadges +
-        "</div>";
-      html += "</div>";
+      const p = `<span class="miniPill">pl ${escapeHtml(platform)}</span>`;
 
-      html += "<div>";
-      html += '<div class="stopStation">' + escapeHtml(station) + "</div>";
-      html += '<div class="stopMeta">' + occMini(occ) + "</div>";
-      html += "</div>";
+      html += `<div class="stopRow">`;
 
-      html += '<div style="justify-self:end; text-align:right;">';
-      html +=
-        '<span class="miniPill">platform ' + escapeHtml(platform) + "</span>";
-      html += "</div>";
-      html += "</div>";
+      html += `<div>`;
+      html += `<div class="stopTime">${depLine}</div>`;
+      html += `<div class="stopMeta">${p}${depBadges}${extraStopMini(s.isExtraStop)}</div>`;
+      html += `<div class="stopMeta" style="margin-top:6px;">`;
+      html += `<span class="miniPill">${arrLine}</span>${arrBadges}`;
+      html += `</div>`;
+      html += `</div>`;
+
+      html += `<div>`;
+      html += `<div class="stopStation">${escapeHtml(station)}</div>`;
+      html += `<div class="stopMeta">${occMini(occ)}</div>`;
+      html += `</div>`;
+
+      html += `<div style="justify-self:end; text-align:right;">`;
+      html += `<span class="miniPill">platform ${escapeHtml(platform)}</span>`;
+      html += `</div>`;
+
+      html += `</div>`;
     }
-    html += "</div>";
+    html += `</div>`;
 
-    modalBody.innerHTML = html;
+    if (modalBody) modalBody.innerHTML = html;
   }
 
-  /* ---- Search liveboard ---- */
+  // ---- Search liveboard ----
   searchBtn.addEventListener("click", async () => {
     try {
       if (!selected && lastResults.length) pickResult(0);
@@ -667,22 +628,15 @@
         return alert("Time must be HH:MM (e.g. 07:30, 23:15).");
       }
 
-      board.innerHTML = '<div class="muted">Loading…</div>';
+      board.innerHTML = `<div class="muted">Loading…</div>`;
       setStatus("loading…", "loading");
 
-      let url =
-        "/api/liveboard?id=" +
-        encodeURIComponent(selected.id) +
-        "&arrdep=" +
-        encodeURIComponent(arrdep) +
-        "&lang=en&alerts=false";
-
-      if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
-      if (timeIRail) url += "&time=" + encodeURIComponent(timeIRail);
+      let url = `/api/liveboard?id=${encodeURIComponent(selected.id)}&arrdep=${encodeURIComponent(arrdep)}&lang=en&alerts=false`;
+      if (dateIRail) url += `&date=${encodeURIComponent(dateIRail)}`;
+      if (timeIRail) url += `&time=${encodeURIComponent(timeIRail)}`;
 
       const r = await fetch(url);
 
-      // Read X-Cache (liveboard) — once
       const xcache = r.headers.get("X-Cache");
       updateBannerFromXCache(xcache);
       noteFreshResponseIfAny(xcache);
@@ -694,57 +648,44 @@
         data.departures && data.departures.departure
           ? data.departures.departure
           : [];
+
       const title = data.station || selected.name || "Station";
       const modeLabel = arrdep === "arrival" ? "arrivals" : "departures";
 
       let momentLabel = "";
       if (prettyDate || prettyTime) {
-        momentLabel =
-          (prettyDate || "").trim() + (prettyTime ? " " + prettyTime : "");
-        momentLabel = momentLabel.trim();
+        momentLabel = `${(prettyDate || "").trim()}${prettyTime ? ` ${prettyTime}` : ""}`.trim();
       }
 
-      let html =
-        '<div class="headerline">' +
-        '<div class="title">' +
-        escapeHtml(title) +
-        "</div>" +
-        '<span class="pill">' +
-        modeLabel +
-        "</span>" +
-        (momentLabel
-          ? '<span class="pill">at ' + escapeHtml(momentLabel) + "</span>"
-          : "") +
-        '<span class="muted">updated: ' +
-        new Date(data.timestamp * 1000).toLocaleString() +
-        "</span>" +
-        "</div>";
+      let html = `
+        <div class="headerline">
+          <div class="title">${escapeHtml(title)}</div>
+          <span class="pill">${modeLabel}</span>
+          ${momentLabel ? `<span class="pill">at ${escapeHtml(momentLabel)}</span>` : ""}
+          <span class="muted">updated: ${new Date(data.timestamp * 1000).toLocaleString()}</span>
+        </div>
+      `;
 
       if (!deps.length) {
-        html +=
-          '<div class="muted" style="margin-top:10px;">No ' +
-          modeLabel +
-          " found for this moment.</div>";
+        html += `<div class="muted" style="margin-top:10px;">No ${modeLabel} found for this moment.</div>`;
         board.innerHTML = html;
         setStatus("no results");
         return;
       }
 
-      html += '<div class="deps">';
+      html += `<div class="deps">`;
+
       for (const d of deps.slice(0, 24)) {
         const when = fmtTime(d.time);
 
         const cancelled = String(d.canceled || "0") === "1";
-        const cancelledPill = cancelled
-          ? '<span class="pill delayBad">cancelled</span>'
-          : "";
+        const cancelledPill = cancelled ? `<span class="pill delayBad">cancelled</span>` : "";
 
         const delayPill = delayPillHtml(d.delay, cancelled);
 
         const platform = d.platform != null ? String(d.platform) : "?";
 
-        const to =
-          d.direction && d.direction.name ? d.direction.name : d.station || "";
+        const to = d.direction && d.direction.name ? d.direction.name : d.station || "";
 
         const trainShort =
           d.vehicleinfo && (d.vehicleinfo.shortname || d.vehicleinfo.name)
@@ -760,45 +701,37 @@
             : "unknown";
         const occ = normalizeOccName(occName);
 
-        html +=
-          '<div class="dep">' +
-          "<div>" +
-          '<div class="when">' +
-          escapeHtml(when) +
-          "</div>" +
-          '<div class="meta">' +
-          escapeHtml(trainShort) +
-          (delayPill ? " " + delayPill : "") +
-          (cancelledPill ? " " + cancelledPill : "") +
-          "</div>" +
-          "</div>" +
-          "<div>" +
-          '<div class="to">' +
-          '<button class="toBtn" type="button" data-vehicle="' +
-          escapeHtml(vehicleId) +
-          '" title="Open train details">' +
-          escapeHtml(to) +
-          ' <span class="chev">›</span>' +
-          "</button>" +
-          "</div>" +
-          '<div class="meta"><span class="pill ' +
-          occ.cls +
-          '">occupancy: ' +
-          occ.label +
-          "</span></div>" +
-          "</div>" +
-          '<div class="right">' +
-          '<div class="platform-badge">' +
-          '<div class="label">PLATFORM</div>' +
-          '<div class="num">' +
-          escapeHtml(platform) +
-          "</div>" +
-          "</div>" +
-          "</div>" +
-          "</div>";
-      }
-      html += "</div>";
+        html += `
+          <div class="dep">
+            <div>
+              <div class="when">${escapeHtml(when)}</div>
+              <div class="meta">
+                ${escapeHtml(trainShort)}
+                ${delayPill ? ` ${delayPill}` : ""}
+                ${cancelledPill ? ` ${cancelledPill}` : ""}
+              </div>
+            </div>
 
+            <div>
+              <div class="to">
+                <button class="toBtn" type="button" data-vehicle="${escapeHtml(vehicleId)}" title="Open train details">
+                  ${escapeHtml(to)} <span class="chev">›</span>
+                </button>
+              </div>
+              <div class="meta"><span class="pill ${occ.cls}">occupancy: ${occ.label}</span></div>
+            </div>
+
+            <div class="right">
+              <div class="platform-badge">
+                <div class="label">PLATFORM</div>
+                <div class="num">${escapeHtml(platform)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
       board.innerHTML = html;
 
       const btns = board.querySelectorAll(".toBtn");
@@ -809,9 +742,8 @@
             if (!vid) return;
             await loadVehicleDetails(vid);
           } catch (e) {
-            modalPill.textContent = "error";
-            modalBody.innerHTML =
-              '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
+            if (modalPill) modalPill.textContent = "error";
+            if (modalBody) modalBody.innerHTML = `<div class="muted">Error: ${escapeHtml(e.message)}</div>`;
             openOverlay();
           }
         });
@@ -819,14 +751,13 @@
 
       setStatus("ok");
     } catch (e) {
-      board.innerHTML =
-        '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
+      board.innerHTML = `<div class="muted">Error: ${escapeHtml(e.message)}</div>`;
       setStatus("error", "error");
     }
   });
 
-  /* ---- Init ---- */
+  // ---- Init ----
   setNow();
   setStatus("ready");
-  updateBannerFromNavigator(); // initial check
+  updateBannerFromNavigator();
 })();
