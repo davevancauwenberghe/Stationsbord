@@ -202,15 +202,25 @@
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
+  // Normalizes iRail-ish occupancy strings into a stable label
   function normalizeOccName(occ) {
     const n = String(occ || "unknown").toLowerCase();
-    if (n.includes("low")) return { label: "low", cls: "occ-low" };
-    if (n.includes("medium")) return { label: "medium", cls: "occ-med" };
-    if (n.includes("high")) return { label: "high", cls: "occ-high" };
-    return { label: "unknown", cls: "occ-unk" };
+    if (n.includes("low")) return { label: "low" };
+    if (n.includes("medium")) return { label: "medium" };
+    if (n.includes("high")) return { label: "high" };
+    return { label: "unknown" };
   }
 
-  /* ---- Delay tier helpers ---- */
+  function occTierClassFromLabel(label, pillBaseClass) {
+    let cls = pillBaseClass || "pill";
+    if (label === "low") cls += " tierOk";
+    else if (label === "medium") cls += " tierWarn";
+    else if (label === "high") cls += " tierBad";
+    // unknown -> base styling only
+    return cls;
+  }
+
+  /* ---- Delay helpers (now output tiers only) ---- */
   function delayMinutesFromSeconds(delaySeconds) {
     if (delaySeconds == null) return null;
     const s = Number(delaySeconds);
@@ -230,15 +240,30 @@
   }
 
   function delayPillHtml(delaySeconds, cancelled) {
+    // cancelled shown separately as tierBad
     if (cancelled) return "";
 
     const mins = delayMinutesFromSeconds(delaySeconds);
     const tier = delayTier(mins, false);
     if (!tier) return "";
 
-    if (tier === "ok") return '<span class="pill delayOk">0m</span>';
-    if (tier === "warn") return '<span class="pill delayWarn">+' + mins + 'm</span>';
-    return '<span class="pill delayBad">+' + mins + 'm</span>';
+    if (tier === "ok") return '<span class="pill tierOk pulseOk">0m</span>';
+    if (tier === "warn") return '<span class="pill tierWarn">+' + mins + 'm</span>';
+    return '<span class="pill tierBad">+' + mins + 'm</span>';
+  }
+
+  function delayMini(delaySeconds, cancelled) {
+    if (cancelled) return '<span class="miniPill tierBad">cancelled</span>';
+
+    const mins = delayMinutesFromSeconds(delaySeconds);
+    if (mins == null) return "";
+
+    const tier = delayTier(mins, false);
+    if (!tier) return "";
+
+    if (tier === "ok") return '<span class="miniPill tierOk pulseOk">0m</span>';
+    if (tier === "warn") return '<span class="miniPill tierWarn">+' + mins + 'm</span>';
+    return '<span class="miniPill tierBad">+' + mins + 'm</span>';
   }
 
   /* ---- Pretty input formatting ---- */
@@ -461,30 +486,13 @@
 
   function occMini(occ) {
     const o = normalizeOccName(occ);
-    let cls = "miniPill";
-    if (o.label === "low") cls += " miniOk";
-    else if (o.label === "medium") cls += " miniWarn";
-    else if (o.label === "high") cls += " miniDelay";
-    return '<span class="' + cls + '">occupancy: ' + o.label + "</span>";
-  }
-
-  function delayMini(delaySeconds, cancelled) {
-    if (cancelled) return '<span class="miniPill miniDelayBad">cancelled</span>';
-
-    const mins = delayMinutesFromSeconds(delaySeconds);
-    if (mins == null) return "";
-
-    const tier = delayTier(mins, false);
-    if (!tier) return "";
-
-    if (tier === "ok") return '<span class="miniPill miniDelayOk">0m</span>';
-    if (tier === "warn") return '<span class="miniPill miniDelayWarn">+' + mins + 'm</span>';
-    return '<span class="miniPill miniDelayBad">+' + mins + 'm</span>';
+    const cls = occTierClassFromLabel(o.label, "miniPill");
+    return '<span class="' + cls + '">occupancy: ' + escapeHtml(o.label) + "</span>";
   }
 
   function extraStopMini(flag) {
     return String(flag || "0") === "1"
-      ? '<span class="miniPill miniExtra">extra stop</span>'
+      ? '<span class="miniPill tierWarn">extra stop</span>'
       : "";
   }
 
@@ -577,12 +585,10 @@
           ? s.occupancy.name || "unknown"
           : "unknown";
 
-      const p = '<span class="miniPill">pl ' + escapeHtml(platform) + "</span>";
-
       html += '<div class="stopRow">';
       html += "<div>";
-      html += '<div class="stopTime">' + depLine + "</div>";
-      html += '<div class="stopMeta">' + p + depBadges + extraStopMini(s.isExtraStop) + "</div>";
+      html += '<div class="stopTime">' + depLine + (depBadges ? ' ' + depBadges : '') + "</div>";
+      html += '<div class="stopMeta">' + extraStopMini(s.isExtraStop) + "</div>";
       html += '<div class="stopMeta" style="margin-top:6px;">' +
         '<span class="miniPill">' + arrLine + "</span>" + arrBadges + "</div>";
       html += "</div>";
@@ -604,7 +610,6 @@
   }
 
   /* ---- Disturbances (pill + overlay) ---- */
-
   function extractDisturbances(data) {
     const root =
       data && (data.disturbances || data.disturbance || data.disruption || data.disruptions);
@@ -622,7 +627,6 @@
   }
 
   function isPlannedDisturbance(d) {
-    // iRail-ish responses vary; we check multiple likely fields.
     const hay = [
       d && d.type,
       d && d.category,
@@ -655,9 +659,8 @@
 
     disturbancePill.textContent = "disturbances: " + String(count);
 
-    // You said: green pill when 0 (rare), red when >=1
-    if (count <= 0) disturbancePill.classList.add("pillOk");
-    else disturbancePill.classList.add("pillBad");
+    if (count <= 0) disturbancePill.classList.add("tierOk");
+    else disturbancePill.classList.add("tierBad");
   }
 
   function bestText(d, keys) {
@@ -669,93 +672,90 @@
   }
 
   function renderDisturbancesOverlay(listUnplanned, countUnplanned, listAll) {
-  modalTitle.textContent = "Disturbances";
-  modalPill.textContent = String(countUnplanned);
+    modalTitle.textContent = "Disturbances";
+    modalPill.textContent = String(countUnplanned);
 
-  const all = Array.isArray(listAll) ? listAll : [];
-  const unplanned = Array.isArray(listUnplanned) ? listUnplanned : [];
-  const planned = all.filter((d) => isPlannedDisturbance(d));
+    const all = Array.isArray(listAll) ? listAll : [];
+    const unplanned = Array.isArray(listUnplanned) ? listUnplanned : [];
+    const planned = all.filter((d) => isPlannedDisturbance(d));
 
-  // Overlay-local toggle state (reset each open)
-  let showPlanned = false;
+    let showPlanned = false;
 
-  function render() {
-    let html = "";
+    function render() {
+      let html = "";
 
-    // Top controls row
-    html += '<div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">';
-    html += '<span class="pill">active: ' + escapeHtml(String(unplanned.length)) + "</span>";
+      html += '<div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">';
+      html += '<span class="pill">active: ' + escapeHtml(String(unplanned.length)) + "</span>";
 
-    if (planned.length > 0) {
-      html +=
-        '<button id="distTogglePlanned" class="pill pillBtn" type="button" ' +
-        'title="Toggle planned works">' +
-        (showPlanned ? "hide planned" : "show planned") +
-        "</button>";
-      html += '<span class="pill">planned: ' + escapeHtml(String(planned.length)) + "</span>";
-    }
-    html += "</div>";
-
-    // Status line when no active disturbances
-    if (unplanned.length === 0) {
-      html += '<div class="muted">No active disturbances (excluding planned works).</div>';
       if (planned.length > 0) {
-        html += '<div class="muted" style="margin-top:6px;">Tip: toggle “show planned” to view works.</div>';
+        html +=
+          '<button id="distTogglePlanned" class="pill pillBtn" type="button" ' +
+          'title="Toggle planned works">' +
+          (showPlanned ? "hide planned" : "show planned") +
+          "</button>";
+        html += '<span class="pill">planned: ' + escapeHtml(String(planned.length)) + "</span>";
       }
-    }
-
-    const listToShow = showPlanned ? all : unplanned;
-
-    if (!listToShow.length) {
-      modalBody.innerHTML = html || '<div class="muted">No disturbances available.</div>';
-      wireToggle();
-      return;
-    }
-
-    html += '<div class="distList">';
-    for (const d of listToShow) {
-      const plannedFlag = isPlannedDisturbance(d);
-
-      const title = bestText(d, ["title", "header", "cause", "type"]) || "Disturbance";
-      const desc = bestText(d, ["description", "message", "text", "body"]) || "";
-
-      const impact = bestText(d, ["impact", "severity", "category", "status", "type"]);
-      const when = bestText(d, ["when", "timestamp", "time", "from", "starttime", "startTime"]);
-
-      const link = bestText(d, ["link", "url", "moreinfo", "moreInfo"]);
-      const attachment = bestText(d, ["attachment", "file", "pdf", "document"]);
-
-      let meta = "";
-      if (plannedFlag) meta += '<span class="pill">planned</span>';
-      if (impact) meta += '<span class="pill">' + escapeHtml(impact) + "</span>";
-      if (when) meta += '<span class="pill">' + escapeHtml(when) + "</span>";
-      if (link) meta += '<a class="distLink" href="' + escapeHtml(link) + '" target="_blank" rel="noopener">More info</a>';
-      if (attachment) meta += '<a class="distLink" href="' + escapeHtml(attachment) + '" target="_blank" rel="noopener">Attachment</a>';
-
-      html += '<div class="distItem">';
-      html += '<div class="distTitle">' + escapeHtml(title) + "</div>";
-      if (desc) html += '<div class="distDesc">' + escapeHtml(desc) + "</div>";
-      else html += '<div class="distDesc muted">No details provided.</div>';
-      if (meta) html += '<div class="distMeta">' + meta + "</div>";
       html += "</div>";
+
+      if (unplanned.length === 0) {
+        html += '<div class="muted">No active disturbances (excluding planned works).</div>';
+        if (planned.length > 0) {
+          html += '<div class="muted" style="margin-top:6px;">Tip: toggle “show planned” to view works.</div>';
+        }
+      }
+
+      const listToShow = showPlanned ? all : unplanned;
+
+      if (!listToShow.length) {
+        modalBody.innerHTML = html || '<div class="muted">No disturbances available.</div>';
+        wireToggle();
+        return;
+      }
+
+      html += '<div class="distList">';
+      for (const d of listToShow) {
+        const plannedFlag = isPlannedDisturbance(d);
+
+        const title = bestText(d, ["title", "header", "cause", "type"]) || "Disturbance";
+        const desc = bestText(d, ["description", "message", "text", "body"]) || "";
+
+        const impact = bestText(d, ["impact", "severity", "category", "status", "type"]);
+        const when = bestText(d, ["when", "timestamp", "time", "from", "starttime", "startTime"]);
+
+        const link = bestText(d, ["link", "url", "moreinfo", "moreInfo"]);
+        const attachment = bestText(d, ["attachment", "file", "pdf", "document"]);
+
+        let meta = "";
+        if (plannedFlag) meta += '<span class="pill">planned</span>';
+        if (impact) meta += '<span class="pill">' + escapeHtml(impact) + "</span>";
+        if (when) meta += '<span class="pill">' + escapeHtml(when) + "</span>";
+        if (link) meta += '<a class="distLink" href="' + escapeHtml(link) + '" target="_blank" rel="noopener">More info</a>';
+        if (attachment) meta += '<a class="distLink" href="' + escapeHtml(attachment) + '" target="_blank" rel="noopener">Attachment</a>';
+
+        html += '<div class="distItem">';
+        html += '<div class="distTitle">' + escapeHtml(title) + "</div>";
+        if (desc) html += '<div class="distDesc">' + escapeHtml(desc) + "</div>";
+        else html += '<div class="distDesc muted">No details provided.</div>';
+        if (meta) html += '<div class="distMeta">' + meta + "</div>";
+        html += "</div>";
+      }
+      html += "</div>";
+
+      modalBody.innerHTML = html;
+      wireToggle();
     }
-    html += "</div>";
 
-    modalBody.innerHTML = html;
-    wireToggle();
+    function wireToggle() {
+      const btn = modalBody.querySelector("#distTogglePlanned");
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        showPlanned = !showPlanned;
+        render();
+      });
+    }
+
+    render();
   }
-
-  function wireToggle() {
-    const btn = modalBody.querySelector("#distTogglePlanned");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      showPlanned = !showPlanned;
-      render();
-    });
-  }
-
-  render();
-}
 
   async function fetchDisturbances() {
     const r = await fetch("/api/disturbances?lang=en", { cache: "no-store" });
@@ -781,7 +781,6 @@
     try {
       await fetchDisturbances();
     } catch (e) {
-      // Don’t break the app if disturbances hiccup
       setDisturbancePill(NaN);
       console.warn("Disturbances failed:", e);
     }
@@ -795,7 +794,6 @@
         modalBody.innerHTML = '<div class="muted">Loading…</div>';
         openOverlay();
 
-        // Try refresh live; fall back to last cache on failure
         try {
           await fetchDisturbances();
         } catch (_e) {}
@@ -820,7 +818,7 @@
       if (!selected && lastResults.length) pickResult(0);
       if (!selected) return alert("Pick a station from the dropdown first");
 
-      const arrdep = "departure"; // hardcoded
+      const arrdep = "departure";
 
       const prettyDate = datePrettyEl.value.trim();
       const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
@@ -888,7 +886,7 @@
         const when = fmtTime(d.time);
 
         const cancelled = String(d.canceled || "0") === "1";
-        const cancelledPill = cancelled ? '<span class="pill delayBad">cancelled</span>' : "";
+        const cancelledPill = cancelled ? '<span class="pill tierBad">cancelled</span>' : "";
 
         const delayPill = delayPillHtml(d.delay, cancelled);
 
@@ -907,7 +905,8 @@
           d.occupancy && (d.occupancy.name || d.occupancy["@id"])
             ? d.occupancy.name || ""
             : "unknown";
-        const occ = normalizeOccName(occName);
+        const o = normalizeOccName(occName);
+        const occCls = occTierClassFromLabel(o.label, "pill");
 
         html +=
           '<div class="dep">' +
@@ -926,7 +925,7 @@
           escapeHtml(to) + ' <span class="chev">›</span>' +
           "</button>" +
           "</div>" +
-          '<div class="meta"><span class="pill ' + occ.cls + '">occupancy: ' + occ.label + "</span></div>" +
+          '<div class="meta"><span class="' + occCls + '">occupancy: ' + escapeHtml(o.label) + "</span></div>" +
           "</div>" +
 
           '<div class="right">' +
