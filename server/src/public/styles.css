@@ -158,6 +158,70 @@ button:hover{background:rgba(47,125,255,.25)}
   height:22px;
 }
 
+.pillBtn{
+  cursor: pointer;
+  transition: background .15s ease, transform .05s ease;
+}
+
+.pillBtn:hover{
+  background: rgba(255,255,255,.08);
+}
+
+.pillBtn:active{
+  transform: translateY(1px);
+}
+
+/* Generic “good/bad” pills (used for disturbances) */
+.pillOk{
+  color:rgba(255,255,255,.92);
+  border:1px solid rgba(52,199,89,.55);
+  background:rgba(52,199,89,.14);
+  font-weight:1000;
+}
+
+.pillBad{
+  color:rgba(255,255,255,.92);
+  border:1px solid rgba(255,59,48,.55);
+  background:rgba(255,59,48,.12);
+  font-weight:1000;
+}
+
+/* Optional: nicer disturbance list inside the overlay */
+.distList{
+  margin-top:10px;
+  display:grid;
+  gap:10px;
+}
+
+.distItem{
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.03);
+  border-radius:14px;
+  padding:10px 12px;
+}
+
+.distTitle{
+  font-weight:1000;
+  letter-spacing:.2px;
+}
+
+.distMeta{
+  margin-top:6px;
+  font-size:12px;
+  color:rgba(255,255,255,.65);
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.distDesc{
+  margin-top:8px;
+  font-size:13px;
+  color:rgba(255,255,255,.82);
+  line-height:1.35;
+  white-space:pre-wrap;
+}
+
 /* Autocomplete */
 
 .autocomplete{
@@ -303,6 +367,21 @@ button:hover{background:rgba(47,125,255,.25)}
   font-size:26px;
   font-weight:1000;
   margin-top:-4px;
+}
+
+/* Disturbance pill */
+.pillOk{
+  border-color: rgba(52,199,89,.55);
+  background: rgba(52,199,89,.14);
+  color: rgba(255,255,255,.90);
+  font-weight: 1000;
+}
+
+.pillBad{
+  border-color: rgba(255,59,48,.55);
+  background: rgba(255,59,48,.12);
+  color: rgba(255,255,255,.90);
+  font-weight: 1000;
 }
 
 /* --- Delay tiers (liveboard) --- */
@@ -543,6 +622,69 @@ button:hover{background:rgba(47,125,255,.25)}
   border-color:rgba(47,125,255,.45);
   background:rgba(47,125,255,.12);
   color:rgba(255,255,255,.88);
+}
+
+/* Disturbances UI */
+.pillBtn{
+  cursor:pointer;
+}
+.pillBtn:hover{
+  background:rgba(255,255,255,.10);
+}
+
+.distItem{
+  padding:12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.distItem:last-child{border-bottom:none}
+
+.distT{
+  font-weight:1000;
+  margin-bottom:6px;
+}
+.distD{
+  color:rgba(255,255,255,.78);
+  font-size:13px;
+  line-height:1.35;
+}
+
+.distMeta{
+  margin-top:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+}
+
+.distLink{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:2px 10px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  font-size:12px;
+  color:rgba(255,255,255,.86);
+  text-decoration:none;
+  background:rgba(255,255,255,.04);
+}
+.distLink:hover{
+  background:rgba(255,255,255,.08);
+  text-decoration:underline;
+}
+
+/* Disturbance pill states */
+.distOk{
+  border-color:rgba(52,199,89,.55);
+  background:rgba(52,199,89,.14);
+  color:rgba(255,255,255,.90);
+  font-weight:1000;
+}
+.distBad{
+  border-color:rgba(255,59,48,.55);
+  background:rgba(255,59,48,.12);
+  color:rgba(255,255,255,.90);
+  font-weight:1000;
 }
 
 /* Mobile */

@@ -1,15 +1,14 @@
 // app.js
 (function () {
-  "use strict";
-
-  // ---- DOM ----
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
   const searchBtn = document.getElementById("searchBtn");
   const board = document.getElementById("board");
   const statusPill = document.getElementById("statusPill");
 
-  const arrdepEl = document.getElementById("arrdep");
+  // Disturbances pill (header)
+  const disturbancePill = document.getElementById("disturbancePill");
+
   const datePrettyEl = document.getElementById("datePretty"); // DD/MM/YYYY
   const timePrettyEl = document.getElementById("timePretty"); // HH:MM
   const btnNow = document.getElementById("btnNow");
@@ -21,15 +20,9 @@
   const modalPill = document.getElementById("modalPill");
   const modalBody = document.getElementById("modalBody");
 
+  // Offline/stale banner (sticky under header)
   const offlineBanner = document.getElementById("offlineBanner");
 
-  // If something essential is missing, bail quietly (prevents half-broken runtime).
-  if (!q || !dropdown || !searchBtn || !board || !statusPill || !arrdepEl || !datePrettyEl || !timePrettyEl) {
-    console.error("[Stationsbord] Missing required DOM elements. Check index.html ids.");
-    return;
-  }
-
-  // ---- State ----
   let selected = null;
   let lastResults = [];
   let activeIdx = -1;
@@ -42,8 +35,18 @@
   // vehicle overlay fetch controller (abort on close)
   let vehicleController = null;
 
-  // ---- Scroll lock while overlay open ----
+  // Disturbances cache
+  let lastDisturbancesAll = [];
+  let lastDisturbancesUnplanned = [];
+
+  // Body scroll lock while overlay open
+  let prevOverflowBody = "";
+  let prevOverflowHtml = "";
+
   function lockScroll() {
+    prevOverflowBody = getComputedStyle(document.body).overflow;
+    prevOverflowHtml = getComputedStyle(document.documentElement).overflow;
+
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
   }
@@ -51,19 +54,20 @@
   function unlockScroll() {
     document.body.style.overflow = "";
     document.documentElement.style.overflow = "";
+
+    prevOverflowBody = "";
+    prevOverflowHtml = "";
   }
 
-  // ---- Status pill ----
   function setStatus(text, kind = "normal") {
     statusPill.textContent = text;
     statusPill.className = "pill";
-
     if (kind === "loading") statusPill.style.borderColor = "rgba(47,125,255,.45)";
     else if (kind === "error") statusPill.style.borderColor = "rgba(255,59,48,.55)";
     else statusPill.style.borderColor = "var(--line)";
   }
 
-  // ---- Offline/stale banner based on X-Cache ----
+  /* ---- Offline/stale banner based on X-Cache ---- */
   function hideBanner() {
     if (!offlineBanner) return;
     offlineBanner.hidden = true;
@@ -102,6 +106,8 @@
     }
   }
 
+  // When we come back online, don't immediately hide the banner.
+  // Only hide it after we see a *fresh* (non-STALE) response.
   function noteFreshResponseIfAny(xcache) {
     const raw = String(xcache || "").trim();
     if (!raw) return;
@@ -130,14 +136,40 @@
   window.addEventListener("offline", updateBannerFromNavigator);
   window.addEventListener("online", updateBannerFromNavigator);
 
-  // ---- Dropdown ----
+  /* ---- Dropdown ---- */
   function openDropdown() {
     dropdown.classList.add("open");
   }
-
   function closeDropdown() {
     dropdown.classList.remove("open");
     activeIdx = -1;
+  }
+
+  function renderDropdown(results) {
+    dropdown.innerHTML = "";
+    if (!results.length) {
+      closeDropdown();
+      return;
+    }
+    for (let i = 0; i < results.length; i++) {
+      const s = results[i];
+      const div = document.createElement("div");
+      div.className = "dd-item";
+      div.dataset.idx = String(i);
+      div.innerHTML =
+        '<div><div class="dd-name">' +
+        escapeHtml(s.name) +
+        "</div></div>" +
+        '<div class="dd-id">' +
+        escapeHtml(s.id) +
+        "</div>";
+      div.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        pickResult(i);
+      });
+      dropdown.appendChild(div);
+    }
+    openDropdown();
   }
 
   function highlightActive() {
@@ -156,32 +188,6 @@
     setStatus("selected");
   }
 
-  function renderDropdown(results) {
-    dropdown.innerHTML = "";
-    if (!results.length) {
-      closeDropdown();
-      return;
-    }
-
-    results.forEach((s, i) => {
-      const div = document.createElement("div");
-      div.className = "dd-item";
-      div.dataset.idx = String(i);
-      div.innerHTML = `
-        <div><div class="dd-name">${escapeHtml(s.name)}</div></div>
-        <div class="dd-id">${escapeHtml(s.id)}</div>
-      `;
-      div.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        pickResult(i);
-      });
-      dropdown.appendChild(div);
-    });
-
-    openDropdown();
-  }
-
-  // ---- Utils ----
   function escapeHtml(str) {
     return String(str || "")
       .replaceAll("&", "&amp;")
@@ -192,7 +198,7 @@
   }
 
   function fmtTime(unixSeconds) {
-    const d = new Date(Number(unixSeconds) * 1000);
+    const d = new Date(unixSeconds * 1000);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
@@ -204,9 +210,7 @@
     return { label: "unknown", cls: "occ-unk" };
   }
 
-  // ---- Delay helpers ----
-  // returns minutes OR null if delay info missing
-  // rule: if delay seconds is 1..59 => show 1 minute (clarity)
+  /* ---- Delay tier helpers ---- */
   function delayMinutesFromSeconds(delaySeconds) {
     if (delaySeconds == null) return null;
     const s = Number(delaySeconds);
@@ -217,7 +221,6 @@
     return Math.round(abs / 60);
   }
 
-  // ok: 0, warn: 1..5, bad: 6+ or cancelled, null: no info
   function delayTier(mins, cancelled) {
     if (cancelled) return "bad";
     if (mins == null) return null;
@@ -226,35 +229,19 @@
     return "bad";
   }
 
-  // Liveboard pill: .delayOk / .delayWarn / .delayBad
   function delayPillHtml(delaySeconds, cancelled) {
-    if (cancelled) return ""; // cancelled handled by caller
+    if (cancelled) return "";
 
     const mins = delayMinutesFromSeconds(delaySeconds);
     const tier = delayTier(mins, false);
     if (!tier) return "";
 
-    if (tier === "ok") return `<span class="pill delayOk">0</span>`;
-    if (tier === "warn") return `<span class="pill delayWarn">+${mins}m</span>`;
-    return `<span class="pill delayBad">+${mins}m</span>`;
+    if (tier === "ok") return '<span class="pill delayOk">0m</span>';
+    if (tier === "warn") return '<span class="pill delayWarn">+' + mins + 'm</span>';
+    return '<span class="pill delayBad">+' + mins + 'm</span>';
   }
 
-  // Overlay mini pill: .miniDelayOk / .miniDelayWarn / .miniDelayBad
-  function delayMini(delaySeconds, cancelled) {
-    if (cancelled) return `<span class="miniPill miniDelayBad">cancelled</span>`;
-
-    const mins = delayMinutesFromSeconds(delaySeconds);
-    if (mins == null) return "";
-
-    const tier = delayTier(mins, false);
-    if (!tier) return "";
-
-    if (tier === "ok") return `<span class="miniPill miniDelayOk">0</span>`;
-    if (tier === "warn") return `<span class="miniPill miniDelayWarn">+${mins}m</span>`;
-    return `<span class="miniPill miniDelayBad">+${mins}m</span>`;
-  }
-
-  // ---- Pretty input formatting ----
+  /* ---- Pretty input formatting ---- */
   function formatDatePrettyOnInput() {
     const digits = datePrettyEl.value.replace(/\D/g, "").slice(0, 8);
     let out = "";
@@ -295,7 +282,7 @@
     return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
   }
 
-  // ---- Now + +1h based on selected moment ----
+  /* ---- Now + +1h ---- */
   function getSelectedMomentLocal() {
     const now = new Date();
 
@@ -331,8 +318,8 @@
     const hh = String(d.getHours()).padStart(2, "0");
     const mi = String(d.getMinutes()).padStart(2, "0");
 
-    datePrettyEl.value = `${dd}/${mm}/${yyyy}`;
-    timePrettyEl.value = `${hh}:${mi}`;
+    datePrettyEl.value = dd + "/" + mm + "/" + yyyy;
+    timePrettyEl.value = hh + ":" + mi;
   }
 
   function setNow() {
@@ -342,15 +329,14 @@
   datePrettyEl.addEventListener("input", formatDatePrettyOnInput);
   timePrettyEl.addEventListener("input", formatTimePrettyOnInput);
 
-  if (btnNow) btnNow.addEventListener("click", () => setNow());
-  if (btnPlus1h)
-    btnPlus1h.addEventListener("click", () => {
-      const base = getSelectedMomentLocal();
-      base.setHours(base.getHours() + 1);
-      setMomentLocal(base);
-    });
+  btnNow.addEventListener("click", () => setNow());
+  btnPlus1h.addEventListener("click", () => {
+    const base = getSelectedMomentLocal();
+    base.setHours(base.getHours() + 1);
+    setMomentLocal(base);
+  });
 
-  // ---- Autocomplete ----
+  /* ---- Autocomplete ---- */
   async function searchStationsAuto() {
     const term = q.value.trim();
     selected = null;
@@ -368,9 +354,10 @@
 
     setStatus("searching…", "loading");
 
-    const r = await fetch(`/api/stations/search?q=${encodeURIComponent(term)}&limit=12`, {
-      signal: controller.signal,
-    }).catch((err) => {
+    const r = await fetch(
+      "/api/stations/search?q=" + encodeURIComponent(term) + "&limit=12",
+      { signal: controller.signal }
+    ).catch((err) => {
       if (err && err.name === "AbortError") return null;
       throw err;
     });
@@ -404,7 +391,10 @@
   q.addEventListener("blur", () => setTimeout(() => closeDropdown(), 120));
 
   q.addEventListener("keydown", (e) => {
-    if (!dropdown.classList.contains("open") && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+    if (
+      !dropdown.classList.contains("open") &&
+      (e.key === "ArrowDown" || e.key === "ArrowUp")
+    ) {
       if (lastResults.length) openDropdown();
     }
 
@@ -439,41 +429,34 @@
     }
   });
 
-  // ---- Overlay helpers ----
+  /* ---- Overlay helpers (train details + disturbances re-use) ---- */
   function openOverlay() {
-    if (!overlay) return;
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
     lockScroll();
   }
 
   function closeOverlay() {
-    if (!overlay) return;
     overlay.classList.remove("open");
     overlay.setAttribute("aria-hidden", "true");
-
-    if (modalTitle) modalTitle.textContent = "Train details";
-    if (modalPill) modalPill.textContent = "vehicle";
-    if (modalBody) modalBody.innerHTML = `<div class="muted">Closed.</div>`;
+    modalTitle.textContent = "Train details";
+    modalPill.textContent = "vehicle";
+    modalBody.innerHTML = '<div class="muted">Closed.</div>';
 
     if (vehicleController) {
-      try {
-        vehicleController.abort();
-      } catch (_e) {}
+      try { vehicleController.abort(); } catch (_e) {}
       vehicleController = null;
     }
 
     unlockScroll();
   }
 
-  if (overlayClose) overlayClose.addEventListener("click", closeOverlay);
-  if (overlay)
-    overlay.addEventListener("mousedown", (e) => {
-      if (e.target === overlay) closeOverlay();
-    });
-
+  overlayClose.addEventListener("click", closeOverlay);
+  overlay.addEventListener("mousedown", (e) => {
+    if (e.target === overlay) closeOverlay();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay && overlay.classList.contains("open")) closeOverlay();
+    if (e.key === "Escape" && overlay.classList.contains("open")) closeOverlay();
   });
 
   function occMini(occ) {
@@ -482,31 +465,48 @@
     if (o.label === "low") cls += " miniOk";
     else if (o.label === "medium") cls += " miniWarn";
     else if (o.label === "high") cls += " miniDelay";
-    return `<span class="${cls}">occupancy: ${o.label}</span>`;
+    return '<span class="' + cls + '">occupancy: ' + o.label + "</span>";
+  }
+
+  function delayMini(delaySeconds, cancelled) {
+    if (cancelled) return '<span class="miniPill miniDelayBad">cancelled</span>';
+
+    const mins = delayMinutesFromSeconds(delaySeconds);
+    if (mins == null) return "";
+
+    const tier = delayTier(mins, false);
+    if (!tier) return "";
+
+    if (tier === "ok") return '<span class="miniPill miniDelayOk">0m</span>';
+    if (tier === "warn") return '<span class="miniPill miniDelayWarn">+' + mins + 'm</span>';
+    return '<span class="miniPill miniDelayBad">+' + mins + 'm</span>';
   }
 
   function extraStopMini(flag) {
-    return String(flag || "0") === "1" ? `<span class="miniPill miniExtra">extra stop</span>` : "";
+    return String(flag || "0") === "1"
+      ? '<span class="miniPill miniExtra">extra stop</span>'
+      : "";
   }
 
   async function loadVehicleDetails(vehicleId) {
     const prettyDate = datePrettyEl.value.trim();
     const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
 
-    if (modalTitle) modalTitle.textContent = "Train details";
-    if (modalPill) modalPill.textContent = "loading…";
-    if (modalBody) modalBody.innerHTML = `<div class="muted">Loading…</div>`;
+    modalTitle.textContent = "Train details";
+    modalPill.textContent = "loading…";
+    modalBody.innerHTML = '<div class="muted">Loading…</div>';
     openOverlay();
 
     if (vehicleController) {
-      try {
-        vehicleController.abort();
-      } catch (_e) {}
+      try { vehicleController.abort(); } catch (_e) {}
     }
     vehicleController = new AbortController();
 
-    let url = `/api/vehicle?id=${encodeURIComponent(vehicleId)}&lang=en&alerts=false`;
-    if (dateIRail) url += `&date=${encodeURIComponent(dateIRail)}`;
+    let url =
+      "/api/vehicle?id=" +
+      encodeURIComponent(vehicleId) +
+      "&lang=en&alerts=false";
+    if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
 
     const r = await fetch(url, { signal: vehicleController.signal });
 
@@ -520,35 +520,32 @@
     const vinfo = data.vehicleinfo || {};
     const short = vinfo.shortname || vinfo.name || data.vehicle || vehicleId;
 
-    if (modalTitle) modalTitle.textContent = short;
-    if (modalPill) modalPill.textContent = "stops";
+    modalTitle.textContent = short;
+    modalPill.textContent = "stops";
 
     const stops = data.stops && data.stops.stop ? data.stops.stop : [];
     if (!stops.length) {
-      if (modalBody) {
-        modalBody.innerHTML =
-          `<div class="muted">No stop list available for this vehicle.</div>` +
-          `<div class="muted" style="margin-top:6px;">Tip: try a date closer to “now”.</div>`;
-      }
+      modalBody.innerHTML =
+        '<div class="muted">No stop list available for this vehicle.</div>' +
+        '<div class="muted" style="margin-top:6px;">Tip: try a date closer to “now”.</div>';
       return;
     }
 
     let html = "";
-    html += `<div class="row" style="gap:8px; align-items:center;">`;
-    html += `<span class="pill">vehicle</span>`;
-    html += `<span class="pill">${escapeHtml(String(stops.length))} stops</span>`;
+    html += '<div class="row" style="gap:8px; align-items:center;">';
+    html += '<span class="pill">vehicle</span>';
+    html += '<span class="pill">' + escapeHtml(String(stops.length)) + " stops</span>";
     if (data.timestamp) {
-      html += `<span class="muted">updated: ${new Date(data.timestamp * 1000).toLocaleString()}</span>`;
+      html += '<span class="muted">updated: ' + new Date(data.timestamp * 1000).toLocaleString() + "</span>";
     }
-    html += `</div>`;
+    html += "</div>";
 
-    html += `<div class="stops">`;
+    html += '<div class="stops">';
     for (const s of stops) {
       const station =
         s.station ||
         (s.stationinfo && (s.stationinfo.name || s.stationinfo.standardname)) ||
         "Unknown";
-
       const platform = s.platform != null ? String(s.platform) : "?";
 
       const depT = s.scheduledDepartureTime
@@ -556,17 +553,15 @@
         : s.departuretime
         ? fmtTime(s.departuretime)
         : "";
-
       const arrT = s.scheduledArrivalTime
         ? fmtTime(s.scheduledArrivalTime)
         : s.arrivaltime
         ? fmtTime(s.arrivaltime)
         : "";
-
       const fallbackT = s.time != null ? fmtTime(s.time) : "";
 
-      const depLine = depT ? `Dep ${escapeHtml(depT)}` : fallbackT ? `Dep ${escapeHtml(fallbackT)}` : "Dep —";
-      const arrLine = arrT ? `Arr ${escapeHtml(arrT)}` : "Arr —";
+      const depLine = depT ? "Dep " + escapeHtml(depT) : fallbackT ? "Dep " + escapeHtml(fallbackT) : "Dep —";
+      const arrLine = arrT ? "Arr " + escapeHtml(arrT) : "Arr —";
 
       const depDelay = s.departureDelay;
       const arrDelay = s.arrivalDelay;
@@ -582,41 +577,250 @@
           ? s.occupancy.name || "unknown"
           : "unknown";
 
-      const p = `<span class="miniPill">pl ${escapeHtml(platform)}</span>`;
+      const p = '<span class="miniPill">pl ' + escapeHtml(platform) + "</span>";
 
-      html += `<div class="stopRow">`;
+      html += '<div class="stopRow">';
+      html += "<div>";
+      html += '<div class="stopTime">' + depLine + "</div>";
+      html += '<div class="stopMeta">' + p + depBadges + extraStopMini(s.isExtraStop) + "</div>";
+      html += '<div class="stopMeta" style="margin-top:6px;">' +
+        '<span class="miniPill">' + arrLine + "</span>" + arrBadges + "</div>";
+      html += "</div>";
 
-      html += `<div>`;
-      html += `<div class="stopTime">${depLine}</div>`;
-      html += `<div class="stopMeta">${p}${depBadges}${extraStopMini(s.isExtraStop)}</div>`;
-      html += `<div class="stopMeta" style="margin-top:6px;">`;
-      html += `<span class="miniPill">${arrLine}</span>${arrBadges}`;
-      html += `</div>`;
-      html += `</div>`;
+      html += "<div>";
+      html += '<div class="stopStation">' + escapeHtml(station) + "</div>";
+      html += '<div class="stopMeta">' + occMini(occ) + "</div>";
+      html += "</div>";
 
-      html += `<div>`;
-      html += `<div class="stopStation">${escapeHtml(station)}</div>`;
-      html += `<div class="stopMeta">${occMini(occ)}</div>`;
-      html += `</div>`;
+      html += '<div style="justify-self:end; text-align:right;">';
+      html += '<span class="miniPill">platform ' + escapeHtml(platform) + "</span>";
+      html += "</div>";
 
-      html += `<div style="justify-self:end; text-align:right;">`;
-      html += `<span class="miniPill">platform ${escapeHtml(platform)}</span>`;
-      html += `</div>`;
-
-      html += `</div>`;
+      html += "</div>";
     }
-    html += `</div>`;
+    html += "</div>";
 
-    if (modalBody) modalBody.innerHTML = html;
+    modalBody.innerHTML = html;
   }
 
-  // ---- Search liveboard ----
+  /* ---- Disturbances (pill + overlay) ---- */
+
+  function extractDisturbances(data) {
+    const root =
+      data && (data.disturbances || data.disturbance || data.disruption || data.disruptions);
+
+    if (!root) return [];
+
+    if (Array.isArray(root)) return root;
+
+    if (Array.isArray(root.disturbance)) return root.disturbance;
+    if (Array.isArray(root.disruption)) return root.disruption;
+    if (Array.isArray(root.disruptions)) return root.disruptions;
+
+    if (typeof root === "object") return [root];
+    return [];
+  }
+
+  function isPlannedDisturbance(d) {
+    // iRail-ish responses vary; we check multiple likely fields.
+    const hay = [
+      d && d.type,
+      d && d.category,
+      d && d.impact,
+      d && d.severity,
+      d && d.status,
+      d && d.title,
+      d && d.header,
+      d && d.description,
+      d && d.message,
+      d && d.text
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return hay.includes("planned");
+  }
+
+  function setDisturbancePill(count) {
+    if (!disturbancePill) return;
+
+    disturbancePill.hidden = false;
+    disturbancePill.className = "pill pillBtn";
+
+    if (!Number.isFinite(count)) {
+      disturbancePill.textContent = "disturbances ?";
+      return;
+    }
+
+    disturbancePill.textContent = "disturbances: " + String(count);
+
+    // You said: green pill when 0 (rare), red when >=1
+    if (count <= 0) disturbancePill.classList.add("pillOk");
+    else disturbancePill.classList.add("pillBad");
+  }
+
+  function bestText(d, keys) {
+    for (const k of keys) {
+      const v = d && d[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return "";
+  }
+
+  function renderDisturbancesOverlay(listUnplanned, countUnplanned, listAll) {
+  modalTitle.textContent = "Disturbances";
+  modalPill.textContent = String(countUnplanned);
+
+  const all = Array.isArray(listAll) ? listAll : [];
+  const unplanned = Array.isArray(listUnplanned) ? listUnplanned : [];
+  const planned = all.filter((d) => isPlannedDisturbance(d));
+
+  // Overlay-local toggle state (reset each open)
+  let showPlanned = false;
+
+  function render() {
+    let html = "";
+
+    // Top controls row
+    html += '<div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">';
+    html += '<span class="pill">active: ' + escapeHtml(String(unplanned.length)) + "</span>";
+
+    if (planned.length > 0) {
+      html +=
+        '<button id="distTogglePlanned" class="pill pillBtn" type="button" ' +
+        'title="Toggle planned works">' +
+        (showPlanned ? "hide planned" : "show planned") +
+        "</button>";
+      html += '<span class="pill">planned: ' + escapeHtml(String(planned.length)) + "</span>";
+    }
+    html += "</div>";
+
+    // Status line when no active disturbances
+    if (unplanned.length === 0) {
+      html += '<div class="muted">No active disturbances (excluding planned works).</div>';
+      if (planned.length > 0) {
+        html += '<div class="muted" style="margin-top:6px;">Tip: toggle “show planned” to view works.</div>';
+      }
+    }
+
+    const listToShow = showPlanned ? all : unplanned;
+
+    if (!listToShow.length) {
+      modalBody.innerHTML = html || '<div class="muted">No disturbances available.</div>';
+      wireToggle();
+      return;
+    }
+
+    html += '<div class="distList">';
+    for (const d of listToShow) {
+      const plannedFlag = isPlannedDisturbance(d);
+
+      const title = bestText(d, ["title", "header", "cause", "type"]) || "Disturbance";
+      const desc = bestText(d, ["description", "message", "text", "body"]) || "";
+
+      const impact = bestText(d, ["impact", "severity", "category", "status", "type"]);
+      const when = bestText(d, ["when", "timestamp", "time", "from", "starttime", "startTime"]);
+
+      const link = bestText(d, ["link", "url", "moreinfo", "moreInfo"]);
+      const attachment = bestText(d, ["attachment", "file", "pdf", "document"]);
+
+      let meta = "";
+      if (plannedFlag) meta += '<span class="pill">planned</span>';
+      if (impact) meta += '<span class="pill">' + escapeHtml(impact) + "</span>";
+      if (when) meta += '<span class="pill">' + escapeHtml(when) + "</span>";
+      if (link) meta += '<a class="distLink" href="' + escapeHtml(link) + '" target="_blank" rel="noopener">More info</a>';
+      if (attachment) meta += '<a class="distLink" href="' + escapeHtml(attachment) + '" target="_blank" rel="noopener">Attachment</a>';
+
+      html += '<div class="distItem">';
+      html += '<div class="distTitle">' + escapeHtml(title) + "</div>";
+      if (desc) html += '<div class="distDesc">' + escapeHtml(desc) + "</div>";
+      else html += '<div class="distDesc muted">No details provided.</div>';
+      if (meta) html += '<div class="distMeta">' + meta + "</div>";
+      html += "</div>";
+    }
+    html += "</div>";
+
+    modalBody.innerHTML = html;
+    wireToggle();
+  }
+
+  function wireToggle() {
+    const btn = modalBody.querySelector("#distTogglePlanned");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      showPlanned = !showPlanned;
+      render();
+    });
+  }
+
+  render();
+}
+
+  async function fetchDisturbances() {
+    const r = await fetch("/api/disturbances?lang=en", { cache: "no-store" });
+
+    const xcache = r.headers.get("X-Cache");
+    updateBannerFromXCache(xcache);
+    noteFreshResponseIfAny(xcache);
+
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "Disturbances request failed");
+
+    const all = extractDisturbances(data);
+    const unplanned = all.filter((d) => !isPlannedDisturbance(d));
+
+    lastDisturbancesAll = all;
+    lastDisturbancesUnplanned = unplanned;
+
+    setDisturbancePill(unplanned.length);
+  }
+
+  async function refreshDisturbancesSafe() {
+    if (!disturbancePill) return;
+    try {
+      await fetchDisturbances();
+    } catch (e) {
+      // Don’t break the app if disturbances hiccup
+      setDisturbancePill(NaN);
+      console.warn("Disturbances failed:", e);
+    }
+  }
+
+  if (disturbancePill) {
+    disturbancePill.addEventListener("click", async () => {
+      try {
+        modalTitle.textContent = "Disturbances";
+        modalPill.textContent = "…";
+        modalBody.innerHTML = '<div class="muted">Loading…</div>';
+        openOverlay();
+
+        // Try refresh live; fall back to last cache on failure
+        try {
+          await fetchDisturbances();
+        } catch (_e) {}
+
+        renderDisturbancesOverlay(
+          lastDisturbancesUnplanned,
+          lastDisturbancesUnplanned.length,
+          lastDisturbancesAll
+        );
+      } catch (e) {
+        modalPill.textContent = "error";
+        modalBody.innerHTML =
+          '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
+        openOverlay();
+      }
+    });
+  }
+
+  /* ---- Search liveboard (DEPARTURES ONLY) ---- */
   searchBtn.addEventListener("click", async () => {
     try {
       if (!selected && lastResults.length) pickResult(0);
       if (!selected) return alert("Pick a station from the dropdown first");
 
-      const arrdep = arrdepEl.value;
+      const arrdep = "departure"; // hardcoded
 
       const prettyDate = datePrettyEl.value.trim();
       const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
@@ -628,12 +832,18 @@
         return alert("Time must be HH:MM (e.g. 07:30, 23:15).");
       }
 
-      board.innerHTML = `<div class="muted">Loading…</div>`;
+      board.innerHTML = '<div class="muted">Loading…</div>';
       setStatus("loading…", "loading");
 
-      let url = `/api/liveboard?id=${encodeURIComponent(selected.id)}&arrdep=${encodeURIComponent(arrdep)}&lang=en&alerts=false`;
-      if (dateIRail) url += `&date=${encodeURIComponent(dateIRail)}`;
-      if (timeIRail) url += `&time=${encodeURIComponent(timeIRail)}`;
+      let url =
+        "/api/liveboard?id=" +
+        encodeURIComponent(selected.id) +
+        "&arrdep=" +
+        encodeURIComponent(arrdep) +
+        "&lang=en&alerts=false";
+
+      if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
+      if (timeIRail) url += "&time=" + encodeURIComponent(timeIRail);
 
       const r = await fetch(url);
 
@@ -650,41 +860,39 @@
           : [];
 
       const title = data.station || selected.name || "Station";
-      const modeLabel = arrdep === "arrival" ? "arrivals" : "departures";
+      const modeLabel = "departures";
 
       let momentLabel = "";
       if (prettyDate || prettyTime) {
-        momentLabel = `${(prettyDate || "").trim()}${prettyTime ? ` ${prettyTime}` : ""}`.trim();
+        momentLabel = (prettyDate || "").trim() + (prettyTime ? " " + prettyTime : "");
+        momentLabel = momentLabel.trim();
       }
 
-      let html = `
-        <div class="headerline">
-          <div class="title">${escapeHtml(title)}</div>
-          <span class="pill">${modeLabel}</span>
-          ${momentLabel ? `<span class="pill">at ${escapeHtml(momentLabel)}</span>` : ""}
-          <span class="muted">updated: ${new Date(data.timestamp * 1000).toLocaleString()}</span>
-        </div>
-      `;
+      let html =
+        '<div class="headerline">' +
+        '<div class="title">' + escapeHtml(title) + "</div>" +
+        '<span class="pill">' + modeLabel + "</span>" +
+        (momentLabel ? '<span class="pill">at ' + escapeHtml(momentLabel) + "</span>" : "") +
+        '<span class="muted">updated: ' + new Date(data.timestamp * 1000).toLocaleString() + "</span>" +
+        "</div>";
 
       if (!deps.length) {
-        html += `<div class="muted" style="margin-top:10px;">No ${modeLabel} found for this moment.</div>`;
+        html += '<div class="muted" style="margin-top:10px;">No ' + modeLabel + " found for this moment.</div>";
         board.innerHTML = html;
         setStatus("no results");
         return;
       }
 
-      html += `<div class="deps">`;
-
+      html += '<div class="deps">';
       for (const d of deps.slice(0, 24)) {
         const when = fmtTime(d.time);
 
         const cancelled = String(d.canceled || "0") === "1";
-        const cancelledPill = cancelled ? `<span class="pill delayBad">cancelled</span>` : "";
+        const cancelledPill = cancelled ? '<span class="pill delayBad">cancelled</span>' : "";
 
         const delayPill = delayPillHtml(d.delay, cancelled);
 
         const platform = d.platform != null ? String(d.platform) : "?";
-
         const to = d.direction && d.direction.name ? d.direction.name : d.station || "";
 
         const trainShort =
@@ -701,37 +909,36 @@
             : "unknown";
         const occ = normalizeOccName(occName);
 
-        html += `
-          <div class="dep">
-            <div>
-              <div class="when">${escapeHtml(when)}</div>
-              <div class="meta">
-                ${escapeHtml(trainShort)}
-                ${delayPill ? ` ${delayPill}` : ""}
-                ${cancelledPill ? ` ${cancelledPill}` : ""}
-              </div>
-            </div>
+        html +=
+          '<div class="dep">' +
+          "<div>" +
+          '<div class="when">' + escapeHtml(when) + "</div>" +
+          '<div class="meta">' +
+          escapeHtml(trainShort) +
+          (delayPill ? " " + delayPill : "") +
+          (cancelledPill ? " " + cancelledPill : "") +
+          "</div>" +
+          "</div>" +
 
-            <div>
-              <div class="to">
-                <button class="toBtn" type="button" data-vehicle="${escapeHtml(vehicleId)}" title="Open train details">
-                  ${escapeHtml(to)} <span class="chev">›</span>
-                </button>
-              </div>
-              <div class="meta"><span class="pill ${occ.cls}">occupancy: ${occ.label}</span></div>
-            </div>
+          "<div>" +
+          '<div class="to">' +
+          '<button class="toBtn" type="button" data-vehicle="' + escapeHtml(vehicleId) + '" title="Open train details">' +
+          escapeHtml(to) + ' <span class="chev">›</span>' +
+          "</button>" +
+          "</div>" +
+          '<div class="meta"><span class="pill ' + occ.cls + '">occupancy: ' + occ.label + "</span></div>" +
+          "</div>" +
 
-            <div class="right">
-              <div class="platform-badge">
-                <div class="label">PLATFORM</div>
-                <div class="num">${escapeHtml(platform)}</div>
-              </div>
-            </div>
-          </div>
-        `;
+          '<div class="right">' +
+          '<div class="platform-badge">' +
+          '<div class="label">PLATFORM</div>' +
+          '<div class="num">' + escapeHtml(platform) + "</div>" +
+          "</div>" +
+          "</div>" +
+          "</div>";
       }
+      html += "</div>";
 
-      html += `</div>`;
       board.innerHTML = html;
 
       const btns = board.querySelectorAll(".toBtn");
@@ -742,8 +949,8 @@
             if (!vid) return;
             await loadVehicleDetails(vid);
           } catch (e) {
-            if (modalPill) modalPill.textContent = "error";
-            if (modalBody) modalBody.innerHTML = `<div class="muted">Error: ${escapeHtml(e.message)}</div>`;
+            modalPill.textContent = "error";
+            modalBody.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
             openOverlay();
           }
         });
@@ -751,13 +958,17 @@
 
       setStatus("ok");
     } catch (e) {
-      board.innerHTML = `<div class="muted">Error: ${escapeHtml(e.message)}</div>`;
+      board.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
       setStatus("error", "error");
     }
   });
 
-  // ---- Init ----
+  /* ---- Init ---- */
   setNow();
   setStatus("ready");
   updateBannerFromNavigator();
+
+  // Disturbances: load once + refresh periodically
+  refreshDisturbancesSafe();
+  setInterval(refreshDisturbancesSafe, 60_000);
 })();

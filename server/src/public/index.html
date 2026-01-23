@@ -6,7 +6,7 @@
   <title>Stationsbord</title>
 
   <!-- Cache-busted assets -->
-  <link rel="stylesheet" href="/styles.css?v=0.2.2" />
+  <link rel="stylesheet" href="/styles.css?v=0.2.3" />
 </head>
 
 <body>
@@ -20,7 +20,7 @@
       <div class="stationRow">
         <input
           id="q"
-          placeholder="Type a station (e.g. Gent, Bruxelles)"
+          placeholder="Type a station (e.g. Gent, Ghent, Bruxelles)"
           autocomplete="off"
         />
         <button id="searchBtn" title="Search liveboard">Search</button>
@@ -29,17 +29,19 @@
     </div>
 
     <div class="spacer"></div>
+
+    <!-- NEW: disturbances pill -->
+    <button class="pill pillBtn" id="disturbancePill" type="button" title="View disturbances">
+    disturbances…
+    </button>
+
+
+    <!-- existing status pill -->
     <span class="pill" id="statusPill">ready</span>
   </div>
 
   <div class="controls">
-    <label>
-      Mode
-      <select id="arrdep">
-        <option value="departure" selected>Departures</option>
-        <option value="arrival">Arrivals</option>
-      </select>
-    </label>
+    <!-- MODE REMOVED -->
 
     <label>
       Date (DD/MM/YYYY)
@@ -64,7 +66,6 @@
     <button class="btn-ghost" id="btnNow" title="Set to current time (local)">Now</button>
     <button class="btn-ghost" id="btnPlus1h" title="Add one hour from the currently selected time">+1h</button>
 
-    <span class="muted">Leave date/time empty for “now”.</span>
   </div>
 
   <div class="board" id="board">
@@ -92,7 +93,21 @@
     </div>
   </div>
 
+  <!-- Disturbances Overlay -->
+<div class="overlay" id="distOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="distTitle">
+    <div class="modalHeader">
+      <div class="modalTitle" id="distTitle">Disturbances</div>
+      <span class="pill" id="distModalPill">status</span>
+      <button class="closeBtn" id="distClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="modalBody" id="distBody">
+      <div class="muted">Loading…</div>
+    </div>
+  </div>
+</div>
+
   <!-- App logic -->
-  <script src="/app.js?v=0.2.2" defer></script>
+  <script src="/app.js?v=0.2.3" defer></script>
 </body>
 </html>
