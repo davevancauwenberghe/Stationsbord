@@ -1,5 +1,9 @@
 [![CodeQL (Stationsbord)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml/badge.svg)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml)
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/2dnur.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow.svg)
+![Docker](https://img.shields.io/badge/Container-Docker-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![GitHub Stars](https://img.shields.io/github/stars/davevancauwenberghe/Stationsbord)
 
 # Stationbord
 *find it on the board*
@@ -10,7 +14,7 @@ Designed to be lightweight, fast, and polite to upstream services. Perfect for d
 
 ---
 
-## Features
+## 📚 Features
 
 - 🚆 Real-time Belgian train departures via iRail  
 - 🪶 Minimal footprint (no heavy frameworks)  
@@ -20,7 +24,7 @@ Designed to be lightweight, fast, and polite to upstream services. Perfect for d
 
 ---
 
-## Notes
+## 📝 Notes
 
 - Sets a proper **User-Agent** (configurable via environment variables)
 - Uses **ETag + Cache-Control** headers to avoid excessive requests
@@ -29,7 +33,7 @@ Designed to be lightweight, fast, and polite to upstream services. Perfect for d
 
 ---
 
-## Tech
+## 🔧 Tech
 
 - Node.js
 - iRail API
@@ -37,3 +41,7 @@ Designed to be lightweight, fast, and polite to upstream services. Perfect for d
 - Optional Docker setup
 
 ---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
