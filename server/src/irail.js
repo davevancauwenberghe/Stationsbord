@@ -17,11 +17,22 @@ export function buildUserAgent({ appName, appVersion, website, email }) {
   return `${safe(appName)}/${safe(appVersion)} (${safe(website)}; ${safe(email)})`;
 }
 
+const DEFAULT_USER_AGENT = buildUserAgent({
+  appName: process.env.APP_NAME,
+  appVersion: process.env.APP_VERSION,
+  website: process.env.APP_WEBSITE,
+  email: process.env.APP_EMAIL,
+});
+
+if (!process.env.APP_NAME) {
+  console.warn("APP_NAME not set – User-Agent may be incomplete");
+}
+
 function snippet(text, max = 240) {
   return String(text || "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-export async function fetchIRailJSON(path, { userAgent, etag, timeoutMs } = {}) {
+export async function fetchIRailJSON(path, { userAgent = DEFAULT_USER_AGENT, etag, timeoutMs } = {}) {
   const url = `${BASE}${path}`;
 
   const headers = {
