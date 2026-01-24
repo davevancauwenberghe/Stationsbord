@@ -6,7 +6,7 @@
   <title>Stationsbord</title>
 
   <!-- Cache-busted assets -->
-  <link rel="stylesheet" href="/styles.css?v=0.3.0" />
+  <link rel="stylesheet" href="/styles.css?v=0.3.1" />
 </head>
 
 <body>
@@ -20,7 +20,7 @@
       <div class="stationRow">
         <input
           id="q"
-          placeholder="Type a station (e.g. Gent, Ghent, Bruxelles)"
+          placeholder="Type a station (e.g. Gent, Bruxelles)"
           autocomplete="off"
         />
         <button id="searchBtn" title="Search liveboard">Search</button>
@@ -31,7 +31,12 @@
     <div class="spacer"></div>
 
     <!-- Disturbances pill -->
-    <button class="pill pillBtn" id="disturbancePill" type="button" title="View disturbances">
+    <button
+      class="pill pillBtn"
+      id="disturbancePill"
+      type="button"
+      title="View disturbances"
+    >
       disturbances…
     </button>
 
@@ -60,19 +65,47 @@
       />
     </label>
 
-    <button class="btn-ghost" id="btnNow" title="Set to current time (local)">Now</button>
-    <button class="btn-ghost" id="btnPlus1h" title="Add one hour from the currently selected time">+1h</button>
+    <button class="btn-ghost" id="btnNow" title="Set to current time (local)">
+      Now
+    </button>
+    <button
+      class="btn-ghost"
+      id="btnPlus1h"
+      title="Add one hour from the currently selected time"
+    >
+      +1h
+    </button>
   </div>
 
-  <div class="board" id="board">
-    <div class="muted">
-      Start typing a station name. Pick from the dropdown. Then hit Search.
+  <!-- Shared shell -->
+  <div class="appShell">
+
+    <div class="board" id="board">
+      <div class="muted">
+        Start typing a station name. Pick from the dropdown. Then hit Search.
+      </div>
     </div>
+
+    <footer class="footerWrap">
+      <div class="footerBox">
+        with love from
+        <a href="https://www.davevancauwenberghe.be" target="_blank" rel="noopener">dvc.</a>
+        · powered by
+        <a href="https://irail.be" target="_blank" rel="noopener">iRail API</a>
+        · v0.3.1
+      </div>
+    </footer>
+
   </div>
 
   <!-- Shared Overlay (train details + disturbances) -->
   <div class="overlay" id="overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
       <div class="modalHeader">
         <div class="modalTitle" id="modalTitle">Train details</div>
         <span class="pill" id="modalPill">vehicle</span>
@@ -83,24 +116,14 @@
           aria-label="Close"
         >✕</button>
       </div>
+
       <div class="modalBody" id="modalBody">
         <div class="muted">Loading…</div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="footerWrap">
-    <div class="footerBox">
-      with love from
-      <a href="https://www.davevancauwenberghe.be" target="_blank" rel="noopener">dvc.</a>
-      · powered by
-      <a href="https://irail.be" target="_blank" rel="noopener">iRail API</a>
-      · v0.3.0
-    </div>
-  </footer>
-
   <!-- App logic -->
-  <script src="/app.js?v=0.3.0" defer></script>
+  <script src="/app.js?v=0.3.1" defer></script>
 </body>
 </html>

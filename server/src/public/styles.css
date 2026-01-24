@@ -79,7 +79,7 @@ h1{
 .banner strong{ font-weight: 900; }
 .banner .pill{ margin-left: 8px; height: 20px; }
 
-/* Give the page content breathing room under sticky header (+ banner if shown) */
+/* Soacing */
 .row{ margin-top: 10px; }
 
 /* Form controls */
@@ -120,7 +120,6 @@ button:hover{background:rgba(47,125,255,.25)}
 .spacer{flex:1}
 
 .board{
-  margin-top:16px;
   border:1px solid var(--line);
   border-radius:14px;
   padding:14px;
@@ -128,9 +127,51 @@ button:hover{background:rgba(47,125,255,.25)}
   backdrop-filter: blur(8px);
 }
 
+/* Shared shell */
+.appShell{
+  margin-top:16px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow:hidden;
+}
+
+.appShell .board{
+  margin-top:0;
+  border:none;
+  border-radius:0;
+  background:transparent;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  padding:14px;
+}
+
+/* Footer as inner section */
+.appShell .footerWrap{
+  margin:0;
+  padding:12px 14px;
+  border-top:1px solid rgba(255,255,255,.08);
+  display:flex;
+  justify-content:center;
+}
+
+/* Footer box */
+.appShell .footerBox{
+  border:none;
+  background:transparent;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  padding:0;
+  border-radius:0;
+  font-size:11px;
+  color: rgba(255,255,255,.45);
+}
+
 .muted{color:var(--muted)}
 
-/* --- Pills base --- */
+/* Pills base */
 .pill{
   padding:2px 10px;
   border:1px solid var(--line);
@@ -189,7 +230,7 @@ button:hover{background:rgba(47,125,255,.25)}
   font-weight:1000;
 }
 
-/* Optional: pulse effect (used for 0m or “ok” status) */
+/* Pulse effect (used for 0m status) */
 .pulseOk{
   animation: pulseOk 1.2s ease-in-out infinite;
 }
@@ -428,6 +469,10 @@ button:hover{background:rgba(47,125,255,.25)}
   background:rgba(0,0,0,.55);
   display:none;
   z-index:200;
+
+  /* keep this, but DO NOT let it be the only overlay rule */
+  touch-action: none;
+
   padding:
     max(18px, env(safe-area-inset-top))
     max(18px, env(safe-area-inset-right))
@@ -474,13 +519,16 @@ button:hover{background:rgba(47,125,255,.25)}
   color:var(--text);
   font:inherit;
 }
-
 .closeBtn:hover{background:rgba(255,255,255,.10)}
 
 .modalBody{
   padding:14px;
   max-height: min(70vh, 560px);
   overflow:auto;
+
+  /* nice-to-have */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stops{
@@ -499,7 +547,6 @@ button:hover{background:rgba(47,125,255,.25)}
   border-bottom:1px solid rgba(255,255,255,.08);
   align-items:flex-start;
 }
-
 .stopRow:last-child{border-bottom:none}
 
 .stopTime{font-weight:1000}
@@ -520,6 +567,7 @@ button:hover{background:rgba(47,125,255,.25)}
   gap:6px;
 }
 
+/* keep it EXACTLY like before for the “old good” look */
 .stopStack{
   display:grid;
   gap:6px;
@@ -546,38 +594,9 @@ button:hover{background:rgba(47,125,255,.25)}
   opacity:.9;
 }
 
-.appFooter{
-  margin-top: 22px;
-  display: flex;
-  justify-content: center;
-}
-
-.footerBox{
-  font-size: 11px;
-  color: rgba(255,255,255,.45);
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,.04);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.footerBox a{
-  color: rgba(255,255,255,.65);
-  text-decoration: none;
-}
-
-.footerBox a:hover{
-  text-decoration: underline;
-  color: rgba(255,255,255,.85);
-}
-
-/* Mobile */
-@media (max-width:720px){
-  body{
-    padding: 0 16px 18px 16px;
-  }
+/* Mobile portrait */
+@media (max-width:720px) and (orientation:portrait){
+  body{ padding: 0 16px 18px 16px; }
 
   h1{
     margin-left: -16px;
@@ -593,10 +612,24 @@ button:hover{background:rgba(47,125,255,.25)}
     padding-right: 16px;
   }
 
-  .dep{grid-template-columns:92px 1fr 92px;}
-  .when{font-size:22px;}
-  .platform-badge{width:56px;height:48px;}
-  .platform-badge .num{font-size:22px;}
-  .to{font-size:16px;}
-  .stopRow{grid-template-columns:140px 1fr 110px;}
+  .dep{ grid-template-columns:92px 1fr 92px; }
+
+  .when{ font-size: clamp(20px, 5.5vw, 22px); }
+  .to{ font-size: clamp(20px, 5.5vw, 22px); }
+
+  .platform-badge{ width:56px; height:48px; }
+  .platform-badge .num{ font-size:22px; }
+
+  .stopRow{ grid-template-columns:140px 1fr 110px; }
+}
+
+/* Phone landscape */
+@media (max-height:520px) and (orientation:landscape){
+  .dep{ grid-template-columns:110px 1fr 120px; }
+
+  .when{ font-size:26px; }
+  .to{ font-size:26px; }
+
+  .platform-badge{ width:66px; height:54px; }
+  .platform-badge .num{ font-size:26px; }
 }

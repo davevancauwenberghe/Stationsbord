@@ -42,21 +42,28 @@
   // Body scroll lock while overlay open
   let prevOverflowBody = "";
   let prevOverflowHtml = "";
+  let scrollLocked = false;
 
   function lockScroll() {
-    prevOverflowBody = getComputedStyle(document.body).overflow;
-    prevOverflowHtml = getComputedStyle(document.documentElement).overflow;
+    if (scrollLocked) return;
+    scrollLocked = true;
+
+    // Store inline styles only (avoid computed-style traps)
+    prevOverflowBody = document.body.style.overflow || "";
+    prevOverflowHtml = document.documentElement.style.overflow || "";
 
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
   }
 
   function unlockScroll() {
-  document.body.style.overflow = prevOverflowBody || "";
-  document.documentElement.style.overflow = prevOverflowHtml || "";
-  prevOverflowBody = "";
-  prevOverflowHtml = "";
-}
+    document.body.style.overflow = prevOverflowBody || "";
+    document.documentElement.style.overflow = prevOverflowHtml || "";
+
+    prevOverflowBody = "";
+    prevOverflowHtml = "";
+    scrollLocked = false;
+  }
 
   function setStatus(text, kind = "normal") {
     statusPill.textContent = text;
@@ -455,24 +462,30 @@
 
   /* Overlay helpers (train details + disturbances) */
   function openOverlay() {
+    const wasOpen = overlay.classList.contains("open");
+
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
-    lockScroll();
+
+    // Only lock scroll on the first open
+    if (!wasOpen) lockScroll();
   }
 
   function closeOverlay() {
-    overlay.classList.remove("open");
-    overlay.setAttribute("aria-hidden", "true");
-    modalTitle.textContent = "Train details";
-    modalPill.textContent = "vehicle";
-    modalBody.innerHTML = '<div class="muted">Closed.</div>';
+    try {
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+      modalTitle.textContent = "Train details";
+      modalPill.textContent = "vehicle";
+      modalBody.innerHTML = '<div class="muted">Closed.</div>';
 
-    if (vehicleController) {
-      try { vehicleController.abort(); } catch (_e) {}
-      vehicleController = null;
+      if (vehicleController) {
+        try { vehicleController.abort(); } catch (_e) {}
+        vehicleController = null;
+      }
+    } finally {
+      unlockScroll();
     }
-
-    unlockScroll();
   }
 
   overlayClose.addEventListener("click", closeOverlay);
@@ -593,9 +606,10 @@
         (arrBadges ? ' ' + arrBadges : '') +
         "</div>";
       html += "</div>";
-      html += (extraStopMini(s.isExtraStop)
-        ? '<div class="stopMeta">' + extraStopMini(s.isExtraStop) + "</div>"
-        : '<div class="stopMeta"></div>');
+      const extra = extraStopMini(s.isExtraStop);
+      html += extra
+        ? '<div class="stopMeta">' + extra + "</div>"
+        : '<div class="stopMeta"></div>';
       html += "</div>";
 
       html += "<div>";
@@ -814,7 +828,6 @@
         modalPill.textContent = "error";
         modalBody.innerHTML =
           '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
-        openOverlay();
       }
     });
   }
@@ -955,9 +968,10 @@
             if (!vid) return;
             await loadVehicleDetails(vid);
           } catch (e) {
+            // loadVehicleDetails() already opened the overlay + locked scroll.
+            // Just update the UI; don't call openOverlay() again.
             modalPill.textContent = "error";
             modalBody.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
-            openOverlay();
           }
         });
       });
