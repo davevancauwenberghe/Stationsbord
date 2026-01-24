@@ -18,11 +18,7 @@ body{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   margin:0;
 
-  padding:
-    calc(12px + env(safe-area-inset-top))
-    22px
-    22px
-    22px;
+  padding: 0 22px 22px 22px;
 
   background:
     radial-gradient(1200px 600px at 20% -20%, rgba(47,125,255,.25), transparent 60%),
@@ -31,16 +27,17 @@ body{
   color:var(--text);
 }
 
-/* --- Sticky header --- */
+/* Sticky header */
 h1{
   position: sticky;
   top: 0;
   z-index: 120;
 
   margin: 0;
-  height: var(--header-h);
+  height: calc(var(--header-h) + env(safe-area-inset-top));
   display:flex;
-  align-items:center;
+  align-items:flex-end;
+  padding-bottom: 10px;
 
   font-size:22px;
   letter-spacing:.3px;
@@ -60,7 +57,7 @@ h1{
 /* When banner shows, it lives under the sticky header */
 .banner{
   position: sticky;
-  top: var(--header-h);
+  top: calc(var(--header-h) + env(safe-area-inset-top));
   z-index: 119;
 
   margin: 0;
@@ -85,7 +82,7 @@ h1{
 /* Give the page content breathing room under sticky header (+ banner if shown) */
 .row{ margin-top: 10px; }
 
-/* --- Form controls --- */
+/* Form controls */
 input, select, button{
   font:inherit;
   padding:10px 10px;
@@ -167,10 +164,7 @@ button:hover{background:rgba(47,125,255,.25)}
 .pillBtn:hover{ background: rgba(255,255,255,.08); }
 .pillBtn:active{ transform: translateY(1px); }
 
-/* =========================================================
-   Unified semantic tiers (works for .pill and .miniPill)
-   Use: tierOk / tierWarn / tierBad
-   ========================================================= */
+/* Unified semantic tiers */
 .pill.tierOk,
 .miniPill.tierOk{
   color:rgba(255,255,255,.92);
@@ -210,7 +204,7 @@ button:hover{background:rgba(47,125,255,.25)}
   .pulseOk{ animation:none; }
 }
 
-/* --- Disturbances list (overlay) --- */
+/* Disturbances list (overlay) */
 .distList{
   margin-top:10px;
   display:grid;
@@ -260,7 +254,7 @@ button:hover{background:rgba(47,125,255,.25)}
   text-decoration:underline;
 }
 
-/* --- Autocomplete --- */
+/* Autocomplete */
 .autocomplete{
   position:relative;
   min-width:280px;
@@ -311,7 +305,7 @@ button:hover{background:rgba(47,125,255,.25)}
 .dd-name{font-weight:800}
 .dd-id{font-size:12px;color:rgba(255,255,255,.55)}
 
-/* --- Controls --- */
+/* Controls */
 .controls{
   margin-top:10px;
   display:flex;
@@ -329,7 +323,7 @@ button:hover{background:rgba(47,125,255,.25)}
 
 .small{width:160px}
 
-/* --- Board layout --- */
+/* Board layout */
 .headerline{
   display:flex;
   flex-wrap:wrap;
@@ -358,7 +352,7 @@ button:hover{background:rgba(47,125,255,.25)}
 .dep:last-child{border-bottom:none}
 
 .when{
-  font-size:28px;
+  font-size:26px;
   font-weight:900;
   letter-spacing:.5px;
 }
@@ -370,8 +364,9 @@ button:hover{background:rgba(47,125,255,.25)}
 }
 
 .to{
-  font-size:18px;
-  font-weight:800;
+  font-size:26px;
+  font-weight:900;
+  letter-spacing:.5px;
 }
 
 .right{
@@ -404,10 +399,10 @@ button:hover{background:rgba(47,125,255,.25)}
   margin-top:-4px;
 }
 
-/* --- Clickable destination --- */
+/* Clickable destination */
 .toBtn{
   display:inline-flex;
-  align-items:center;
+  align-items:baseline;
   gap:8px;
   padding:0;
   border:none;
@@ -421,11 +416,12 @@ button:hover{background:rgba(47,125,255,.25)}
 .toBtn:hover{text-decoration: underline}
 
 .chev{
-  opacity:.65;
-  font-weight:900
+  font-size:18px;
+  line-height:1;
+  transform: translateY(1px);
 }
 
-/* --- Overlay modal --- */
+/* Overlay modal */
 .overlay{
   position:fixed;
   inset:0;
@@ -501,7 +497,7 @@ button:hover{background:rgba(47,125,255,.25)}
   gap:12px;
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,.08);
-  align-items:center;
+  align-items:flex-start;
 }
 
 .stopRow:last-child{border-bottom:none}
@@ -519,14 +515,68 @@ button:hover{background:rgba(47,125,255,.25)}
   align-items:center;
 }
 
-/* --- Mobile --- */
+.timeStack{
+  display:grid;
+  gap:6px;
+}
+
+.stopStack{
+  display:grid;
+  gap:6px;
+}
+
+.depLine{
+  font-weight:1000;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+.arrLine{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+.arrLine, .stopOcc{
+  line-height: 1;
+}
+
+.arrLine .miniPill{
+  opacity:.9;
+}
+
+.appFooter{
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.footerBox{
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.footerBox a{
+  color: rgba(255,255,255,.65);
+  text-decoration: none;
+}
+
+.footerBox a:hover{
+  text-decoration: underline;
+  color: rgba(255,255,255,.85);
+}
+
+/* Mobile */
 @media (max-width:720px){
   body{
-    padding:
-      calc(12px + env(safe-area-inset-top))
-      16px
-      18px
-      16px;
+    padding: 0 16px 18px 16px;
   }
 
   h1{

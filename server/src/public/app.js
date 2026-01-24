@@ -52,12 +52,11 @@
   }
 
   function unlockScroll() {
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
-
-    prevOverflowBody = "";
-    prevOverflowHtml = "";
-  }
+  document.body.style.overflow = prevOverflowBody || "";
+  document.documentElement.style.overflow = prevOverflowHtml || "";
+  prevOverflowBody = "";
+  prevOverflowHtml = "";
+}
 
   function setStatus(text, kind = "normal") {
     statusPill.textContent = text;
@@ -454,7 +453,7 @@
     }
   });
 
-  /* ---- Overlay helpers (train details + disturbances re-use) ---- */
+  /* Overlay helpers (train details + disturbances) */
   function openOverlay() {
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
@@ -587,15 +586,23 @@
 
       html += '<div class="stopRow">';
       html += "<div>";
-      html += '<div class="stopTime">' + depLine + (depBadges ? ' ' + depBadges : '') + "</div>";
-      html += '<div class="stopMeta">' + extraStopMini(s.isExtraStop) + "</div>";
-      html += '<div class="stopMeta" style="margin-top:6px;">' +
-        '<span class="miniPill">' + arrLine + "</span>" + arrBadges + "</div>";
+      html += '<div class="timeStack">';
+      html += '  <div class="depLine">' + depLine + (depBadges ? ' ' + depBadges : '') + "</div>";
+      html += '  <div class="arrLine">' +
+        '<span class="miniPill">' + arrLine + "</span>" +
+        (arrBadges ? ' ' + arrBadges : '') +
+        "</div>";
+      html += "</div>";
+      html += (extraStopMini(s.isExtraStop)
+        ? '<div class="stopMeta">' + extraStopMini(s.isExtraStop) + "</div>"
+        : '<div class="stopMeta"></div>');
       html += "</div>";
 
       html += "<div>";
-      html += '<div class="stopStation">' + escapeHtml(station) + "</div>";
-      html += '<div class="stopMeta">' + occMini(occ) + "</div>";
+      html += '<div class="stopStack">';
+      html += '  <div class="stopStation">' + escapeHtml(station) + "</div>";
+      html += '  <div class="stopOcc">' + occMini(occ) + "</div>";
+      html += "</div>";
       html += "</div>";
 
       html += '<div style="justify-self:end; text-align:right;">';
