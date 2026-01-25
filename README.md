@@ -5,8 +5,8 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![GitHub Stars](https://img.shields.io/github/stars/davevancauwenberghe/Stationsbord)
 
-# Stationbord
-*find it on the board*
+# Stationsbord
+### *find it on the board*
 
 A tiny, self-hosted Belgian train station departure board powered by the **iRail API**.
 
