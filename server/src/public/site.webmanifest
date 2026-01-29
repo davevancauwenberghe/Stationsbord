@@ -1,0 +1,16 @@
+{
+  "name": "Stationsbord",
+  "short_name": "Stationsbord",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e0e11",
+  "theme_color": "#0e0e11",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
