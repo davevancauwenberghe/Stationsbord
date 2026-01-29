@@ -54,18 +54,6 @@ h1{
   padding-right: 22px;
 }
 
-.siteTitle {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-}
-
-.siteLogo {
-  width: 1em;
-  height: 1em;
-  flex-shrink: 0;
-}
-
 /* When banner shows, it lives under the sticky header */
 .banner{
   position: sticky;
