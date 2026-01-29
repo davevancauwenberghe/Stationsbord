@@ -44,6 +44,9 @@
   let prevOverflowHtml = "";
   let scrollLocked = false;
 
+  // Track whether last edit action was delete/backspace (for pretty input UX)
+  let lastEditWasDelete = false;
+
   function lockScroll() {
     if (scrollLocked) return;
     scrollLocked = true;
@@ -222,11 +225,10 @@
     if (label === "low") cls += " tierOk";
     else if (label === "medium") cls += " tierWarn";
     else if (label === "high") cls += " tierBad";
-    // unknown -> base styling only
     return cls;
   }
 
-  /* ---- Delay helpers (now output tiers only) ---- */
+  // delay helpers
   function delayMinutesFromSeconds(delaySeconds) {
     if (delaySeconds == null) return null;
     const s = Number(delaySeconds);
@@ -246,7 +248,6 @@
   }
 
   function delayPillHtml(delaySeconds, cancelled) {
-    // cancelled shown separately as tierBad
     if (cancelled) return "";
 
     const mins = delayMinutesFromSeconds(delaySeconds);
@@ -271,27 +272,160 @@
     if (tier === "warn") return '<span class="miniPill tierWarn">+' + mins + 'm</span>';
     return '<span class="miniPill tierBad">+' + mins + 'm</span>';
   }
+  
+  // Pretty date and time input
+  function clamp(n, lo, hi) {
+    n = Number(n);
+    if (!Number.isFinite(n)) return lo;
+    return Math.max(lo, Math.min(hi, n));
+  }
 
-  /* ---- Pretty input formatting ---- */
-  function formatDatePrettyOnInput() {
-    const digits = datePrettyEl.value.replace(/\D/g, "").slice(0, 8);
+  function getSel(el) {
+    try {
+      return {
+        start: typeof el.selectionStart === "number" ? el.selectionStart : el.value.length,
+        end: typeof el.selectionEnd === "number" ? el.selectionEnd : el.value.length,
+      };
+    } catch (_e) {
+      return { start: el.value.length, end: el.value.length };
+    }
+  }
+
+  function setCaret(el, pos) {
+    try {
+      el.setSelectionRange(pos, pos);
+    } catch (_e) {}
+  }
+
+  // Map caret position -> "digit index"
+  function digitIndexFromCaret(maskedValue, caretPos) {
+    const left = maskedValue.slice(0, caretPos);
+    const m = left.match(/\d/g);
+    return m ? m.length : 0;
+  }
+
+  // Map "digit index" -> caret position in masked string
+  function caretFromDigitIndex(maskedValue, digitIdx) {
+    if (digitIdx <= 0) return 0;
+    let seen = 0;
+    for (let i = 0; i < maskedValue.length; i++) {
+      if (/\d/.test(maskedValue[i])) {
+        seen++;
+        if (seen >= digitIdx) return i + 1;
+      }
+    }
+    return maskedValue.length;
+  }
+
+  function maskDigitsToDate(digits) {
+    digits = String(digits || "").replace(/\D/g, "").slice(0, 8);
     let out = "";
     for (let i = 0; i < digits.length; i++) {
       out += digits[i];
-      if (i === 1 || i === 3) out += "/";
+      if (i === 1 || i === 3) {
+        if (digits.length > i + 1) out += "/";
+      }
     }
-    datePrettyEl.value = out;
+    return out;
   }
 
-  function formatTimePrettyOnInput() {
-    const digits = timePrettyEl.value.replace(/\D/g, "").slice(0, 4);
+  function maskDigitsToTime(digits) {
+    digits = String(digits || "").replace(/\D/g, "").slice(0, 4);
     let out = "";
     for (let i = 0; i < digits.length; i++) {
       out += digits[i];
-      if (i === 1) out += ":";
+      if (i === 1) {
+        if (digits.length > i + 1) out += ":";
+      }
     }
-    timePrettyEl.value = out;
+    return out;
   }
+  
+  function smartDeleteAroundSeparator(el, sepChar, maxDigits) {
+    const v = String(el.value || "");
+    const sel = getSel(el);
+    if (sel.start !== sel.end) return false; // range delete -> let input handler do it
+
+    const pos = sel.start;
+    if (pos <= 0 || pos > v.length) return false;
+
+    // backspace right after separator
+    if (v[pos - 1] === sepChar) {
+      // remove the digit before separator as well (if any)
+      const before = v.slice(0, pos - 1);
+      const after = v.slice(pos);
+
+      // remove last digit from "before"
+      const beforeDigits = before.replace(/\D/g, "");
+      const newBeforeDigits = beforeDigits.slice(0, -1);
+
+      // keep only digits from after (user can keep editing)
+      const afterDigits = after.replace(/\D/g, "");
+
+      const newDigits = (newBeforeDigits + afterDigits).slice(0, maxDigits);
+      const isDate = maxDigits === 8;
+
+      const masked = isDate ? maskDigitsToDate(newDigits) : maskDigitsToTime(newDigits);
+
+      // caret: stay at the boundary where the digit was removed
+      const caretDigitIdx = clamp(newBeforeDigits.length, 0, maxDigits);
+      const newCaret = caretFromDigitIndex(masked, caretDigitIdx);
+
+      el.value = masked;
+      setCaret(el, newCaret);
+      return true;
+    }
+    return false;
+  }
+
+  function handlePrettyInput(el, kind) {
+    const maxDigits = kind === "date" ? 8 : 4;
+    const sepChar = kind === "date" ? "/" : ":";
+
+    const prevValue = String(el.value || "");
+    const sel = getSel(el);
+    const caretPos = sel.start;
+
+    // "digit index" before we mutate
+    const caretDigitIdx = digitIndexFromCaret(prevValue, caretPos);
+
+    // Extract digits then re-mask
+    const digits = prevValue.replace(/\D/g, "").slice(0, maxDigits);
+    const masked = kind === "date" ? maskDigitsToDate(digits) : maskDigitsToTime(digits);
+
+    el.value = masked;
+
+    // Try to keep caret near the same digit position
+    const nextCaret = caretFromDigitIndex(masked, caretDigitIdx);
+    setCaret(el, nextCaret);
+  }
+
+  function wirePrettyInput(el, kind) {
+    // beforeinput gives us reliable "deleteContentBackward" on modern browsers
+    el.addEventListener("beforeinput", (e) => {
+      const t = String(e?.inputType || "");
+      lastEditWasDelete = t.startsWith("delete");
+
+      if (t === "deleteContentBackward") {
+        const handled = smartDeleteAroundSeparator(
+          el,
+          kind === "date" ? "/" : ":",
+          kind === "date" ? 8 : 4
+        );
+        if (handled) {
+          e.preventDefault();
+        }
+      }
+    });
+
+    el.addEventListener("input", () => {
+      handlePrettyInput(el, kind);
+      lastEditWasDelete = false;
+    });
+  }
+
+  wirePrettyInput(datePrettyEl, "date");
+  wirePrettyInput(timePrettyEl, "time");
 
   function prettyToIRailDate(ddmmyyyy) {
     const m = String(ddmmyyyy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -356,9 +490,6 @@
   function setNow() {
     setMomentLocal(new Date());
   }
-
-  datePrettyEl.addEventListener("input", formatDatePrettyOnInput);
-  timePrettyEl.addEventListener("input", formatTimePrettyOnInput);
 
   btnNow.addEventListener("click", () => setNow());
   btnPlus1h.addEventListener("click", () => {
@@ -968,8 +1099,6 @@
             if (!vid) return;
             await loadVehicleDetails(vid);
           } catch (e) {
-            // loadVehicleDetails() already opened the overlay + locked scroll.
-            // Just update the UI; don't call openOverlay() again.
             modalPill.textContent = "error";
             modalBody.innerHTML = '<div class="muted">Error: ' + escapeHtml(e.message) + "</div>";
           }
