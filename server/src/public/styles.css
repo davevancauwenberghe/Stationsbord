@@ -633,3 +633,136 @@ button:hover{background:rgba(47,125,255,.25)}
   .platform-badge{ width:66px; height:54px; }
   .platform-badge .num{ font-size:26px; }
 }
+
+/* Responsive scaling improvements */
+:root{
+  --page-pad: clamp(12px, 4vw, 22px);
+}
+
+body{
+  padding-left: var(--page-pad);
+  padding-right: var(--page-pad);
+}
+
+h1,
+.banner{
+  margin-left: calc(-1 * var(--page-pad));
+  margin-right: calc(-1 * var(--page-pad));
+  padding-left: var(--page-pad);
+  padding-right: var(--page-pad);
+}
+
+select.small{
+  min-width: 160px;
+}
+
+@media (max-width:900px){
+  .autocomplete,
+  .stationRow,
+  .controls label,
+  .controls .small,
+  select.small{
+    max-width:none;
+    width:100%;
+  }
+
+  .stationRow input{
+    min-width:0;
+  }
+
+  .controls{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls button{
+    width:100%;
+    align-self:end;
+  }
+}
+
+@media (max-width:620px){
+  .row,
+  .stationRow{
+    align-items:stretch;
+  }
+
+  .stationRow,
+  .controls{
+    grid-template-columns:1fr;
+  }
+
+  .row > .spacer{
+    display:none;
+  }
+
+  #disturbancePill,
+  #statusPill{
+    justify-content:center;
+    width:100%;
+  }
+
+  .dep{
+    grid-template-columns:1fr auto;
+    gap:8px 12px;
+  }
+
+  .dep > :first-child{
+    grid-column:1 / 2;
+  }
+
+  .dep > :nth-child(2){
+    grid-column:1 / -1;
+    order:3;
+  }
+
+  .dep > .right{
+    grid-column:2 / 3;
+    grid-row:1 / 2;
+  }
+
+  .when,
+  .to{
+    font-size: clamp(20px, 7vw, 26px);
+    overflow-wrap:anywhere;
+  }
+
+  .headerline{
+    align-items:flex-start;
+  }
+
+  .title{
+    width:100%;
+    overflow-wrap:anywhere;
+  }
+
+  .modalHeader{
+    flex-wrap:wrap;
+  }
+
+  .stopRow{
+    grid-template-columns:1fr;
+  }
+
+  .stopRow > div[style]{
+    justify-self:start !important;
+    text-align:left !important;
+  }
+}
+
+@media (max-width:380px){
+  input, select, button{
+    padding:9px 8px;
+  }
+
+  .board,
+  .appShell .board,
+  .modalBody{
+    padding:10px;
+  }
+
+  .platform-badge{
+    width:52px;
+    height:46px;
+  }
+}

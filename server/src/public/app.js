@@ -13,6 +13,7 @@
   const timePrettyEl = document.getElementById("timePretty"); // HH:MM
   const btnNow = document.getElementById("btnNow");
   const btnPlus1h = document.getElementById("btnPlus1h");
+  const languageSelect = document.getElementById("languageSelect");
 
   const overlay = document.getElementById("overlay");
   const overlayClose = document.getElementById("overlayClose");
@@ -28,6 +29,7 @@
   let activeIdx = -1;
   let typingTimer = null;
   let inFlight = null;
+  const allowedLanguages = new Set(["en", "nl", "fr", "de"]);
 
   // Banner “don’t lie yet” state
   let bannerWaitingForFresh = false;
@@ -66,6 +68,25 @@
     prevOverflowBody = "";
     prevOverflowHtml = "";
     scrollLocked = false;
+  }
+
+
+  function getLanguage() {
+    const value = String(languageSelect?.value || "en").toLowerCase();
+    return allowedLanguages.has(value) ? value : "en";
+  }
+
+  function setDocumentLanguage() {
+    document.documentElement.lang = getLanguage();
+  }
+
+  function resetStationSelectionForLanguageChange() {
+    selected = null;
+    lastResults = [];
+    activeIdx = -1;
+    dropdown.innerHTML = "";
+    closeDropdown();
+    if (q.value.trim().length >= 2) debounceSearch();
   }
 
   function setStatus(text, kind = "normal") {
@@ -498,6 +519,15 @@
     setMomentLocal(base);
   });
 
+  if (languageSelect) {
+    languageSelect.addEventListener("change", () => {
+      setDocumentLanguage();
+      resetStationSelectionForLanguageChange();
+      refreshDisturbancesSafe();
+    });
+    setDocumentLanguage();
+  }
+
   /* ---- Autocomplete ---- */
   async function searchStationsAuto() {
     const term = q.value.trim();
@@ -517,7 +547,7 @@
     setStatus("searching…", "loading");
 
     const r = await fetch(
-      "/api/stations/search?q=" + encodeURIComponent(term) + "&limit=12",
+      "/api/stations/search?q=" + encodeURIComponent(term) + "&limit=12&lang=" + encodeURIComponent(getLanguage()),
       { signal: controller.signal }
     ).catch((err) => {
       if (err && err.name === "AbortError") return null;
@@ -656,7 +686,9 @@
     let url =
       "/api/vehicle?id=" +
       encodeURIComponent(vehicleId) +
-      "&lang=en&alerts=false";
+      "&lang=" +
+      encodeURIComponent(getLanguage()) +
+      "&alerts=false";
     if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
 
     const r = await fetch(url, { signal: vehicleController.signal });
@@ -910,7 +942,7 @@
   }
 
   async function fetchDisturbances() {
-    const r = await fetch("/api/disturbances?lang=en", { cache: "no-store" });
+    const r = await fetch("/api/disturbances?lang=" + encodeURIComponent(getLanguage()), { cache: "no-store" });
 
     const xcache = r.headers.get("X-Cache");
     updateBannerFromXCache(xcache);
@@ -989,7 +1021,9 @@
         encodeURIComponent(selected.id) +
         "&arrdep=" +
         encodeURIComponent(arrdep) +
-        "&lang=en&alerts=false";
+        "&lang=" +
+        encodeURIComponent(getLanguage()) +
+        "&alerts=false";
 
       if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
       if (timeIRail) url += "&time=" + encodeURIComponent(timeIRail);
