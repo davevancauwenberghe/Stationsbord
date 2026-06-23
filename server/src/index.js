@@ -332,6 +332,41 @@ app.get("/api/vehicle", async (req, res) => {
   }
 });
 
+
+/* Composition proxy (cached, on-demand) */
+app.get("/api/composition", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+
+    const id = req.query.id;
+    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
+
+    const lang = normalizeLang(req.query.lang);
+    const data = String(req.query.data || "").toLowerCase().trim();
+    if (data && data !== "all") {
+      return res.status(400).json({ error: "Invalid data parameter. Expected empty or all." });
+    }
+
+    const params = new URLSearchParams();
+    params.set("format", "json");
+    params.set("lang", lang);
+    params.set("id", String(id));
+    if (data === "all") params.set("data", "all");
+
+    const pathQ = `/composition/?${params.toString()}`;
+
+    return await cachedProxy(req, res, {
+      keyPrefix: "composition",
+      pathQ,
+      params,
+      // Composition is new and can be slower/less predictable.
+      timeoutMs: 25000,
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
 /* Static frontend (public/) — keep LAST */
 app.use(
   express.static(path.join(__dirname, "public"), {

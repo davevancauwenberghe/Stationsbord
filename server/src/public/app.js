@@ -32,10 +32,10 @@
   const allowedLanguages = new Set(["en", "nl", "fr", "de"]);
 
   const translations = {
-    en: { title: "Stationsbord", placeholder: "Type a station (e.g. Gent, Bruxelles)", search: "Search", searchTitle: "Search liveboard", date: "Date (DD/MM/YYYY)", time: "Time (HH:MM)", now: "Now", nowTitle: "Set to current time (local)", plusTitle: "Add one hour from the currently selected time", language: "Language", intro: "Start typing a station name. Pick from the dropdown. Then hit Search.", ready: "ready", disturbances: "disturbances", selected: "selected", searching: "searching…", pickStation: "pick station", noMatches: "no matches", searchError: "search error", loading: "Loading…", trainDetails: "Train details", vehicle: "vehicle", departures: "departures", at: "at", updated: "updated", occupancy: "occupancy", platform: "PLATFORM", platformLower: "platform", noResults: "No departures found for this moment.", stationAlert: "Pick a station from the dropdown first", timeAlert: "Time must be HH:MM (e.g. 07:30, 23:15).", error: "Error", ok: "ok", cancelled: "cancelled" },
-    nl: { title: "Stationsbord", placeholder: "Typ een station (bv. Gent, Brussel)", search: "Zoeken", searchTitle: "Zoek livebord", date: "Datum (DD/MM/JJJJ)", time: "Tijd (UU:MM)", now: "Nu", nowTitle: "Zet op huidige tijd (lokaal)", plusTitle: "Tel één uur bij de gekozen tijd", language: "Taal", intro: "Typ een station. Kies uit de lijst. Druk daarna op Zoeken.", ready: "klaar", disturbances: "storingen", selected: "geselecteerd", searching: "zoeken…", pickStation: "kies station", noMatches: "geen resultaten", searchError: "zoekfout", loading: "Laden…", trainDetails: "Treindetails", vehicle: "voertuig", departures: "vertrekken", at: "om", updated: "bijgewerkt", occupancy: "bezetting", platform: "PERRON", platformLower: "perron", noResults: "Geen vertrekken gevonden voor dit moment.", stationAlert: "Kies eerst een station uit de lijst", timeAlert: "Tijd moet UU:MM zijn (bv. 07:30, 23:15).", error: "Fout", ok: "ok", cancelled: "afgeschaft" },
-    fr: { title: "Stationsbord", placeholder: "Tapez une gare (p. ex. Gand, Bruxelles)", search: "Rechercher", searchTitle: "Rechercher le tableau", date: "Date (JJ/MM/AAAA)", time: "Heure (HH:MM)", now: "Maintenant", nowTitle: "Définir l’heure actuelle (locale)", plusTitle: "Ajouter une heure à l’heure sélectionnée", language: "Langue", intro: "Tapez une gare. Choisissez dans la liste. Puis lancez la recherche.", ready: "prêt", disturbances: "perturbations", selected: "sélectionné", searching: "recherche…", pickStation: "choisir gare", noMatches: "aucun résultat", searchError: "erreur recherche", loading: "Chargement…", trainDetails: "Détails du train", vehicle: "véhicule", departures: "départs", at: "à", updated: "mis à jour", occupancy: "occupation", platform: "VOIE", platformLower: "voie", noResults: "Aucun départ trouvé pour ce moment.", stationAlert: "Choisissez d’abord une gare dans la liste", timeAlert: "L’heure doit être HH:MM (p. ex. 07:30, 23:15).", error: "Erreur", ok: "ok", cancelled: "supprimé" },
-    de: { title: "Stationsbord", placeholder: "Bahnhof eingeben (z. B. Gent, Brüssel)", search: "Suchen", searchTitle: "Liveboard suchen", date: "Datum (TT/MM/JJJJ)", time: "Zeit (HH:MM)", now: "Jetzt", nowTitle: "Auf aktuelle lokale Zeit setzen", plusTitle: "Eine Stunde zur ausgewählten Zeit hinzufügen", language: "Sprache", intro: "Bahnhof eingeben. Aus der Liste wählen. Dann Suchen drücken.", ready: "bereit", disturbances: "Störungen", selected: "ausgewählt", searching: "suche…", pickStation: "Bahnhof wählen", noMatches: "keine Treffer", searchError: "Suchfehler", loading: "Laden…", trainDetails: "Zugdetails", vehicle: "Fahrzeug", departures: "Abfahrten", at: "um", updated: "aktualisiert", occupancy: "Auslastung", platform: "GLEIS", platformLower: "Gleis", noResults: "Keine Abfahrten für diesen Zeitpunkt gefunden.", stationAlert: "Wählen Sie zuerst einen Bahnhof aus der Liste", timeAlert: "Zeit muss HH:MM sein (z. B. 07:30, 23:15).", error: "Fehler", ok: "ok", cancelled: "fällt aus" }
+    en: { title: "Stationsbord", placeholder: "Type a station (e.g. Gent, Bruxelles)", search: "Search", searchTitle: "Search liveboard", date: "Date (DD/MM/YYYY)", time: "Time (HH:MM)", now: "Now", nowTitle: "Set to current time (local)", plusTitle: "Add one hour from the currently selected time", language: "Language", intro: "Start typing a station name. Pick from the dropdown. Then hit Search.", ready: "ready", disturbances: "disturbances", selected: "selected", searching: "searching…", pickStation: "pick station", noMatches: "no matches", searchError: "search error", loading: "Loading…", trainDetails: "Train details", vehicle: "vehicle", departures: "departures", at: "at", updated: "updated", occupancy: "occupancy", platform: "PLATFORM", platformLower: "platform", noResults: "No departures found for this moment.", stationAlert: "Pick a station from the dropdown first", timeAlert: "Time must be HH:MM (e.g. 07:30, 23:15).", error: "Error", ok: "ok", cancelled: "cancelled", composition: "composition", carriages: "carriages", seats: "seats", standing: "standing", length: "length", amenities: "amenities", toilets: "toilets", bikes: "bikes", accessibility: "accessibility", outlets: "outlets", airco: "airco" },
+    nl: { title: "Stationsbord", placeholder: "Typ een station (bv. Gent, Brussel)", search: "Zoeken", searchTitle: "Zoek livebord", date: "Datum (DD/MM/JJJJ)", time: "Tijd (UU:MM)", now: "Nu", nowTitle: "Zet op huidige tijd (lokaal)", plusTitle: "Tel één uur bij de gekozen tijd", language: "Taal", intro: "Typ een station. Kies uit de lijst. Druk daarna op Zoeken.", ready: "klaar", disturbances: "storingen", selected: "geselecteerd", searching: "zoeken…", pickStation: "kies station", noMatches: "geen resultaten", searchError: "zoekfout", loading: "Laden…", trainDetails: "Treindetails", vehicle: "voertuig", departures: "vertrekken", at: "om", updated: "bijgewerkt", occupancy: "bezetting", platform: "PERRON", platformLower: "perron", noResults: "Geen vertrekken gevonden voor dit moment.", stationAlert: "Kies eerst een station uit de lijst", timeAlert: "Tijd moet UU:MM zijn (bv. 07:30, 23:15).", error: "Fout", ok: "ok", cancelled: "afgeschaft", composition: "samenstelling", carriages: "rijtuigen", seats: "zitplaatsen", standing: "staanplaatsen", length: "lengte", amenities: "voorzieningen", toilets: "toiletten", bikes: "fietsen", accessibility: "toegankelijkheid", outlets: "stopcontacten", airco: "airco" },
+    fr: { title: "Stationsbord", placeholder: "Tapez une gare (p. ex. Gand, Bruxelles)", search: "Rechercher", searchTitle: "Rechercher le tableau", date: "Date (JJ/MM/AAAA)", time: "Heure (HH:MM)", now: "Maintenant", nowTitle: "Définir l’heure actuelle (locale)", plusTitle: "Ajouter une heure à l’heure sélectionnée", language: "Langue", intro: "Tapez une gare. Choisissez dans la liste. Puis lancez la recherche.", ready: "prêt", disturbances: "perturbations", selected: "sélectionné", searching: "recherche…", pickStation: "choisir gare", noMatches: "aucun résultat", searchError: "erreur recherche", loading: "Chargement…", trainDetails: "Détails du train", vehicle: "véhicule", departures: "départs", at: "à", updated: "mis à jour", occupancy: "occupation", platform: "VOIE", platformLower: "voie", noResults: "Aucun départ trouvé pour ce moment.", stationAlert: "Choisissez d’abord une gare dans la liste", timeAlert: "L’heure doit être HH:MM (p. ex. 07:30, 23:15).", error: "Erreur", ok: "ok", cancelled: "supprimé", composition: "composition", carriages: "voitures", seats: "places assises", standing: "places debout", length: "longueur", amenities: "équipements", toilets: "toilettes", bikes: "vélos", accessibility: "accessibilité", outlets: "prises", airco: "climatisation" },
+    de: { title: "Stationsbord", placeholder: "Bahnhof eingeben (z. B. Gent, Brüssel)", search: "Suchen", searchTitle: "Liveboard suchen", date: "Datum (TT/MM/JJJJ)", time: "Zeit (HH:MM)", now: "Jetzt", nowTitle: "Auf aktuelle lokale Zeit setzen", plusTitle: "Eine Stunde zur ausgewählten Zeit hinzufügen", language: "Sprache", intro: "Bahnhof eingeben. Aus der Liste wählen. Dann Suchen drücken.", ready: "bereit", disturbances: "Störungen", selected: "ausgewählt", searching: "suche…", pickStation: "Bahnhof wählen", noMatches: "keine Treffer", searchError: "Suchfehler", loading: "Laden…", trainDetails: "Zugdetails", vehicle: "Fahrzeug", departures: "Abfahrten", at: "um", updated: "aktualisiert", occupancy: "Auslastung", platform: "GLEIS", platformLower: "Gleis", noResults: "Keine Abfahrten für diesen Zeitpunkt gefunden.", stationAlert: "Wählen Sie zuerst einen Bahnhof aus der Liste", timeAlert: "Zeit muss HH:MM sein (z. B. 07:30, 23:15).", error: "Fehler", ok: "ok", cancelled: "fällt aus", composition: "Zusammenstellung", carriages: "Wagen", seats: "Sitzplätze", standing: "Stehplätze", length: "Länge", amenities: "Ausstattung", toilets: "Toiletten", bikes: "Fahrräder", accessibility: "Barrierefreiheit", outlets: "Steckdosen", airco: "Klimaanlage" }
   };
   function t(key) { return (translations[getLanguage()] && translations[getLanguage()][key]) || translations.en[key] || key; }
 
@@ -708,6 +708,101 @@
       : "";
   }
 
+  function asArray(value) {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+  }
+
+  function parseCount(value) {
+    const n = Number(value || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function yesFlag(value) {
+    return String(value || "0") === "1";
+  }
+
+  function sumUnits(units, key) {
+    return units.reduce((total, unit) => total + parseCount(unit && unit[key]), 0);
+  }
+
+  function compositionLookupId(vehicleId, shortName) {
+    const raw = String(shortName || vehicleId || "").trim();
+    return raw.replace(/^BE\.NMBS\./i, "");
+  }
+
+  function extractCompositionSegments(data) {
+    const segments = data && data.composition && data.composition.segments;
+    return asArray(segments && segments.segment);
+  }
+
+  function renderComposition(data) {
+    const segments = extractCompositionSegments(data);
+    const units = segments.flatMap((segment) =>
+      asArray(segment && segment.composition && segment.composition.units && segment.composition.units.unit)
+    );
+
+    if (!units.length) {
+      return '<section class="compositionBox"><div class="sectionTitle">' +
+        escapeHtml(t("composition")) +
+        '</div><div class="muted">No composition details available for this vehicle.</div></section>';
+    }
+
+    const seatsFirst = sumUnits(units, "seatsFirstClass") + sumUnits(units, "seatsCoupeFirstClass");
+    const seatsSecond = sumUnits(units, "seatsSecondClass") + sumUnits(units, "seatsCoupeSecondClass");
+    const standing = sumUnits(units, "standingPlacesFirstClass") + sumUnits(units, "standingPlacesSecondClass");
+    const length = sumUnits(units, "lengthInMeter");
+
+    let html = '<section class="compositionBox">';
+    html += '<div class="sectionTitle">' + escapeHtml(t("composition")) + '</div>';
+    html += '<div class="compositionSummary">';
+    html += '<span class="pill">' + escapeHtml(String(units.length)) + ' ' + escapeHtml(t("carriages")) + '</span>';
+    html += '<span class="pill">1st ' + escapeHtml(String(seatsFirst)) + ' / 2nd ' + escapeHtml(String(seatsSecond)) + ' ' + escapeHtml(t("seats")) + '</span>';
+    html += '<span class="pill">' + escapeHtml(String(standing)) + ' ' + escapeHtml(t("standing")) + '</span>';
+    if (length) html += '<span class="pill">' + escapeHtml(String(length)) + 'm ' + escapeHtml(t("length")) + '</span>';
+    html += '</div>';
+
+    html += '<div class="compositionUnits">';
+    for (const unit of units) {
+      const material = unit.materialSubTypeName || (unit.materialType && [unit.materialType.parent_type, unit.materialType.sub_type].filter(Boolean).join("_")) || unit.tractionType || "unit";
+      const seats = parseCount(unit.seatsFirstClass) + parseCount(unit.seatsSecondClass) + parseCount(unit.seatsCoupeFirstClass) + parseCount(unit.seatsCoupeSecondClass);
+      const features = [];
+      if (yesFlag(unit.hasToilets)) features.push(t("toilets"));
+      if (yesFlag(unit.hasBikeSection)) features.push(t("bikes"));
+      if (yesFlag(unit.hasPrmSection)) features.push(t("accessibility"));
+      if (yesFlag(unit.hasFirstClassOutlets) || yesFlag(unit.hasSecondClassOutlets)) features.push(t("outlets"));
+      if (yesFlag(unit.hasAirco)) features.push(t("airco"));
+
+      html += '<div class="compositionUnit">';
+      html += '<div><div class="unitTitle">' + escapeHtml(material) + '</div>';
+      html += '<div class="unitMeta">#' + escapeHtml(unit.materialNumber || unit.id || "?") +
+        (unit.materialType && unit.materialType.orientation ? ' · ' + escapeHtml(unit.materialType.orientation) : '') + '</div></div>';
+      html += '<div class="unitBadges"><span class="miniPill">' + escapeHtml(String(seats)) + ' ' + escapeHtml(t("seats")) + '</span>';
+      for (const feature of features) html += '<span class="miniPill">' + escapeHtml(feature) + '</span>';
+      html += '</div></div>';
+    }
+    html += '</div></section>';
+    return html;
+  }
+
+  async function fetchCompositionSafe(vehicleId, shortName, signal) {
+    const id = compositionLookupId(vehicleId, shortName);
+    if (!id) return null;
+
+    const r = await fetch(
+      "/api/composition?id=" + encodeURIComponent(id) + "&lang=" + encodeURIComponent(getLanguage()),
+      { signal }
+    );
+
+    const xcache = r.headers.get("X-Cache");
+    updateBannerFromXCache(xcache);
+    noteFreshResponseIfAny(xcache);
+
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "Composition request failed");
+    return data;
+  }
+
   async function loadVehicleDetails(vehicleId) {
     const prettyDate = datePrettyEl.value.trim();
     const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
@@ -744,6 +839,8 @@
 
     modalTitle.textContent = short;
     modalPill.textContent = "stops";
+
+    const compositionPromise = fetchCompositionSafe(vehicleId, short, vehicleController.signal).catch((e) => ({ __error: e }));
 
     const stops = data.stops && data.stops.stop ? data.stops.stop : [];
     if (!stops.length) {
@@ -828,6 +925,14 @@
       html += "</div>";
     }
     html += "</div>";
+
+    const composition = await compositionPromise;
+    if (composition && !composition.__error) {
+      html += renderComposition(composition);
+      modalPill.textContent = "stops + " + t("composition");
+    } else if (composition && composition.__error) {
+      html += '<section class="compositionBox"><div class="sectionTitle">' + escapeHtml(t("composition")) + '</div><div class="muted">Composition unavailable: ' + escapeHtml(composition.__error.message) + '</div></section>';
+    }
 
     modalBody.innerHTML = html;
   }

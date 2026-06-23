@@ -806,3 +806,54 @@ select.small{
     max-width:100%;
   }
 }
+
+/* Vehicle composition (overlay) */
+.compositionBox{
+  margin-top:14px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,255,255,.03);
+}
+
+.sectionTitle{
+  font-weight:1000;
+  letter-spacing:.2px;
+  margin-bottom:10px;
+}
+
+.compositionSummary,
+.unitBadges{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.compositionUnits{
+  margin-top:10px;
+  display:grid;
+  gap:8px;
+}
+
+.compositionUnit{
+  display:grid;
+  grid-template-columns:minmax(150px, .8fr) 1fr;
+  gap:10px;
+  align-items:start;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+}
+
+.unitTitle{ font-weight:900; }
+.unitMeta{
+  margin-top:3px;
+  font-size:12px;
+  color:rgba(255,255,255,.60);
+}
+
+@media (max-width:620px){
+  .compositionUnit{ grid-template-columns:1fr; }
+}
