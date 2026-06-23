@@ -6,11 +6,11 @@
   <title>Stationsbord</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png?v=0.3.3" />
-  <link rel="manifest" href="/site.webmanifest?v=0.3.3">
+  <link rel="icon" type="image/png" href="/favicon.png?v=0.4.0" />
+  <link rel="manifest" href="/site.webmanifest?v=0.4.0">
 
   <!-- Cache-busted assets -->
-  <link rel="stylesheet" href="/styles.css?v=0.3.3" />
+  <link rel="stylesheet" href="/styles.css?v=0.4.0" />
 </head>
 
 <body>
@@ -79,6 +79,16 @@
     >
       +1h
     </button>
+
+    <label>
+      Language
+      <select id="languageSelect" class="small" aria-label="Language">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </label>
   </div>
 
   <!-- Shared shell -->
@@ -96,7 +106,7 @@
         <a href="https://www.davevancauwenberghe.be" target="_blank" rel="noopener">dvc.</a>
         · powered by
         <a href="https://irail.be" target="_blank" rel="noopener">iRail API</a>
-        · v0.3.3
+        · v0.4.0
       </div>
     </footer>
 
@@ -128,6 +138,6 @@
   </div>
 
   <!-- App logic -->
-  <script src="/app.js?v=0.3.3" defer></script>
+  <script src="/app.js?v=0.4.0" defer></script>
 </body>
 </html>

@@ -12,7 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.1.0";
+const APP_VERSION = process.env.APP_VERSION || "0.4.0";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -44,7 +44,13 @@ function takeIpToken(req) {
   return bucket();
 }
 
-let stationIndex = buildSearchIndex([]);
+const stationIndexes = new Map();
+function getStationIndex(lang) {
+  return stationIndexes.get(lang) || buildSearchIndex([]);
+}
+function setStationIndex(lang, stations) {
+  stationIndexes.set(lang, buildSearchIndex(stations));
+}
 
 /* Resolve paths */
 const __filename = fileURLToPath(import.meta.url);
@@ -154,8 +160,9 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs }) {
 app.get("/health", (_req, res) => res.json({ ok: true, name: APP_NAME, version: APP_VERSION }));
 
 /* Stations: fetch + cache */
-async function getStationsFresh() {
-  const key = "stations:all";
+async function getStationsFresh(lang = "en") {
+  const safeLang = normalizeLang(lang);
+  const key = `stations:all:${safeLang}`;
   const cached = cache.get(key);
   const peek = cache.peek(key);
 
@@ -165,7 +172,7 @@ async function getStationsFresh() {
 
   if (!takeGlobalToken()) throw Object.assign(new Error("Local rate limit reached"), { status: 429 });
 
-  const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(`/stations/?format=json&lang=en`, {
+  const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(`/stations/?format=json&lang=${safeLang}`, {
     userAgent: USER_AGENT,
     etag,
   });
@@ -177,15 +184,16 @@ async function getStationsFresh() {
 
   const stations = extractStations(json);
   cache.set(key, { ttlMs, etag: newEtag, value: stations });
-  stationIndex = buildSearchIndex(stations);
+  setStationIndex(safeLang, stations);
   return stations;
 }
 
 app.get("/api/stations/refresh", async (_req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");
-    const stations = await getStationsFresh();
-    res.json({ count: stations.length });
+    const lang = normalizeLang(_req.query.lang);
+    const stations = await getStationsFresh(lang);
+    res.json({ count: stations.length, lang });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }
@@ -195,10 +203,15 @@ app.get("/api/stations/search", async (req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");
 
-    if (!stationIndex.all.length) await getStationsFresh();
+    const lang = normalizeLang(req.query.lang);
+    let stationIndex = getStationIndex(lang);
+    if (!stationIndex.all.length) {
+      await getStationsFresh(lang);
+      stationIndex = getStationIndex(lang);
+    }
     const q = String(req.query.q || "");
     const limit = Math.min(50, Number(req.query.limit || 15));
-    res.json({ q, results: stationIndex.search(q, limit) });
+    res.json({ q, lang, results: stationIndex.search(q, limit) });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }
