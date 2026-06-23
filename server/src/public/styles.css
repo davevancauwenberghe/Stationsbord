@@ -766,3 +766,43 @@ select.small{
     height:46px;
   }
 }
+
+/* Keep the departures board closer to the landscape layout in portrait while
+   scaling typography and columns to the available width. */
+.dep{
+  grid-template-columns: clamp(76px, 16vw, 110px) minmax(0, 1fr) clamp(58px, 15vw, 120px);
+}
+.when,
+.to{
+  font-size: clamp(20px, 4.8vw, 26px);
+}
+.platform-badge{
+  width: clamp(50px, 11vw, 66px);
+  height: clamp(44px, 9vw, 54px);
+}
+.platform-badge .num{
+  font-size: clamp(20px, 4.8vw, 26px);
+}
+
+@media (max-width:620px){
+  .dep{
+    grid-template-columns: clamp(72px, 18vw, 92px) minmax(0, 1fr) clamp(54px, 16vw, 92px);
+    align-items:center;
+  }
+
+  .dep > :first-child,
+  .dep > :nth-child(2),
+  .dep > .right{
+    grid-column:auto;
+    grid-row:auto;
+    order:initial;
+  }
+
+  .dep > .right{
+    justify-self:end;
+  }
+
+  .toBtn{
+    max-width:100%;
+  }
+}
