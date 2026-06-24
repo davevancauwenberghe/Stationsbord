@@ -27,31 +27,103 @@ body{
   color:var(--text);
 }
 
-/* Sticky header */
-h1{
+/* Sticky topbar */
+.topbar{
   position: sticky;
   top: 0;
   z-index: 120;
 
-  margin: 0;
+  margin: 0 -22px;
   height: calc(var(--header-h) + env(safe-area-inset-top));
   display:flex;
   align-items:flex-end;
-  padding-bottom: 10px;
-
-  font-size:22px;
-  letter-spacing:.3px;
+  justify-content:space-between;
+  gap:16px;
+  padding: env(safe-area-inset-top) 22px 10px;
 
   background: rgba(11,16,32,.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
   border-bottom: 1px solid rgba(255,255,255,.10);
+}
 
-  margin-left: -22px;
-  margin-right: -22px;
-  padding-left: 22px;
-  padding-right: 22px;
+h1{
+  margin: 0;
+  font-size:22px;
+  letter-spacing:.3px;
+}
+
+.languageMenu{
+  position:relative;
+  display:flex;
+  align-items:center;
+  margin-left:auto;
+}
+
+.languageMenu select{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+
+.languageButton{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:rgba(255,255,255,.78);
+  font-size:12px;
+  font-weight:1000;
+  line-height:1;
+}
+
+.languageButton:hover,
+.languageButton[aria-expanded="true"]{
+  background:transparent;
+  color:var(--text);
+}
+
+.languageChev{
+  display:inline-block;
+  pointer-events:none;
+  transform:rotate(90deg);
+  transform-origin:center;
+  color:rgba(255,255,255,.78);
+}
+
+.languageOptions{
+  position:absolute;
+  top:calc(100% + 10px);
+  right:0;
+  min-width:160px;
+  padding:6px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  background:rgba(11,16,32,.96);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.languageOptions button{
+  width:100%;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+}
+
+.languageOptions button:hover,
+.languageOptions button[aria-selected="true"]{
+  background:rgba(47,125,255,.18);
 }
 
 /* When banner shows, it lives under the sticky header */
@@ -696,8 +768,7 @@ select.small{
     display:none;
   }
 
-  #disturbancePill,
-  #statusPill{
+  #disturbancePill{
     justify-content:center;
     width:100%;
   }

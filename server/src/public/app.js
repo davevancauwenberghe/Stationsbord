@@ -14,6 +14,9 @@
   const btnNow = document.getElementById("btnNow");
   const btnPlus1h = document.getElementById("btnPlus1h");
   const languageSelect = document.getElementById("languageSelect");
+  const languageButton = document.getElementById("languageButton");
+  const languageCurrent = document.getElementById("languageCurrent");
+  const languageOptions = document.getElementById("languageOptions");
 
   const overlay = document.getElementById("overlay");
   const overlayClose = document.getElementById("overlayClose");
@@ -117,6 +120,24 @@
     document.documentElement.lang = getLanguage();
   }
 
+  const languageCodes = { en: "ENG", nl: "NL", fr: "FR", de: "DE" };
+
+  function updateLanguagePicker() {
+    const lang = getLanguage();
+    if (languageCurrent) languageCurrent.textContent = languageCodes[lang] || "ENG";
+    if (languageButton) languageButton.setAttribute("aria-label", t("language"));
+    if (!languageOptions) return;
+    languageOptions.querySelectorAll("[data-lang]").forEach((option) => {
+      option.setAttribute("aria-selected", option.getAttribute("data-lang") === lang ? "true" : "false");
+    });
+  }
+
+  function setLanguageMenuOpen(open) {
+    if (!languageButton || !languageOptions) return;
+    languageOptions.hidden = !open;
+    languageButton.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
   function applyLanguage() {
     setDocumentLanguage();
     document.title = t("title");
@@ -131,7 +152,7 @@
     const labels = document.querySelectorAll(".controls label");
     if (labels[0]) labels[0].firstChild.textContent = t("date") + " ";
     if (labels[1]) labels[1].firstChild.textContent = t("time") + " ";
-    if (labels[2]) labels[2].firstChild.textContent = t("language") + " ";
+    updateLanguagePicker();
     if (disturbancePill && !/\d/.test(disturbancePill.textContent || "")) disturbancePill.textContent = t("disturbances") + "…";
     const onlyMuted = board.children.length === 1 ? board.querySelector(".muted") : null;
     if (onlyMuted) onlyMuted.textContent = t("intro");
@@ -146,12 +167,9 @@
     if (q.value.trim().length >= 2) debounceSearch();
   }
 
-  function setStatus(text, kind = "normal") {
-    statusPill.textContent = text;
-    statusPill.className = "pill";
-    if (kind === "loading") statusPill.style.borderColor = "rgba(47,125,255,.45)";
-    else if (kind === "error") statusPill.style.borderColor = "rgba(255,59,48,.55)";
-    else statusPill.style.borderColor = "var(--line)";
+  function setStatus(_text, _kind = "normal") {
+    // The old visible status pill (including the “ok” state) was removed to keep
+    // the interface focused on the board and disturbance indicator.
   }
 
   /* ---- Offline/stale banner based on X-Cache ---- */
@@ -595,6 +613,25 @@
       applyLanguage();
       resetStationSelectionForLanguageChange();
       refreshDisturbancesSafe();
+      setLanguageMenuOpen(false);
+    });
+    if (languageButton) {
+      languageButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setLanguageMenuOpen(languageButton.getAttribute("aria-expanded") !== "true");
+      });
+    }
+    if (languageOptions) {
+      languageOptions.addEventListener("click", (e) => {
+        const option = e.target.closest("[data-lang]");
+        if (!option) return;
+        languageSelect.value = option.getAttribute("data-lang") || "en";
+        languageSelect.dispatchEvent(new Event("change"));
+      });
+    }
+    document.addEventListener("click", () => setLanguageMenuOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setLanguageMenuOpen(false);
     });
     languageSelect.value = browserLanguage();
     applyLanguage();
@@ -1033,7 +1070,7 @@
   }
 
   function renderDisturbancesOverlay(listUnplanned, countUnplanned, listAll) {
-    modalTitle.textContent = "Disturbances";
+    modalTitle.textContent = t("disturbances");
     modalPill.textContent = String(countUnplanned);
 
     const all = Array.isArray(listAll) ? listAll : [];
@@ -1150,7 +1187,7 @@
   if (disturbancePill) {
     disturbancePill.addEventListener("click", async () => {
       try {
-        modalTitle.textContent = "Disturbances";
+        modalTitle.textContent = t("disturbances");
         modalPill.textContent = "…";
         modalBody.innerHTML = '<div class="muted">' + t("loading") + '</div>';
         openOverlay();

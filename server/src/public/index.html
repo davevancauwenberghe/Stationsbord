@@ -19,7 +19,34 @@
 </head>
 
 <body>
-  <h1>Stationsbord</h1>
+  <header class="topbar">
+    <h1>Stationsbord</h1>
+    <div class="languageMenu">
+      <select id="languageSelect" aria-label="Language" aria-hidden="true" tabindex="-1">
+        <option value="nl">Nederlands</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+      </select>
+      <button
+        class="languageButton"
+        id="languageButton"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-label="Language"
+      >
+        <span id="languageCurrent">ENG</span>
+        <span class="chev languageChev" aria-hidden="true">›</span>
+      </button>
+      <div class="languageOptions" id="languageOptions" role="listbox" hidden>
+        <button type="button" role="option" data-lang="nl">Nederlands</button>
+        <button type="button" role="option" data-lang="fr">Français</button>
+        <button type="button" role="option" data-lang="de">Deutsch</button>
+        <button type="button" role="option" data-lang="en">English</button>
+      </div>
+    </div>
+  </header>
 
   <!-- Offline / stale cache banner -->
   <div class="banner" id="offlineBanner" hidden></div>
@@ -56,8 +83,6 @@
       disturbances…
     </button>
 
-    <!-- Status pill -->
-    <span class="pill" id="statusPill">ready</span>
   </div>
 
   <div class="controls">
@@ -101,15 +126,6 @@
       +1h
     </button>
 
-    <label>
-      Language
-      <select id="languageSelect" class="small" aria-label="Language">
-        <option value="en">English</option>
-        <option value="nl">Nederlands</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
-      </select>
-    </label>
   </div>
 
   <!-- Shared shell -->
