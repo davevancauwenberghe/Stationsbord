@@ -14,9 +14,7 @@
   const btnNow = document.getElementById("btnNow");
   const btnPlus1h = document.getElementById("btnPlus1h");
   const languageSelect = document.getElementById("languageSelect");
-  const languageButton = document.getElementById("languageButton");
-  const languageCurrent = document.getElementById("languageCurrent");
-  const languageOptions = document.getElementById("languageOptions");
+  const languageLabel = document.getElementById("languageLabel");
 
   const overlay = document.getElementById("overlay");
   const overlayClose = document.getElementById("overlayClose");
@@ -152,7 +150,7 @@
     const labels = document.querySelectorAll(".controls label");
     if (labels[0]) labels[0].firstChild.textContent = t("date") + " ";
     if (labels[1]) labels[1].firstChild.textContent = t("time") + " ";
-    updateLanguagePicker();
+    if (languageLabel) languageLabel.textContent = t("language");
     if (disturbancePill && !/\d/.test(disturbancePill.textContent || "")) disturbancePill.textContent = t("disturbances") + "…";
     const onlyMuted = board.children.length === 1 ? board.querySelector(".muted") : null;
     if (onlyMuted) onlyMuted.textContent = t("intro");
