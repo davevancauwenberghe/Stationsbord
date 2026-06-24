@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Stationsbord" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>Stationsbord</title>
 
   <!-- Favicon -->
@@ -26,10 +31,17 @@
           id="q"
           placeholder="Type a station (e.g. Gent, Bruxelles)"
           autocomplete="off"
+          autocapitalize="words"
+          spellcheck="false"
+          enterkeyhint="search"
+          aria-label="Station"
+          aria-autocomplete="list"
+          aria-controls="dropdown"
+          aria-expanded="false"
         />
-        <button id="searchBtn" title="Search liveboard">Search</button>
+        <button id="searchBtn" type="button" title="Search liveboard">Search</button>
       </div>
-      <div class="dropdown" id="dropdown"></div>
+      <div class="dropdown" id="dropdown" role="listbox"></div>
     </div>
 
     <div class="spacer"></div>
@@ -56,6 +68,10 @@
         id="datePretty"
         placeholder="DD/MM/YYYY"
         inputmode="numeric"
+        pattern="[0-9/]*"
+        enterkeyhint="next"
+        autocomplete="off"
+        aria-label="Date"
       />
     </label>
 
@@ -66,15 +82,20 @@
         id="timePretty"
         placeholder="HH:MM"
         inputmode="numeric"
+        pattern="[0-9:]*"
+        enterkeyhint="done"
+        autocomplete="off"
+        aria-label="Time"
       />
     </label>
 
-    <button class="btn-ghost" id="btnNow" title="Set to current time (local)">
+    <button class="btn-ghost" id="btnNow" type="button" title="Set to current time (local)">
       Now
     </button>
     <button
       class="btn-ghost"
       id="btnPlus1h"
+      type="button"
       title="Add one hour from the currently selected time"
     >
       +1h

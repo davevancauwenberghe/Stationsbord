@@ -52,6 +52,10 @@
   // Body scroll lock while overlay open
   let prevOverflowBody = "";
   let prevOverflowHtml = "";
+  let prevBodyPosition = "";
+  let prevBodyTop = "";
+  let prevBodyWidth = "";
+  let lockedScrollY = 0;
   let scrollLocked = false;
 
   // Track whether last edit action was delete/backspace (for pretty input UX)
@@ -64,17 +68,33 @@
     // Store inline styles only (avoid computed-style traps)
     prevOverflowBody = document.body.style.overflow || "";
     prevOverflowHtml = document.documentElement.style.overflow || "";
+    prevBodyPosition = document.body.style.position || "";
+    prevBodyTop = document.body.style.top || "";
+    prevBodyWidth = document.body.style.width || "";
+    lockedScrollY = window.scrollY || window.pageYOffset || 0;
 
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = "-" + lockedScrollY + "px";
+    document.body.style.width = "100%";
   }
 
   function unlockScroll() {
     document.body.style.overflow = prevOverflowBody || "";
     document.documentElement.style.overflow = prevOverflowHtml || "";
+    document.body.style.position = prevBodyPosition || "";
+    document.body.style.top = prevBodyTop || "";
+    document.body.style.width = prevBodyWidth || "";
+
+    if (lockedScrollY) window.scrollTo(0, lockedScrollY);
 
     prevOverflowBody = "";
     prevOverflowHtml = "";
+    prevBodyPosition = "";
+    prevBodyTop = "";
+    prevBodyWidth = "";
+    lockedScrollY = 0;
     scrollLocked = false;
   }
 
@@ -206,10 +226,13 @@
   /* ---- Dropdown ---- */
   function openDropdown() {
     dropdown.classList.add("open");
+    q.setAttribute("aria-expanded", "true");
   }
   function closeDropdown() {
     dropdown.classList.remove("open");
+    q.setAttribute("aria-expanded", "false");
     activeIdx = -1;
+    q.removeAttribute("aria-activedescendant");
   }
 
   function renderDropdown(results) {
@@ -223,6 +246,10 @@
       const div = document.createElement("div");
       div.className = "dd-item";
       div.dataset.idx = String(i);
+      div.id = "station-option-" + String(i);
+      div.setAttribute("role", "option");
+      div.setAttribute("aria-selected", "false");
+      div.tabIndex = -1;
       div.innerHTML =
         '<div><div class="dd-name">' +
         escapeHtml(s.name) +
@@ -234,6 +261,8 @@
         e.preventDefault();
         pickResult(i);
       });
+      div.addEventListener("click", () => pickResult(i));
+      div.addEventListener("touchstart", () => { activeIdx = i; highlightActive(); }, { passive: true });
       dropdown.appendChild(div);
     }
     openDropdown();
@@ -242,8 +271,12 @@
   function highlightActive() {
     const items = dropdown.querySelectorAll(".dd-item");
     items.forEach((el, idx) => {
-      el.style.background = idx === activeIdx ? "rgba(255,255,255,.08)" : "";
+      const active = idx === activeIdx;
+      el.style.background = active ? "rgba(255,255,255,.08)" : "";
+      el.setAttribute("aria-selected", active ? "true" : "false");
     });
+    if (activeIdx >= 0) q.setAttribute("aria-activedescendant", "station-option-" + String(activeIdx));
+    else q.removeAttribute("aria-activedescendant");
   }
 
   function pickResult(idx) {
