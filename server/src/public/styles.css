@@ -41,9 +41,62 @@ body{
   gap:16px;
   padding: env(safe-area-inset-top) 22px 10px;
 
-  background: rgba(11,16,32,.75);
+.languageMenu{
+  position:relative;
+  display:flex;
+  align-items:center;
+  margin-left:auto;
+}
+
+.languageMenu select{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+
+.languageButton{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:rgba(255,255,255,.78);
+  font-size:12px;
+  font-weight:1000;
+  line-height:1;
+}
+
+.languageButton:hover,
+.languageButton[aria-expanded="true"]{
+  background:transparent;
+  color:var(--text);
+}
+
+.languageChev{
+  display:inline-block;
+  pointer-events:none;
+  transform:rotate(90deg);
+  transform-origin:center;
+  color:rgba(255,255,255,.78);
+}
+
+.languageOptions{
+  position:absolute;
+  top:calc(100% + 10px);
+  right:0;
+  min-width:160px;
+  padding:6px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  background:rgba(11,16,32,.96);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
 
   border-bottom: 1px solid rgba(255,255,255,.10);
 }
