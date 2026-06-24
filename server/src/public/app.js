@@ -14,6 +14,7 @@
   const btnNow = document.getElementById("btnNow");
   const btnPlus1h = document.getElementById("btnPlus1h");
   const languageSelect = document.getElementById("languageSelect");
+  const languageLabel = document.getElementById("languageLabel");
 
   const overlay = document.getElementById("overlay");
   const overlayClose = document.getElementById("overlayClose");
@@ -131,7 +132,7 @@
     const labels = document.querySelectorAll(".controls label");
     if (labels[0]) labels[0].firstChild.textContent = t("date") + " ";
     if (labels[1]) labels[1].firstChild.textContent = t("time") + " ";
-    if (labels[2]) labels[2].firstChild.textContent = t("language") + " ";
+    if (languageLabel) languageLabel.textContent = t("language");
     if (disturbancePill && !/\d/.test(disturbancePill.textContent || "")) disturbancePill.textContent = t("disturbances") + "…";
     const onlyMuted = board.children.length === 1 ? board.querySelector(".muted") : null;
     if (onlyMuted) onlyMuted.textContent = t("intro");
@@ -146,12 +147,9 @@
     if (q.value.trim().length >= 2) debounceSearch();
   }
 
-  function setStatus(text, kind = "normal") {
-    statusPill.textContent = text;
-    statusPill.className = "pill";
-    if (kind === "loading") statusPill.style.borderColor = "rgba(47,125,255,.45)";
-    else if (kind === "error") statusPill.style.borderColor = "rgba(255,59,48,.55)";
-    else statusPill.style.borderColor = "var(--line)";
+  function setStatus(_text, _kind = "normal") {
+    // The old visible status pill (including the “ok” state) was removed to keep
+    // the interface focused on the board and disturbance indicator.
   }
 
   /* ---- Offline/stale banner based on X-Cache ---- */
@@ -1033,7 +1031,7 @@
   }
 
   function renderDisturbancesOverlay(listUnplanned, countUnplanned, listAll) {
-    modalTitle.textContent = "Disturbances";
+    modalTitle.textContent = t("disturbances");
     modalPill.textContent = String(countUnplanned);
 
     const all = Array.isArray(listAll) ? listAll : [];
@@ -1150,7 +1148,7 @@
   if (disturbancePill) {
     disturbancePill.addEventListener("click", async () => {
       try {
-        modalTitle.textContent = "Disturbances";
+        modalTitle.textContent = t("disturbances");
         modalPill.textContent = "…";
         modalBody.innerHTML = '<div class="muted">' + t("loading") + '</div>';
         openOverlay();
