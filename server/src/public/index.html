@@ -21,14 +21,18 @@
 <body>
   <header class="topbar">
     <h1>Stationsbord</h1>
-    <div class="languageMenu">
-      <select id="languageSelect" aria-label="Language">
-        <option value="nl">Nederlands</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
-        <option value="en">English</option>
-      </select>
-    </div>
+    <label class="languageMenu" for="languageSelect">
+      <span id="languageLabel">Language</span>
+      <span class="languageSelectWrap">
+        <select id="languageSelect" aria-label="Language">
+          <option value="nl">NL</option>
+          <option value="fr">FR</option>
+          <option value="de">DE</option>
+          <option value="en">ENG</option>
+        </select>
+        <span class="chev languageChev" aria-hidden="true">›</span>
+      </span>
+    </label>
   </header>
 
   <!-- Offline / stale cache banner -->
