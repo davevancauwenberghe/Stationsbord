@@ -4,8 +4,6 @@
   const dropdown = document.getElementById("dropdown");
   const searchBtn = document.getElementById("searchBtn");
   const board = document.getElementById("board");
-  const statusPill = document.getElementById("statusPill");
-
   // Disturbances pill (header)
   const disturbancePill = document.getElementById("disturbancePill");
 
@@ -1361,10 +1359,6 @@
   searchBtn.addEventListener("click", searchLiveboard);
 
   /* ---- Init ---- */
-  if (languageSelect) {
-    languageSelect.value = browserLanguage();
-    applyLanguage();
-  }
   setNow();
   setStatus(t("ready"));
   updateBannerFromNavigator();

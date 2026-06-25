@@ -8,6 +8,7 @@
 
   /* Sticky header sizing */
   --header-h: 54px;
+  --page-pad: clamp(12px, 4vw, 22px);
 }
 
 *{box-sizing:border-box}
@@ -18,7 +19,7 @@ body{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   margin:0;
 
-  padding: 0 22px 22px 22px;
+  padding: 0 var(--page-pad) 22px var(--page-pad);
 
   background:
     radial-gradient(1200px 600px at 20% -20%, rgba(47,125,255,.25), transparent 60%),
@@ -155,11 +156,9 @@ h1{
   top: calc(var(--header-h) + env(safe-area-inset-top));
   z-index: 119;
 
-  margin: 0;
-  margin-left: -22px;
-  margin-right: -22px;
+  margin: 0 calc(-1 * var(--page-pad));
 
-  padding: 10px 22px;
+  padding: 10px var(--page-pad);
   border-bottom: 1px solid rgba(255,255,255,.10);
 
   font-size: 12px;
@@ -730,16 +729,7 @@ button:hover{background:rgba(47,125,255,.25)}
 }
 
 /* Responsive scaling improvements */
-:root{
-  --page-pad: clamp(12px, 4vw, 22px);
-}
-
-body{
-  padding-left: var(--page-pad);
-  padding-right: var(--page-pad);
-}
-
-h1,
+.topbar,
 .banner{
   margin-left: calc(-1 * var(--page-pad));
   margin-right: calc(-1 * var(--page-pad));
