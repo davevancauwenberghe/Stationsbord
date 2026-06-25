@@ -116,24 +116,6 @@
     document.documentElement.lang = getLanguage();
   }
 
-  const languageCodes = { en: "ENG", nl: "NL", fr: "FR", de: "DE" };
-
-  function updateLanguagePicker() {
-    const lang = getLanguage();
-    if (languageCurrent) languageCurrent.textContent = languageCodes[lang] || "ENG";
-    if (languageButton) languageButton.setAttribute("aria-label", t("language"));
-    if (!languageOptions) return;
-    languageOptions.querySelectorAll("[data-lang]").forEach((option) => {
-      option.setAttribute("aria-selected", option.getAttribute("data-lang") === lang ? "true" : "false");
-    });
-  }
-
-  function setLanguageMenuOpen(open) {
-    if (!languageButton || !languageOptions) return;
-    languageOptions.hidden = !open;
-    languageButton.setAttribute("aria-expanded", open ? "true" : "false");
-  }
-
   function applyLanguage() {
     setDocumentLanguage();
     document.title = t("title");
@@ -609,25 +591,6 @@
       applyLanguage();
       resetStationSelectionForLanguageChange();
       refreshDisturbancesSafe();
-      setLanguageMenuOpen(false);
-    });
-    if (languageButton) {
-      languageButton.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setLanguageMenuOpen(languageButton.getAttribute("aria-expanded") !== "true");
-      });
-    }
-    if (languageOptions) {
-      languageOptions.addEventListener("click", (e) => {
-        const option = e.target.closest("[data-lang]");
-        if (!option) return;
-        languageSelect.value = option.getAttribute("data-lang") || "en";
-        languageSelect.dispatchEvent(new Event("change"));
-      });
-    }
-    document.addEventListener("click", () => setLanguageMenuOpen(false));
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") setLanguageMenuOpen(false);
     });
     languageSelect.value = browserLanguage();
     applyLanguage();
