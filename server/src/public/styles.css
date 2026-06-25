@@ -8,6 +8,7 @@
 
   /* Sticky header sizing */
   --header-h: 54px;
+  --page-pad: clamp(12px, 4vw, 22px);
 }
 
 *{box-sizing:border-box}
@@ -18,7 +19,7 @@ body{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   margin:0;
 
-  padding: 0 22px 22px 22px;
+  padding: 0 var(--page-pad) 22px var(--page-pad);
 
   background:
     radial-gradient(1200px 600px at 20% -20%, rgba(47,125,255,.25), transparent 60%),
@@ -27,31 +28,44 @@ body{
   color:var(--text);
 }
 
-/* Sticky header */
-h1{
+/* Sticky topbar */
+.topbar{
   position: sticky;
   top: 0;
   z-index: 120;
 
-  margin: 0;
+  margin: 0 calc(-1 * var(--page-pad));
   height: calc(var(--header-h) + env(safe-area-inset-top));
   display:flex;
   align-items:flex-end;
-  padding-bottom: 10px;
-
-  font-size:22px;
-  letter-spacing:.3px;
+  justify-content:space-between;
+  gap:16px;
+  padding: env(safe-area-inset-top) var(--page-pad) 10px;
 
   background: rgba(11,16,32,.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
   border-bottom: 1px solid rgba(255,255,255,.10);
+}
 
-  margin-left: -22px;
-  margin-right: -22px;
-  padding-left: 22px;
-  padding-right: 22px;
+h1{
+  margin: 0;
+  font-size:22px;
+  letter-spacing:.3px;
+}
+
+.languageMenu{
+  margin-left:auto;
+}
+
+.languageMenu select{
+  width:auto;
+  min-width:130px;
+  padding:7px 10px;
+  border-radius:10px;
+  background:rgba(255,255,255,.06);
+  color:var(--text);
 }
 
 /* When banner shows, it lives under the sticky header */
@@ -60,11 +74,9 @@ h1{
   top: calc(var(--header-h) + env(safe-area-inset-top));
   z-index: 119;
 
-  margin: 0;
-  margin-left: -22px;
-  margin-right: -22px;
+  margin: 0 calc(-1 * var(--page-pad));
 
-  padding: 10px 22px;
+  padding: 10px var(--page-pad);
   border-bottom: 1px solid rgba(255,255,255,.10);
 
   font-size: 12px;
@@ -635,16 +647,7 @@ button:hover{background:rgba(47,125,255,.25)}
 }
 
 /* Responsive scaling improvements */
-:root{
-  --page-pad: clamp(12px, 4vw, 22px);
-}
-
-body{
-  padding-left: var(--page-pad);
-  padding-right: var(--page-pad);
-}
-
-h1,
+.topbar,
 .banner{
   margin-left: calc(-1 * var(--page-pad));
   margin-right: calc(-1 * var(--page-pad));
@@ -696,8 +699,7 @@ select.small{
     display:none;
   }
 
-  #disturbancePill,
-  #statusPill{
+  #disturbancePill{
     justify-content:center;
     width:100%;
   }

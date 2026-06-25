@@ -19,7 +19,17 @@
 </head>
 
 <body>
-  <h1>Stationsbord</h1>
+  <header class="topbar">
+    <h1>Stationsbord</h1>
+    <div class="languageMenu">
+      <select id="languageSelect" aria-label="Language">
+        <option value="nl">Nederlands</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </header>
 
   <!-- Offline / stale cache banner -->
   <div class="banner" id="offlineBanner" hidden></div>
@@ -56,8 +66,6 @@
       disturbances…
     </button>
 
-    <!-- Status pill -->
-    <span class="pill" id="statusPill">ready</span>
   </div>
 
   <div class="controls">
@@ -101,15 +109,6 @@
       +1h
     </button>
 
-    <label>
-      Language
-      <select id="languageSelect" class="small" aria-label="Language">
-        <option value="en">English</option>
-        <option value="nl">Nederlands</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
-      </select>
-    </label>
   </div>
 
   <!-- Shared shell -->
