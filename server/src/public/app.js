@@ -2,6 +2,7 @@
 (function () {
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
+  const recentStationsEl = document.getElementById("recentStations");
   const searchBtn = document.getElementById("searchBtn");
   const board = document.getElementById("board");
   // Disturbances pill (header)
@@ -29,12 +30,14 @@
   let typingTimer = null;
   let inFlight = null;
   const allowedLanguages = new Set(["en", "nl", "fr", "de"]);
+  const recentStationsKey = "stationsbord.recentStations";
+  const maxRecentStations = 3;
 
   const translations = {
-    en: { title: "Stationsbord", placeholder: "Type a station (e.g. Gent, Bruxelles)", search: "Search", searchTitle: "Search liveboard", date: "Date (DD/MM/YYYY)", time: "Time (HH:MM)", now: "Now", nowTitle: "Set to current time (local)", plusTitle: "Add one hour from the currently selected time", language: "Language", intro: "Start typing a station name. Pick from the dropdown. Then hit Search.", ready: "ready", disturbances: "disturbances", selected: "selected", searching: "searching…", pickStation: "pick station", noMatches: "no matches", searchError: "search error", loading: "Loading…", trainDetails: "Train details", vehicle: "vehicle", departures: "departures", at: "at", updated: "updated", occupancy: "occupancy", platform: "PLATFORM", platformLower: "platform", noResults: "No departures found for this moment.", stationAlert: "Pick a station from the dropdown first", timeAlert: "Time must be HH:MM (e.g. 07:30, 23:15).", error: "Error", ok: "ok", cancelled: "cancelled", composition: "composition", carriages: "carriages", seats: "seats", standing: "standing", length: "length", amenities: "amenities", toilets: "toilets", bikes: "bikes", accessibility: "accessibility", outlets: "outlets", airco: "airco" },
-    nl: { title: "Stationsbord", placeholder: "Typ een station (bv. Gent, Brussel)", search: "Zoeken", searchTitle: "Zoek livebord", date: "Datum (DD/MM/JJJJ)", time: "Tijd (UU:MM)", now: "Nu", nowTitle: "Zet op huidige tijd (lokaal)", plusTitle: "Tel één uur bij de gekozen tijd", language: "Taal", intro: "Typ een station. Kies uit de lijst. Druk daarna op Zoeken.", ready: "klaar", disturbances: "storingen", selected: "geselecteerd", searching: "zoeken…", pickStation: "kies station", noMatches: "geen resultaten", searchError: "zoekfout", loading: "Laden…", trainDetails: "Treindetails", vehicle: "voertuig", departures: "vertrekken", at: "om", updated: "bijgewerkt", occupancy: "bezetting", platform: "PERRON", platformLower: "perron", noResults: "Geen vertrekken gevonden voor dit moment.", stationAlert: "Kies eerst een station uit de lijst", timeAlert: "Tijd moet UU:MM zijn (bv. 07:30, 23:15).", error: "Fout", ok: "ok", cancelled: "afgeschaft", composition: "samenstelling", carriages: "rijtuigen", seats: "zitplaatsen", standing: "staanplaatsen", length: "lengte", amenities: "voorzieningen", toilets: "toiletten", bikes: "fietsen", accessibility: "toegankelijkheid", outlets: "stopcontacten", airco: "airco" },
-    fr: { title: "Stationsbord", placeholder: "Tapez une gare (p. ex. Gand, Bruxelles)", search: "Rechercher", searchTitle: "Rechercher le tableau", date: "Date (JJ/MM/AAAA)", time: "Heure (HH:MM)", now: "Maintenant", nowTitle: "Définir l’heure actuelle (locale)", plusTitle: "Ajouter une heure à l’heure sélectionnée", language: "Langue", intro: "Tapez une gare. Choisissez dans la liste. Puis lancez la recherche.", ready: "prêt", disturbances: "perturbations", selected: "sélectionné", searching: "recherche…", pickStation: "choisir gare", noMatches: "aucun résultat", searchError: "erreur recherche", loading: "Chargement…", trainDetails: "Détails du train", vehicle: "véhicule", departures: "départs", at: "à", updated: "mis à jour", occupancy: "occupation", platform: "VOIE", platformLower: "voie", noResults: "Aucun départ trouvé pour ce moment.", stationAlert: "Choisissez d’abord une gare dans la liste", timeAlert: "L’heure doit être HH:MM (p. ex. 07:30, 23:15).", error: "Erreur", ok: "ok", cancelled: "supprimé", composition: "composition", carriages: "voitures", seats: "places assises", standing: "places debout", length: "longueur", amenities: "équipements", toilets: "toilettes", bikes: "vélos", accessibility: "accessibilité", outlets: "prises", airco: "climatisation" },
-    de: { title: "Stationsbord", placeholder: "Bahnhof eingeben (z. B. Gent, Brüssel)", search: "Suchen", searchTitle: "Liveboard suchen", date: "Datum (TT/MM/JJJJ)", time: "Zeit (HH:MM)", now: "Jetzt", nowTitle: "Auf aktuelle lokale Zeit setzen", plusTitle: "Eine Stunde zur ausgewählten Zeit hinzufügen", language: "Sprache", intro: "Bahnhof eingeben. Aus der Liste wählen. Dann Suchen drücken.", ready: "bereit", disturbances: "Störungen", selected: "ausgewählt", searching: "suche…", pickStation: "Bahnhof wählen", noMatches: "keine Treffer", searchError: "Suchfehler", loading: "Laden…", trainDetails: "Zugdetails", vehicle: "Fahrzeug", departures: "Abfahrten", at: "um", updated: "aktualisiert", occupancy: "Auslastung", platform: "GLEIS", platformLower: "Gleis", noResults: "Keine Abfahrten für diesen Zeitpunkt gefunden.", stationAlert: "Wählen Sie zuerst einen Bahnhof aus der Liste", timeAlert: "Zeit muss HH:MM sein (z. B. 07:30, 23:15).", error: "Fehler", ok: "ok", cancelled: "fällt aus", composition: "Zusammenstellung", carriages: "Wagen", seats: "Sitzplätze", standing: "Stehplätze", length: "Länge", amenities: "Ausstattung", toilets: "Toiletten", bikes: "Fahrräder", accessibility: "Barrierefreiheit", outlets: "Steckdosen", airco: "Klimaanlage" }
+    en: { title: "Stationsbord", placeholder: "Type a station (e.g. Gent, Bruxelles)", search: "Search", searchTitle: "Search liveboard", date: "Date (DD/MM/YYYY)", time: "Time (HH:MM)", now: "Now", nowTitle: "Set to current time (local)", plusTitle: "Add one hour from the currently selected time", language: "Language", intro: "Start typing a station name. Pick from the dropdown. Then hit Search.", recent: "Recent", ready: "ready", disturbances: "disturbances", selected: "selected", searching: "searching…", pickStation: "pick station", noMatches: "no matches", searchError: "search error", loading: "Loading…", trainDetails: "Train details", vehicle: "vehicle", departures: "departures", at: "at", updated: "updated", occupancy: "occupancy", platform: "PLATFORM", platformLower: "platform", noResults: "No departures found for this moment.", stationAlert: "Pick a station from the dropdown first", timeAlert: "Time must be HH:MM (e.g. 07:30, 23:15).", error: "Error", ok: "ok", cancelled: "cancelled", composition: "composition", carriages: "carriages", seats: "seats", standing: "standing", length: "length", amenities: "amenities", toilets: "toilets", bikes: "bikes", accessibility: "accessibility", outlets: "outlets", airco: "airco" },
+    nl: { title: "Stationsbord", placeholder: "Typ een station (bv. Gent, Brussel)", search: "Zoeken", searchTitle: "Zoek livebord", date: "Datum (DD/MM/JJJJ)", time: "Tijd (UU:MM)", now: "Nu", nowTitle: "Zet op huidige tijd (lokaal)", plusTitle: "Tel één uur bij de gekozen tijd", language: "Taal", intro: "Typ een station. Kies uit de lijst. Druk daarna op Zoeken.", recent: "Recent", ready: "klaar", disturbances: "storingen", selected: "geselecteerd", searching: "zoeken…", pickStation: "kies station", noMatches: "geen resultaten", searchError: "zoekfout", loading: "Laden…", trainDetails: "Treindetails", vehicle: "voertuig", departures: "vertrekken", at: "om", updated: "bijgewerkt", occupancy: "bezetting", platform: "PERRON", platformLower: "perron", noResults: "Geen vertrekken gevonden voor dit moment.", stationAlert: "Kies eerst een station uit de lijst", timeAlert: "Tijd moet UU:MM zijn (bv. 07:30, 23:15).", error: "Fout", ok: "ok", cancelled: "afgeschaft", composition: "samenstelling", carriages: "rijtuigen", seats: "zitplaatsen", standing: "staanplaatsen", length: "lengte", amenities: "voorzieningen", toilets: "toiletten", bikes: "fietsen", accessibility: "toegankelijkheid", outlets: "stopcontacten", airco: "airco" },
+    fr: { title: "Stationsbord", placeholder: "Tapez une gare (p. ex. Gand, Bruxelles)", search: "Rechercher", searchTitle: "Rechercher le tableau", date: "Date (JJ/MM/AAAA)", time: "Heure (HH:MM)", now: "Maintenant", nowTitle: "Définir l’heure actuelle (locale)", plusTitle: "Ajouter une heure à l’heure sélectionnée", language: "Langue", intro: "Tapez une gare. Choisissez dans la liste. Puis lancez la recherche.", recent: "Récent", ready: "prêt", disturbances: "perturbations", selected: "sélectionné", searching: "recherche…", pickStation: "choisir gare", noMatches: "aucun résultat", searchError: "erreur recherche", loading: "Chargement…", trainDetails: "Détails du train", vehicle: "véhicule", departures: "départs", at: "à", updated: "mis à jour", occupancy: "occupation", platform: "VOIE", platformLower: "voie", noResults: "Aucun départ trouvé pour ce moment.", stationAlert: "Choisissez d’abord une gare dans la liste", timeAlert: "L’heure doit être HH:MM (p. ex. 07:30, 23:15).", error: "Erreur", ok: "ok", cancelled: "supprimé", composition: "composition", carriages: "voitures", seats: "places assises", standing: "places debout", length: "longueur", amenities: "équipements", toilets: "toilettes", bikes: "vélos", accessibility: "accessibilité", outlets: "prises", airco: "climatisation" },
+    de: { title: "Stationsbord", placeholder: "Bahnhof eingeben (z. B. Gent, Brüssel)", search: "Suchen", searchTitle: "Liveboard suchen", date: "Datum (TT/MM/JJJJ)", time: "Zeit (HH:MM)", now: "Jetzt", nowTitle: "Auf aktuelle lokale Zeit setzen", plusTitle: "Eine Stunde zur ausgewählten Zeit hinzufügen", language: "Sprache", intro: "Bahnhof eingeben. Aus der Liste wählen. Dann Suchen drücken.", recent: "Zuletzt", ready: "bereit", disturbances: "Störungen", selected: "ausgewählt", searching: "suche…", pickStation: "Bahnhof wählen", noMatches: "keine Treffer", searchError: "Suchfehler", loading: "Laden…", trainDetails: "Zugdetails", vehicle: "Fahrzeug", departures: "Abfahrten", at: "um", updated: "aktualisiert", occupancy: "Auslastung", platform: "GLEIS", platformLower: "Gleis", noResults: "Keine Abfahrten für diesen Zeitpunkt gefunden.", stationAlert: "Wählen Sie zuerst einen Bahnhof aus der Liste", timeAlert: "Zeit muss HH:MM sein (z. B. 07:30, 23:15).", error: "Fehler", ok: "ok", cancelled: "fällt aus", composition: "Zusammenstellung", carriages: "Wagen", seats: "Sitzplätze", standing: "Stehplätze", length: "Länge", amenities: "Ausstattung", toilets: "Toiletten", bikes: "Fahrräder", accessibility: "Barrierefreiheit", outlets: "Steckdosen", airco: "Klimaanlage" }
   };
   function t(key) { return (translations[getLanguage()] && translations[getLanguage()][key]) || translations.en[key] || key; }
 
@@ -134,6 +137,63 @@
     if (disturbancePill && !/\d/.test(disturbancePill.textContent || "")) disturbancePill.textContent = t("disturbances") + "…";
     const onlyMuted = board.children.length === 1 ? board.querySelector(".muted") : null;
     if (onlyMuted) onlyMuted.textContent = t("intro");
+    renderRecentStations();
+  }
+
+  function readRecentStations() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(recentStationsKey) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((station) => station && station.id && station.name)
+        .slice(0, maxRecentStations);
+    } catch (_e) {
+      return [];
+    }
+  }
+
+  function writeRecentStations(stations) {
+    try {
+      localStorage.setItem(recentStationsKey, JSON.stringify(stations.slice(0, maxRecentStations)));
+    } catch (_e) {
+      // Ignore storage failures; recent searches are only a convenience.
+    }
+  }
+
+  function rememberRecentStation(station) {
+    if (!station || !station.id || !station.name) return;
+    const normalized = { id: station.id, name: station.name };
+    const existing = readRecentStations().filter((item) => item.id !== normalized.id);
+    writeRecentStations([normalized, ...existing]);
+    renderRecentStations();
+  }
+
+  function renderRecentStations() {
+    if (!recentStationsEl) return;
+
+    const stations = readRecentStations();
+    recentStationsEl.innerHTML = "";
+    recentStationsEl.classList.toggle("hasRecent", stations.length > 0);
+    if (!stations.length) return;
+
+    const label = document.createElement("span");
+    label.className = "recentStationsLabel";
+    label.textContent = t("recent") + ":";
+    recentStationsEl.appendChild(label);
+
+    for (const station of stations) {
+      const button = document.createElement("button");
+      button.className = "recentStationBtn";
+      button.type = "button";
+      button.textContent = station.name;
+      button.addEventListener("click", () => {
+        selected = { id: station.id, name: station.name };
+        q.value = station.name;
+        closeDropdown();
+        searchLiveboard();
+      });
+      recentStationsEl.appendChild(button);
+    }
   }
 
   function resetStationSelectionForLanguageChange() {
@@ -1209,6 +1269,7 @@
 
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Liveboard failed");
+      rememberRecentStation(selected);
 
       const deps =
         data.departures && data.departures.departure

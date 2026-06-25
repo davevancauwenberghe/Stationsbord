@@ -12,7 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.4.0";
+const APP_VERSION = process.env.APP_VERSION || "0.4.0a";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
