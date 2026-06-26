@@ -3,6 +3,7 @@
   const q = document.getElementById("q");
   const dropdown = document.getElementById("dropdown");
   const recentStationsEl = document.getElementById("recentStations");
+  const stationInputWrap = recentStationsEl?.closest(".stationInputWrap") || null;
   const searchBtn = document.getElementById("searchBtn");
   const board = document.getElementById("board");
   // Disturbances pill (header)
@@ -174,6 +175,10 @@
     const stations = readRecentStations();
     recentStationsEl.innerHTML = "";
     recentStationsEl.classList.toggle("hasRecent", stations.length > 0);
+    if (stationInputWrap) {
+      stationInputWrap.classList.toggle("hasRecent", stations.length > 0);
+      stationInputWrap.style.removeProperty("--recent-stations-inline");
+    }
     if (!stations.length) return;
 
     const label = document.createElement("span");
@@ -193,6 +198,15 @@
         searchLiveboard();
       });
       recentStationsEl.appendChild(button);
+    }
+
+    if (stationInputWrap && window.matchMedia("(min-width: 621px)").matches) {
+      window.requestAnimationFrame(() => {
+        const recentWidth = Math.ceil(recentStationsEl.getBoundingClientRect().width);
+        if (recentWidth > 0) {
+          stationInputWrap.style.setProperty("--recent-stations-inline", `${recentWidth + 20}px`);
+        }
+      });
     }
   }
 

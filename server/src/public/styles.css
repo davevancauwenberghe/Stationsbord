@@ -37,9 +37,9 @@ body{
   margin: 0 -22px;
   height: calc(var(--header-h) + env(safe-area-inset-top));
   display:flex;
-  align-items:flex-end;
+  align-items:center;
   justify-content:space-between;
-  gap:16px;
+  gap:12px;
   padding: env(safe-area-inset-top) 22px 10px;
   background: rgba(11,16,32,.75);
   backdrop-filter: blur(10px);
@@ -49,14 +49,20 @@ body{
 
 h1{
   margin: 0;
+  min-width:0;
   font-size:22px;
+  line-height:1.1;
   letter-spacing:.3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
 .languageMenu{
   position:relative;
   display:flex;
   align-items:center;
+  flex:0 0 auto;
   gap:4px;
   margin-left:auto;
   color:var(--text);
@@ -74,10 +80,10 @@ h1{
 .languageSelectWrap select{
   width:auto;
   min-width:0;
-  padding:0 18px 0 0;
-  border:0;
-  border-radius:0;
-  background:transparent;
+  padding:8px 24px 8px 10px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
   color:var(--text);
   font-weight:1000;
   appearance:none;
@@ -92,7 +98,7 @@ h1{
 
 .languageChev{
   position:absolute;
-  right:0;
+  right:9px;
   pointer-events:none;
   transform:rotate(90deg);
   color:var(--text);
@@ -351,9 +357,21 @@ button:hover{background:rgba(47,125,255,.25)}
   align-items:center;
 }
 
+.stationInputWrap{
+  position:relative;
+  display:flex;
+  flex:1;
+  min-width:220px;
+}
+
 .stationRow input{
   flex:1;
   min-width: 220px;
+  padding-right:var(--recent-stations-inline, 10px);
+}
+
+.stationInputWrap.hasRecent input{
+  min-height:46px;
 }
 
 .dropdown{
@@ -373,13 +391,18 @@ button:hover{background:rgba(47,125,255,.25)}
 .dropdown.open{display:block}
 
 .recentStations{
+  position:absolute;
+  top:50%;
+  right:8px;
+  transform:translateY(-50%);
   display:none;
-  flex-wrap:wrap;
+  max-width:min(54%, 280px);
   align-items:center;
-  gap:8px;
-  margin-top:10px;
+  gap:6px;
   color:var(--muted);
   font-size:12px;
+  overflow:hidden;
+  pointer-events:none;
 }
 
 .recentStations.hasRecent{
@@ -388,17 +411,23 @@ button:hover{background:rgba(47,125,255,.25)}
 
 .recentStationsLabel{
   font-weight:900;
+  white-space:nowrap;
 }
 
 .recentStationBtn{
   border:1px solid rgba(255,255,255,.12);
   border-radius:999px;
-  padding:6px 10px;
-  background:rgba(255,255,255,.05);
+  max-width:88px;
+  padding:5px 9px;
+  background:rgba(15,23,51,.92);
   color:var(--text);
   font:inherit;
   font-weight:900;
   cursor:pointer;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  pointer-events:auto;
 }
 
 .recentStationBtn:hover{
@@ -674,10 +703,8 @@ button:hover{background:rgba(47,125,255,.25)}
   body{ padding: 0 16px 18px 16px; }
 
   h1{
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
+    margin:0;
+    padding:0;
   }
 
   .banner{
@@ -730,6 +757,10 @@ select.small{
   select.small{
     max-width:none;
     width:100%;
+  }
+
+  .stationInputWrap{
+    min-width:0;
   }
 
   .stationRow input{
@@ -816,7 +847,15 @@ select.small{
 }
 
 @media (max-width:520px){
-  .languageMenu > span:first-child{ display:none; }
+  .topbar{
+    padding-left:var(--page-pad);
+    padding-right:var(--page-pad);
+  }
+
+  .languageSelectWrap select{
+    padding:7px 22px 7px 9px;
+    font-size:13px;
+  }
 }
 
 @media (max-width:380px){
@@ -1031,12 +1070,31 @@ select:focus-visible,
   }
 
   h1{
-    height: calc(50px + env(safe-area-inset-top));
+    font-size:20px;
   }
 
   .stationRow{
     display:grid;
     grid-template-columns:1fr;
+  }
+
+  .recentStations{
+    position:static;
+    transform:none;
+    max-width:100%;
+    flex-wrap:nowrap;
+    margin-top:8px;
+    padding:0 2px;
+    pointer-events:auto;
+  }
+
+  .stationInputWrap{
+    display:block;
+  }
+
+  .stationRow input{
+    width:100%;
+    padding-right:10px;
   }
 
   #searchBtn,
