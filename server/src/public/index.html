@@ -22,7 +22,6 @@
   <header class="topbar">
     <h1>Stationsbord</h1>
     <label class="languageMenu" for="languageSelect">
-      <span id="languageLabel">Language</span>
       <span class="languageSelectWrap">
         <select id="languageSelect" aria-label="Language">
           <option value="nl">NL</option>
@@ -41,22 +40,24 @@
   <div class="row">
     <div class="autocomplete">
       <div class="stationRow">
-        <input
-          id="q"
-          placeholder="Type a station (e.g. Gent, Bruxelles)"
-          autocomplete="off"
-          autocapitalize="words"
-          spellcheck="false"
-          enterkeyhint="search"
-          aria-label="Station"
-          aria-autocomplete="list"
-          aria-controls="dropdown"
-          aria-expanded="false"
-        />
+        <div class="stationInputWrap">
+          <input
+            id="q"
+            placeholder="Type a station (e.g. Gent, Bruxelles)"
+            autocomplete="off"
+            autocapitalize="words"
+            spellcheck="false"
+            enterkeyhint="search"
+            aria-label="Station"
+            aria-autocomplete="list"
+            aria-controls="dropdown"
+            aria-expanded="false"
+          />
+          <div class="recentStations" id="recentStations" aria-live="polite"></div>
+        </div>
         <button id="searchBtn" type="button" title="Search liveboard">Search</button>
       </div>
       <div class="dropdown" id="dropdown" role="listbox"></div>
-      <div class="recentStations" id="recentStations" aria-live="polite"></div>
     </div>
 
     <div class="spacer"></div>
