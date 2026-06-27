@@ -1,6 +1,6 @@
 {
   "name": "stationbord-server",
-  "version": "0.4.0a",
+  "version": "0.4.0b",
   "private": true,
   "type": "module",
   "main": "src/index.js",

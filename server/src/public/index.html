@@ -11,11 +11,11 @@
   <title>Stationsbord</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png?v=0.4.0a" />
-  <link rel="manifest" href="/site.webmanifest?v=0.4.0a">
+  <link rel="icon" type="image/png" href="/favicon.png?v=0.4.0b" />
+  <link rel="manifest" href="/site.webmanifest?v=0.4.0b">
 
   <!-- Cache-busted assets -->
-  <link rel="stylesheet" href="/styles.css?v=0.4.0a" />
+  <link rel="stylesheet" href="/styles.css?v=0.4.0b" />
 </head>
 
 <body>
@@ -47,15 +47,13 @@
             autocomplete="off"
             autocapitalize="words"
             spellcheck="false"
-            enterkeyhint="search"
+            enterkeyhint="go"
             aria-label="Station"
             aria-autocomplete="list"
             aria-controls="dropdown"
             aria-expanded="false"
           />
-          <div class="recentStations" id="recentStations" aria-live="polite"></div>
         </div>
-        <button id="searchBtn" type="button" title="Search liveboard">Search</button>
       </div>
       <div class="dropdown" id="dropdown" role="listbox"></div>
     </div>
@@ -122,7 +120,7 @@
 
     <div class="board" id="board">
       <div class="muted">
-        Start typing a station name. Pick from the dropdown. Then hit Search.
+        Start typing a station name or tap the field to pick a recent station. Selecting a station loads the board.
       </div>
     </div>
 
@@ -132,7 +130,7 @@
         <a href="https://www.davevancauwenberghe.be" target="_blank" rel="noopener">dvc.</a>
         · powered by
         <a href="https://irail.be" target="_blank" rel="noopener">iRail API</a>
-        · v0.4.0a
+        · v0.4.0b
       </div>
     </footer>
 
@@ -164,6 +162,6 @@
   </div>
 
   <!-- App logic -->
-  <script src="/app.js?v=0.4.0a" defer></script>
+  <script src="/app.js?v=0.4.0b" defer></script>
 </body>
 </html>
