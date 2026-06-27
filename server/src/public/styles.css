@@ -13,7 +13,7 @@
 
 *{box-sizing:border-box}
 
-html, body{ height:100%; }
+html, body{ min-height:100%; }
 
 body{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -518,6 +518,12 @@ button:hover{background:rgba(47,125,255,.25)}
 
 .toBtn:hover{text-decoration: underline}
 
+.toBtn span:first-child,
+.toBtn{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
 .chev{
   font-size:18px;
   line-height:1;
@@ -532,8 +538,11 @@ button:hover{background:rgba(47,125,255,.25)}
   display:none;
   z-index:200;
 
-  /* keep this, but DO NOT let it be the only overlay rule */
-  touch-action: none;
+  align-items:flex-start;
+  justify-content:center;
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 
   padding:
     max(18px, env(safe-area-inset-top))
@@ -543,8 +552,7 @@ button:hover{background:rgba(47,125,255,.25)}
 }
 
 .overlay.open{
-  display:block;
-  overscroll-behavior: contain;
+  display:flex;
 }
 
 .modal{
@@ -935,7 +943,7 @@ html{
 body{
   min-height:100%;
   padding-bottom: calc(22px + env(safe-area-inset-bottom));
-  overscroll-behavior-y: contain;
+  overflow-x:hidden;
 }
 
 input, select, button{
