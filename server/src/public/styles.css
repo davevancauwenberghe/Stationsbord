@@ -80,10 +80,10 @@ h1{
 .languageSelectWrap select{
   width:auto;
   min-width:0;
-  padding:8px 24px 8px 10px;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:999px;
-  background:rgba(255,255,255,.07);
+  padding:4px 18px 4px 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
   color:var(--text);
   font-weight:1000;
   appearance:none;
@@ -96,9 +96,14 @@ h1{
   color:#fff;
 }
 
+.languageSelectWrap select:focus-visible{
+  outline:1px solid rgba(255,255,255,.45);
+  outline-offset:3px;
+}
+
 .languageChev{
   position:absolute;
-  right:9px;
+  right:0;
   pointer-events:none;
   transform:rotate(90deg);
   color:var(--text);
@@ -806,7 +811,7 @@ select.small{
   }
 
   .languageSelectWrap select{
-    padding:7px 22px 7px 9px;
+    padding:4px 18px 4px 0;
     font-size:13px;
   }
 }

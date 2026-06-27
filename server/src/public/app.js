@@ -627,7 +627,39 @@
     setMomentLocal(new Date());
   }
 
-  btnNow.addEventListener("click", () => setNow());
+  function shouldRefreshForDateTimeChange() {
+    if (!selected) return false;
+
+    const prettyTime = timePrettyEl.value.trim();
+    if (prettyTime && !isValidTimePretty(prettyTime)) return false;
+
+    const prettyDate = datePrettyEl.value.trim();
+    if (prettyDate && !prettyToIRailDate(prettyDate)) return false;
+
+    return true;
+  }
+
+  function refreshLiveboardForDateTimeChange() {
+    if (shouldRefreshForDateTimeChange()) searchLiveboard();
+  }
+
+  function wireDateTimeSearchRefresh(el) {
+    el.addEventListener("change", refreshLiveboardForDateTimeChange);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+  }
+
+  wireDateTimeSearchRefresh(datePrettyEl);
+  wireDateTimeSearchRefresh(timePrettyEl);
+
+  btnNow.addEventListener("click", () => {
+    setNow();
+    refreshLiveboardForDateTimeChange();
+  });
   btnPlus1h.addEventListener("click", () => {
     const base = getSelectedMomentLocal();
     base.setHours(base.getHours() + 1);
