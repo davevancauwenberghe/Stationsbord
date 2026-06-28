@@ -12,7 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.4.0d";
+const APP_VERSION = process.env.APP_VERSION || "0.5.0a";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -82,6 +82,12 @@ function normalizeLang(raw) {
 function normalizeArrdep(raw) {
   const v = String(raw || "departure").toLowerCase().trim();
   return v === "arrival" ? "arrival" : "departure";
+}
+
+function normalizeTypeOfTransport(raw) {
+  const v = String(raw || "automatic").toLowerCase().trim();
+  const allowed = new Set(["automatic", "trains", "nointernationaltrains", "all"]);
+  return allowed.has(v) ? v : "automatic";
 }
 
 function normalizeAlerts(raw) {
@@ -289,6 +295,58 @@ app.get("/api/disturbances", async (req, res) => {
       pathQ,
       params,
       timeoutMs: undefined,
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+/* Connections proxy (cached) */
+app.get("/api/connections", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+
+    const from = String(req.query.from || "").trim();
+    const to = String(req.query.to || "").trim();
+    if (!from) return res.status(400).json({ error: "Missing required parameter: from" });
+    if (!to) return res.status(400).json({ error: "Missing required parameter: to" });
+    if (from === to) return res.status(400).json({ error: "From and to must be different stations" });
+
+    const lang = normalizeLang(req.query.lang);
+    const timesel = normalizeArrdep(req.query.timesel);
+    const typeOfTransport = normalizeTypeOfTransport(req.query.typeOfTransport);
+
+    const date = normalizeDateDDMMYY(req.query.date);
+    if (req.query.date && !date) {
+      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+    }
+
+    const time = normalizeTimeHHMM(req.query.time);
+    if (req.query.time && !time) {
+      return res.status(400).json({ error: "Invalid time format. Expected HHMM." });
+    }
+
+    const resultsRaw = Number(req.query.results || 6);
+    const results = Number.isFinite(resultsRaw) ? Math.max(1, Math.min(12, Math.round(resultsRaw))) : 6;
+
+    const params = new URLSearchParams();
+    params.set("format", "json");
+    params.set("lang", lang);
+    params.set("from", from);
+    params.set("to", to);
+    params.set("timesel", timesel);
+    params.set("typeOfTransport", typeOfTransport);
+    params.set("results", String(results));
+    if (date) params.set("date", date);
+    if (time) params.set("time", time);
+
+    const pathQ = `/connections/?${params.toString()}`;
+
+    return await cachedProxy(req, res, {
+      keyPrefix: "connections",
+      pathQ,
+      params,
+      timeoutMs: 25000,
     });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
