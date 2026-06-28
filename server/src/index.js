@@ -12,7 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.5.0a";
+const APP_VERSION = process.env.APP_VERSION || "0.5.0c";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -79,9 +79,35 @@ function normalizeLang(raw) {
   return allowed.has(v) ? v : "en";
 }
 
-function normalizeArrdep(raw) {
-  const v = String(raw || "departure").toLowerCase().trim();
-  return v === "arrival" ? "arrival" : "departure";
+
+function vehicleInfoFromId(vehicle) {
+  const name = String(vehicle || "").trim();
+  if (!name) return null;
+  const shortname = name.split(".").filter(Boolean).pop() || name;
+  return { name, shortname };
+}
+
+function enrichConnectionEndpoint(point) {
+  if (!point || typeof point !== "object") return;
+  if (!point.vehicleinfo) {
+    const vehicleinfo = vehicleInfoFromId(point.vehicle);
+    if (vehicleinfo) point.vehicleinfo = vehicleinfo;
+  }
+}
+
+function enrichConnectionVehicleInfo(json) {
+  if (!json || typeof json !== "object") return json;
+  const connections = Array.isArray(json.connection) ? json.connection : json.connection ? [json.connection] : [];
+  for (const connection of connections) {
+    enrichConnectionEndpoint(connection.departure);
+    enrichConnectionEndpoint(connection.arrival);
+    const vias = connection.vias && (Array.isArray(connection.vias.via) ? connection.vias.via : connection.vias.via ? [connection.vias.via] : []);
+    for (const via of vias || []) {
+      enrichConnectionEndpoint(via.departure);
+      enrichConnectionEndpoint(via.arrival);
+    }
+  }
+  return json;
 }
 
 function normalizeTypeOfTransport(raw) {
@@ -111,7 +137,7 @@ function normalizeTimeHHMM(raw) {
   return s;
 }
 
-async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs }) {
+async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs, transformJson }) {
   const stableKey = stableParamsKey(params);
   const key = `${keyPrefix}:${stableKey}`;
 
@@ -150,6 +176,7 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs }) {
   }
 
   const { status, etag: newEtag, ttlMs, json } = out;
+  const responseJson = typeof transformJson === "function" ? transformJson(json) : json;
 
   if (status === 304 && peek?.value) {
     cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
@@ -157,9 +184,9 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs }) {
     return res.json(peek.value);
   }
 
-  cache.set(key, { ttlMs, etag: newEtag, value: json });
+  cache.set(key, { ttlMs, etag: newEtag, value: responseJson });
   res.setHeader("X-Cache", "MISS");
-  return res.json(json);
+  return res.json(responseJson);
 }
 
 /* Health */
@@ -313,7 +340,6 @@ app.get("/api/connections", async (req, res) => {
     if (from === to) return res.status(400).json({ error: "From and to must be different stations" });
 
     const lang = normalizeLang(req.query.lang);
-    const timesel = normalizeArrdep(req.query.timesel);
     const typeOfTransport = normalizeTypeOfTransport(req.query.typeOfTransport);
 
     const date = normalizeDateDDMMYY(req.query.date);
@@ -334,7 +360,7 @@ app.get("/api/connections", async (req, res) => {
     params.set("lang", lang);
     params.set("from", from);
     params.set("to", to);
-    params.set("timesel", timesel);
+    params.set("timesel", "departure");
     params.set("typeOfTransport", typeOfTransport);
     params.set("results", String(results));
     if (date) params.set("date", date);
@@ -347,6 +373,7 @@ app.get("/api/connections", async (req, res) => {
       pathQ,
       params,
       timeoutMs: 25000,
+      transformJson: enrichConnectionVehicleInfo,
     });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });

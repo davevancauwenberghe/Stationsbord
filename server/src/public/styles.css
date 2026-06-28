@@ -1127,10 +1127,14 @@ select:focus-visible,
 
 .routeForm{
   display:grid;
-  grid-template-columns:1fr 1fr auto;
+  grid-template-columns:minmax(150px, 1fr) minmax(150px, 1fr) 130px 100px auto;
   gap:10px;
   align-items:start;
   margin-bottom:14px;
+}
+
+.routeForm .small{
+  width:100%;
 }
 
 .routeForm label{
@@ -1184,6 +1188,12 @@ select:focus-visible,
 
 .routeResults{
   display:grid;
+  gap:12px;
+}
+
+.routeNav{
+  display:flex;
+  justify-content:space-between;
   gap:10px;
 }
 
@@ -1194,6 +1204,11 @@ select:focus-visible,
   background:rgba(255,255,255,.03);
 }
 
+.routeCardSelected{
+  border-color:rgba(255,193,7,.45);
+  background:linear-gradient(135deg, rgba(255,193,7,.09), rgba(255,255,255,.03));
+}
+
 .routeSummary{
   display:flex;
   gap:8px;
@@ -1201,19 +1216,88 @@ select:focus-visible,
   margin-bottom:10px;
 }
 
-.routeEndpoint{
+.routeLegs{
   display:grid;
-  gap:4px;
-  padding:8px 0;
+  gap:8px;
 }
 
-.routeVia{
-  margin:2px 0;
-  padding:8px 10px;
+.routeEndpoint{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(92px, auto) minmax(0, 1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  color:inherit;
+  text-align:left;
+  background:rgba(0,0,0,.12);
+}
+
+.routeEndpointTap{
+  cursor:pointer;
+}
+
+.routeEndpointTap:hover{
+  border-color:rgba(47,125,255,.55);
+  background:rgba(47,125,255,.12);
+}
+
+.routeEndpointTime{
+  display:grid;
+  gap:4px;
+}
+
+.routeEndpointTime strong{
+  font-size:22px;
+  line-height:1;
+  letter-spacing:.2px;
+}
+
+.routeEndpointMain{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.routeStationName{
+  min-width:100%;
+  font-weight:800;
+  font-size:17px;
+}
+
+.routeVehicleBadge{
+  border-color:rgba(47,125,255,.45);
+}
+
+.routeMoreInfo{
+  justify-self:end;
+  padding:6px 9px;
+  border-radius:999px;
+  color:#dbe7ff;
+  background:rgba(47,125,255,.22);
+  font-size:12px;
+  font-weight:800;
+}
+
+.routeTransfer{
+  display:grid;
+  gap:8px;
+  padding:10px;
   border-left:2px solid rgba(47,125,255,.55);
-  color:rgba(255,255,255,.82);
+  color:rgba(255,255,255,.86);
   background:rgba(47,125,255,.08);
-  border-radius:0 10px 10px 0;
+  border-radius:0 12px 12px 0;
+}
+
+.routeTransferHeader{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
 }
 
 @media (max-width:720px){
@@ -1224,5 +1308,13 @@ select:focus-visible,
   .routeActions{
     display:grid;
     grid-template-columns:1fr 1fr;
+  }
+
+  .routeEndpoint{
+    grid-template-columns:1fr;
+  }
+
+  .routeMoreInfo{
+    justify-self:start;
   }
 }
