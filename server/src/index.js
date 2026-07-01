@@ -80,40 +80,10 @@ function normalizeLang(raw) {
 }
 
 
-function vehicleInfoFromId(vehicle) {
-  const name = String(vehicle || "").trim();
-  if (!name) return null;
-  const shortname = name.split(".").filter(Boolean).pop() || name;
-  return { name, shortname };
-}
-
-function enrichConnectionEndpoint(point) {
-  if (!point || typeof point !== "object") return;
-  if (!point.vehicleinfo) {
-    const vehicleinfo = vehicleInfoFromId(point.vehicle);
-    if (vehicleinfo) point.vehicleinfo = vehicleinfo;
-  }
-}
-
-function enrichConnectionVehicleInfo(json) {
-  if (!json || typeof json !== "object") return json;
-  const connections = Array.isArray(json.connection) ? json.connection : json.connection ? [json.connection] : [];
-  for (const connection of connections) {
-    enrichConnectionEndpoint(connection.departure);
-    enrichConnectionEndpoint(connection.arrival);
-    const vias = connection.vias && (Array.isArray(connection.vias.via) ? connection.vias.via : connection.vias.via ? [connection.vias.via] : []);
-    for (const via of vias || []) {
-      enrichConnectionEndpoint(via.departure);
-      enrichConnectionEndpoint(via.arrival);
-    }
-  }
-  return json;
-}
-
-function normalizeTypeOfTransport(raw) {
-  const v = String(raw || "automatic").toLowerCase().trim();
-  const allowed = new Set(["automatic", "trains", "nointernationaltrains", "all"]);
-  return allowed.has(v) ? v : "automatic";
+function normalizeArrdep(raw) {
+  const v = String(raw || "departure").toLowerCase().trim();
+  const allowed = new Set(["departure", "arrival"]);
+  return allowed.has(v) ? v : "departure";
 }
 
 function normalizeAlerts(raw) {
@@ -265,9 +235,12 @@ app.get("/api/liveboard", async (req, res) => {
     const arrdep = normalizeArrdep(req.query.arrdep);
     const alerts = normalizeAlerts(req.query.alerts);
 
-    const date = req.query.date != null ? String(req.query.date).trim() : "";
-    const timeNorm = normalizeTimeHHMM(req.query.time);
+    const date = normalizeDateDDMMYY(req.query.date);
+    if (req.query.date && !date) {
+      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+    }
 
+    const timeNorm = normalizeTimeHHMM(req.query.time);
     if (req.query.time && !timeNorm) {
       return res.status(400).json({ error: "Invalid time format. Expected HHMM." });
     }
@@ -322,58 +295,6 @@ app.get("/api/disturbances", async (req, res) => {
       pathQ,
       params,
       timeoutMs: undefined,
-    });
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-/* Connections proxy (cached) */
-app.get("/api/connections", async (req, res) => {
-  try {
-    res.setHeader("Cache-Control", "no-store");
-
-    const from = String(req.query.from || "").trim();
-    const to = String(req.query.to || "").trim();
-    if (!from) return res.status(400).json({ error: "Missing required parameter: from" });
-    if (!to) return res.status(400).json({ error: "Missing required parameter: to" });
-    if (from === to) return res.status(400).json({ error: "From and to must be different stations" });
-
-    const lang = normalizeLang(req.query.lang);
-    const typeOfTransport = normalizeTypeOfTransport(req.query.typeOfTransport);
-
-    const date = normalizeDateDDMMYY(req.query.date);
-    if (req.query.date && !date) {
-      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
-    }
-
-    const time = normalizeTimeHHMM(req.query.time);
-    if (req.query.time && !time) {
-      return res.status(400).json({ error: "Invalid time format. Expected HHMM." });
-    }
-
-    const resultsRaw = Number(req.query.results || 6);
-    const results = Number.isFinite(resultsRaw) ? Math.max(1, Math.min(12, Math.round(resultsRaw))) : 6;
-
-    const params = new URLSearchParams();
-    params.set("format", "json");
-    params.set("lang", lang);
-    params.set("from", from);
-    params.set("to", to);
-    params.set("timesel", "departure");
-    params.set("typeOfTransport", typeOfTransport);
-    params.set("results", String(results));
-    if (date) params.set("date", date);
-    if (time) params.set("time", time);
-
-    const pathQ = `/connections/?${params.toString()}`;
-
-    return await cachedProxy(req, res, {
-      keyPrefix: "connections",
-      pathQ,
-      params,
-      timeoutMs: 25000,
-      transformJson: enrichConnectionVehicleInfo,
     });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
