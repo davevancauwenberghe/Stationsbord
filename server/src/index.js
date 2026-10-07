@@ -9,6 +9,8 @@ import { extractStations, buildSearchIndex } from "./stationIndex.js";
 import { createSimpleRateLimiter, pruneLimiterMap } from "./rateLimit.js";
 
 const app = express();
+// Preserve scalar query validation when upgrading from Express 4 to Express 5.
+app.set("query parser", "extended");
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
