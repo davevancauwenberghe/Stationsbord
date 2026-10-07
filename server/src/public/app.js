@@ -1,4 +1,4 @@
-import { languages, messages } from "./i18n.js?v=0.6.1";
+import { languages, messages } from "./i18n.js?v=0.6.2";
 import {
   asArray,
   escapeHtml as h,
@@ -16,7 +16,7 @@ import {
   serviceDate,
   delayMinutes,
   occupancy,
-} from "./rail-utils.js?v=0.6.1";
+} from "./rail-utils.js?v=0.6.2";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -883,6 +883,19 @@ $("networkButton").addEventListener("click", async () => {
 });
 $("shareBoard").addEventListener("click", async () => {
   syncURL();
+  if (navigator.share) {
+    try {
+      const view = state.view;
+      await navigator.share({
+        title: `${state.data?.station || view.station.name} · ${t(view.mode === "arrival" ? "arrivals" : "departures")} | Stationsbord`,
+        url: location.href,
+      });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      // If native sharing is unavailable, keep the copy-link fallback.
+    }
+  }
   try {
     await navigator.clipboard.writeText(location.href);
     toast(t("copied"));

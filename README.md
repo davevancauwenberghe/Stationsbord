@@ -14,7 +14,8 @@ A clear, lightweight timetable for the Belgian rail network, powered by [iRail](
 Live boards refresh every minute while the page is visible. Planned searches stay at the selected time. All schedule times use **Europe/Brussels**, including daylight saving changes, regardless of the device’s time zone.
 
 - Save up to eight stations using the star button. Recent and saved stations remain in your browser; no account is required.
-- Share a link containing the station, arrivals/departures, language and optional date/time.
+- Share a link containing the station, arrivals/departures, language and optional date/time, using the native share sheet where supported or copying the link.
+- Shared URLs include a branded image and localized station/timetable previews, available to social crawlers without JavaScript.
 - View disruptions and engineering works across the rail network.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
@@ -52,6 +53,7 @@ The container listens on port 8080 and runs as an unprivileged user. The existin
 | `IRAIL_TIMEOUT_MS` | `25000`; covers headers and response body |
 | `APP_NAME`, `APP_VERSION` | Application name/version in the upstream User-Agent |
 | `APP_WEBSITE`, `APP_EMAIL` | Owner contact details in the upstream User-Agent |
+| `PUBLIC_BASE_URL` | Public origin for canonical and social-image URLs; defaults to `https://stationsbord.fly.dev`. Set this to your HTTPS domain if using a custom domain. |
 
 ETags and upstream cache lifetimes are respected. Identical concurrent requests share one upstream request. Upstream requests are rate limited; the memory cache is capped at 500 entries, and stale responses expire five minutes after their fresh lifetime. Per-client limiter entries are periodically pruned. Fly installations trust one ingress proxy hop; direct/self-hosted installations do not trust forwarded client headers by default.
 
@@ -66,6 +68,12 @@ npm test
 Tests cover Belgian time and DST, calendar validation, service-date handling, station search, safe external links, supported language coverage, cache limits, response-body timeouts and HTTP proxy behavior. GitHub Actions runs tests alongside CodeQL.
 
 No bundler or frontend framework is required. Assets use a version query, and browser caching is limited to one hour with revalidation.
+
+## Link previews
+
+The server renders Open Graph and large-image card metadata for the homepage and shared station URLs in Dutch, French, German and English. Station, direction and valid planned date/time parameters are retained in the canonical URL; unrelated tracking parameters are omitted. Preview creation never calls iRail, and the artwork contains no live departure times that could become stale.
+
+`server/src/public/social-card.svg` is the editable source for the 1200 × 630 PNG used by social platforms. Export an updated PNG at the same dimensions when changing the artwork. Platforms cache previews independently, so existing posts may retain an older image or description until their cache refreshes. Actual card presentation depends on the receiving platform.
 
 ## License
 
