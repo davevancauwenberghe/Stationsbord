@@ -1,4 +1,4 @@
-import { languages, messages } from "./i18n.js?v=0.6.0";
+import { languages, messages } from "./i18n.js?v=0.6.1";
 import {
   asArray,
   escapeHtml as h,
@@ -16,7 +16,7 @@ import {
   serviceDate,
   delayMinutes,
   occupancy,
-} from "./rail-utils.js?v=0.6.0";
+} from "./rail-utils.js?v=0.6.1";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
