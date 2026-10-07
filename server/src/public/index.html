@@ -1,165 +1,300 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1020" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Stationsbord" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <title>Stationsbord</title>
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png?v=0.5.0c" />
-  <link rel="manifest" href="/site.webmanifest?v=0.5.0c">
-
-  <!-- Cache-busted assets -->
-  <link rel="stylesheet" href="/styles.css?v=0.5.0c" />
-</head>
-
-<body>
-  <header class="topbar">
-    <h1>Stationsbord</h1>
-    <label class="languageMenu" for="languageSelect">
-      <span class="languageSelectWrap">
-        <select id="languageSelect" aria-label="Language">
-          <option value="nl">NL</option>
-          <option value="fr">FR</option>
-          <option value="de">DE</option>
-          <option value="en">ENG</option>
-        </select>
-        <span class="chev languageChev" aria-hidden="true">›</span>
-      </span>
-    </label>
-  </header>
-
-  <!-- Offline / stale cache banner -->
-  <div class="banner" id="offlineBanner" hidden></div>
-
-  <div class="row">
-    <div class="autocomplete">
-      <div class="stationRow">
-        <div class="stationInputWrap">
-          <input
-            id="q"
-            placeholder="Type a station (e.g. Gent, Bruxelles)"
-            autocomplete="off"
-            autocapitalize="words"
-            spellcheck="false"
-            enterkeyhint="go"
-            aria-label="Station"
-            aria-autocomplete="list"
-            aria-controls="dropdown"
-            aria-expanded="false"
-          />
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#163b36" />
+    <meta
+      name="description"
+      content="Belgische treinen, helder in beeld. Vertrekken, aankomsten, perrons en vertragingen voor jouw station."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Stationsbord" />
+    <title>Stationsbord · België per spoor</title>
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.6.0" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/site.webmanifest?v=0.6.0" />
+    <link rel="stylesheet" href="/styles.css?v=0.6.0" />
+    <script type="module" src="/app.js?v=0.6.0"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#board" data-i18n="skip"
+      >Naar de dienstregeling</a
+    >
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Stationsbord"
+          ><img src="/mark.svg?v=0.6.0" alt="" width="36" height="36" /><span
+            >stationsbord<span class="brand-dot">.</span></span
+          ></a
+        >
+        <div class="header-right">
+          <span class="clock" id="clock" aria-hidden="true"></span
+          ><label class="language"
+            ><span class="sr-only" data-i18n="language">Taal</span
+            ><select id="languageSelect">
+              <option value="nl">NL</option>
+              <option value="fr">FR</option>
+              <option value="de">DE</option>
+              <option value="en">EN</option>
+            </select></label
+          >
         </div>
       </div>
-      <div class="dropdown" id="dropdown" role="listbox"></div>
-    </div>
-
-    <!-- Disturbances pill -->
-    <button
-      class="pill pillBtn"
-      id="disturbancePill"
-      type="button"
-      title="View disturbances"
-    >
-      disturbances…
-    </button>
-
-  </div>
-
-  <div class="controls">
-    <label>
-      Date (DD/MM/YYYY)
-      <input
-        class="small"
-        id="datePretty"
-        placeholder="DD/MM/YYYY"
-        inputmode="numeric"
-        pattern="[0-9/]*"
-        enterkeyhint="next"
-        autocomplete="off"
-        aria-label="Date"
-      />
-    </label>
-
-    <label>
-      Time (HH:MM)
-      <input
-        class="small"
-        id="timePretty"
-        placeholder="HH:MM"
-        inputmode="numeric"
-        pattern="[0-9:]*"
-        enterkeyhint="done"
-        autocomplete="off"
-        aria-label="Time"
-      />
-    </label>
-
-    <button class="btn-ghost" id="btnNow" type="button" title="Set to current time (local)">
-      Now
-    </button>
-    <button
-      class="btn-ghost"
-      id="btnPlus1h"
-      type="button"
-      title="Add one hour from the currently selected time"
-    >
-      +1h
-    </button>
-
-  </div>
-
-  <!-- Shared shell -->
-  <div class="appShell">
-
-    <div class="board" id="board">
-      <div class="muted">
-        Start typing a station name or tap the field to pick a recent station. Selecting a station loads the board.
+    </header>
+    <main class="page">
+      <div class="page-intro">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">BELGIË PER SPOOR</p>
+          <h1 data-i18n="headline">Waar gaat jouw dag heen?</h1>
+          <p class="intro-copy" data-i18n="intro">
+            Jouw station. Alle treinen. Helder in beeld.
+          </p>
+        </div>
+        <button class="network-button" id="networkButton" type="button">
+          <span class="network-dot" aria-hidden="true"></span
+          ><span id="networkLabel">Spoornetwerk</span
+          ><span aria-hidden="true">↗</span>
+        </button>
       </div>
-    </div>
-
-    <footer class="footerWrap">
-      <div class="footerBox">
-        with love from
-        <a href="https://www.davevancauwenberghe.be" target="_blank" rel="noopener">dvc.</a>
-        · powered by
-        <a href="https://irail.be" target="_blank" rel="noopener">iRail API</a>
-        · v0.5.0c
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Station en tijd">
+          <form id="stationForm" class="search-panel" autocomplete="off">
+            <p class="section-kicker">
+              <span class="step-number">01</span
+              ><span data-i18n="yourStation">Jouw station</span>
+            </p>
+            <label for="stationInput" class="field-label" data-i18n="station"
+              >Station</label
+            >
+            <div class="autocomplete">
+              <div class="search-field">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                  <path d="m16 16 4 4"></path></svg
+                ><input
+                  id="stationInput"
+                  type="text"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="stationOptions"
+                  aria-describedby="searchStatus"
+                  placeholder="Zoek een station…"
+                  spellcheck="false"
+                  enterkeyhint="search"
+                /><button
+                  id="clearStation"
+                  class="clear-input"
+                  type="button"
+                  aria-label="Wis zoekveld"
+                  hidden
+                >
+                  ×
+                </button>
+              </div>
+              <div
+                id="stationOptions"
+                class="station-options"
+                role="listbox"
+                hidden
+              ></div>
+            </div>
+            <p id="searchStatus" class="field-hint" role="status"></p>
+            <div class="when-heading">
+              <p class="section-kicker">
+                <span class="step-number">02</span
+                ><span data-i18n="when">Wanneer?</span>
+              </p>
+              <span class="timezone" data-i18n="belgianTime"
+                >Belgische tijd</span
+              >
+            </div>
+            <div class="segmented when-tabs" aria-label="Wanneer">
+              <button
+                id="liveMode"
+                type="button"
+                aria-pressed="true"
+                data-i18n="now"
+              >
+                Nu</button
+              ><button
+                id="planMode"
+                type="button"
+                aria-pressed="false"
+                data-i18n="plan"
+              >
+                Andere tijd
+              </button>
+            </div>
+            <div id="plannedFields" class="date-fields" hidden>
+              <label
+                ><span class="field-label" data-i18n="date">Datum</span
+                ><input
+                  id="dateInput"
+                  type="date"
+                  required
+                  min="2000-01-01"
+                  max="2099-12-31"
+                  disabled /></label
+              ><label
+                ><span class="field-label" data-i18n="time">Tijd</span
+                ><input id="timeInput" type="time" required disabled
+              /></label>
+            </div>
+            <p class="field-hint mode-hint" id="modeHint"></p>
+            <button class="primary-button" type="submit">
+              <span data-i18n="showBoard">Toon dienstregeling</span
+              ><span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <section class="station-shortcuts" id="savedSection" hidden>
+            <h2 data-i18n="savedStations">Bewaarde stations</h2>
+            <div id="savedStations"></div>
+          </section>
+          <section class="station-shortcuts">
+            <h2 id="shortcutsTitle" data-i18n="popularStations">
+              Vaak gezocht
+            </h2>
+            <div id="stationShortcuts"></div>
+          </section>
+          <div class="sidebar-note">
+            <span class="note-line" aria-hidden="true"></span>
+            <p data-i18n="stationTip">
+              Tik op een trein voor de haltes, perrons en samenstelling.
+            </p>
+          </div>
+        </aside>
+        <section
+          class="board-panel"
+          id="board"
+          tabindex="-1"
+          aria-labelledby="boardTitle"
+        >
+          <div class="board-heading">
+            <div>
+              <p class="eyebrow" id="boardEyebrow">DIENSTREGELING</p>
+              <h2 id="boardTitle">Kies je station</h2>
+              <p id="boardSubtitle" class="board-subtitle"></p>
+            </div>
+            <div class="board-actions">
+              <button
+                id="saveStation"
+                class="icon-button"
+                type="button"
+                aria-label="Bewaar station"
+                aria-pressed="false"
+                hidden
+              >
+                ☆</button
+              ><button
+                id="shareBoard"
+                class="icon-button"
+                type="button"
+                aria-label="Deel dienstregeling"
+                hidden
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="board-toolbar">
+            <div
+              class="board-tabs"
+              role="group"
+              aria-label="Vertrekken of aankomsten"
+            >
+              <button
+                id="departuresTab"
+                type="button"
+                aria-pressed="true"
+                data-i18n="departures"
+              >
+                Vertrekken</button
+              ><button
+                id="arrivalsTab"
+                type="button"
+                aria-pressed="false"
+                data-i18n="arrivals"
+              >
+                Aankomsten
+              </button>
+            </div>
+            <button
+              class="refresh-button"
+              id="refreshBoard"
+              type="button"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 18 17"
+                ></path></svg
+              ><span data-i18n="refresh">Vernieuwen</span>
+            </button>
+          </div>
+          <div id="boardNotice" class="notice" role="status" hidden></div>
+          <div id="boardContent">
+            <div class="empty-state">
+              <div class="empty-sign" aria-hidden="true">↗</div>
+              <h3 data-i18n="emptyTitle">Je volgende trein begint hier.</h3>
+              <p data-i18n="emptyBody">
+                Zoek een station of kies er een uit de lijst. Wij zetten de
+                treinen voor je op een rij.
+              </p>
+            </div>
+          </div>
+          <div class="board-footer">
+            <span id="updateStatus" role="status"></span
+            ><span data-i18n="allTimes">Alle tijden zijn Belgische tijd</span>
+          </div>
+        </section>
       </div>
-    </footer>
-
-  </div>
-
-  <!-- Shared Overlay (train details + disturbances) -->
-  <div class="overlay" id="overlay" aria-hidden="true">
-    <div
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modalTitle"
-    >
-      <div class="modalHeader">
-        <div class="modalTitle" id="modalTitle">Train details</div>
-        <span class="pill" id="modalPill">vehicle</span>
+      <footer class="site-footer">
+        <span
+          >with love from
+          <a
+            href="https://www.davevancauwenberghe.be"
+            target="_blank"
+            rel="noopener noreferrer"
+            >dvc.</a
+          ></span
+        ><span
+          ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
+          <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
+            >iRail</a
+          ><span class="footer-version">v0.6.0</span></span
+        >
+      </footer>
+    </main>
+    <dialog id="detailsDialog" aria-labelledby="dialogTitle">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" id="dialogEyebrow"></p>
+          <h2 id="dialogTitle"></h2>
+        </div>
         <button
-          class="closeBtn"
-          id="overlayClose"
+          id="closeDialog"
+          class="icon-button"
           type="button"
-          aria-label="Close"
-        >✕</button>
+          aria-label="Sluiten"
+        >
+          ×
+        </button>
       </div>
-
-      <div class="modalBody" id="modalBody">
-        <div class="muted">Loading…</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- App logic -->
-  <script src="/app.js?v=0.5.0c" defer></script>
-</body>
+      <div id="dialogContent" class="dialog-content"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <noscript
+      ><p class="notice">
+        Schakel JavaScript in om treinen op te zoeken. / Enable JavaScript to
+        look up trains.
+      </p></noscript
+    >
+  </body>
 </html>

@@ -1,47 +1,71 @@
-[![CodeQL (Stationsbord)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml/badge.svg)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml)
-[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/2dnur.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
-![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow.svg)
-![Docker](https://img.shields.io/badge/Container-Docker-blue.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![GitHub Stars](https://img.shields.io/github/stars/davevancauwenberghe/Stationsbord)
+[![Tests](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/test.yml/badge.svg)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/test.yml)
+[![CodeQL](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml/badge.svg)](https://github.com/davevancauwenberghe/Stationsbord/actions/workflows/codeql.yml)
 
 # Stationsbord
-### *find it on the board*
 
-A tiny, self-hosted Belgian train station departure board powered by the **iRail API**.
+A clear, lightweight timetable for the Belgian rail network, powered by [iRail](https://irail.be). Built with Node.js, Express and plain HTML/CSS/JavaScript.
 
-Designed to be lightweight, fast, and polite to upstream services. Perfect for dashboards, wall displays, or running in a small container on a VPS or Raspberry Pi.
+## Using the board
 
----
+1. Search for a station, or choose a popular, recent or saved station.
+2. Use **Now** for a live board, or **Choose a time** for a specific date and time.
+3. Switch between **Departures** and **Arrivals**. Select a train to view its stops and available carriage information.
 
-## 📚 Features
+Live boards refresh every minute while the page is visible. Planned searches stay at the selected time. All schedule times use **Europe/Brussels**, including daylight saving changes, regardless of the device’s time zone.
 
-- 🚆 Real-time Belgian train departures via iRail  
-- 🪶 Minimal footprint (no heavy frameworks)  
-- ⚡ HTTP caching using **ETag** and **Cache-Control**  
-- 🛡️ Built-in rate limiting to prevent API abuse
-- 🐳 Docker-friendly
+- Save up to eight stations using the star button. Recent and saved stations remain in your browser; no account is required.
+- Share a link containing the station, arrivals/departures, language and optional date/time.
+- View disruptions and engineering works across the rail network.
+- Dutch, French, German and English interfaces.
+- Responsive timetable, keyboard station search, native date/time pickers and accessible train-detail dialogs.
 
----
+Stationsbord is an independent service. Schedule availability depends on iRail/NMBS; searches far into the past or future may not be available. Train composition is queried only for today, because that endpoint does not accept a service date. Cached or failed refreshes are explicitly labelled rather than presented as fresh data.
 
-## 📝 Notes
+## Run locally
 
-- Sets a proper **User-Agent** (configurable via environment variables)
-- Uses **ETag + Cache-Control** headers to avoid excessive requests
-- Includes a small in-process rate limiter to avoid spiking iRail
-- Intended for personal or small-scale use
+Requires Node.js 22 or later; Docker and CI use Node.js 24.
 
----
+```sh
+cp .env.example .env
+cd server
+npm ci
+node --env-file=../.env src/index.js
+```
 
-## 🔧 Tech
+Open **http://localhost:8080**. Set `APP_WEBSITE` and `APP_EMAIL` in `.env` to real contact details before production use; iRail uses these to contact application owners when needed.
 
-- Node.js
-- iRail API
-- Plain HTML + CSS frontend
-- Optional Docker setup
+## Docker
 
----
+```sh
+docker compose up --build -d
+```
 
-## 📄 License
+The container listens on port 8080 and runs as an unprivileged user. The existing `fly.toml` continues to configure Fly.io hosting.
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+## Configuration
+
+| Variable | Default / purpose |
+| --- | --- |
+| `PORT` | `8080` |
+| `IRAIL_BASE_URL` | `https://api.irail.be`; override for an upstream fixture or alternate endpoint |
+| `IRAIL_TIMEOUT_MS` | `25000`; covers headers and response body |
+| `APP_NAME`, `APP_VERSION` | Application name/version in the upstream User-Agent |
+| `APP_WEBSITE`, `APP_EMAIL` | Owner contact details in the upstream User-Agent |
+
+ETags and upstream cache lifetimes are respected. Identical concurrent requests share one upstream request. Upstream requests are rate limited; the memory cache is capped at 500 entries, and stale responses expire five minutes after their fresh lifetime. Per-client limiter entries are periodically pruned. Fly installations trust one ingress proxy hop; direct/self-hosted installations do not trust forwarded client headers by default.
+
+## Checks
+
+```sh
+cd server
+npm ci
+npm test
+```
+
+Tests cover Belgian time and DST, calendar validation, service-date handling, station search, safe external links, supported language coverage, cache limits, response-body timeouts and HTTP proxy behavior. GitHub Actions runs tests alongside CodeQL.
+
+No bundler or frontend framework is required. Assets use a version query, and browser caching is limited to one hour with revalidation.
+
+## License
+
+[MIT](LICENSE)

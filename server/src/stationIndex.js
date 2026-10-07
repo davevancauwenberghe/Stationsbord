@@ -7,7 +7,7 @@ function normalizeStation(s) {
     name: s.name ?? s.standardname ?? null,
     standardname: s.standardname ?? s.name ?? null,
     locationX: s.locationX ?? null,
-    locationY: s.locationY ?? null
+    locationY: s.locationY ?? null,
   };
 }
 
@@ -17,17 +17,27 @@ export function extractStations(payload) {
   // - station: [ ... ]
   // - stations: { station: [...] } (depending on format/version)
   const raw =
-    payload?.station ??
-    payload?.stations?.station ??
-    payload?.stations ??
-    null;
+    payload?.station ?? payload?.stations?.station ?? payload?.stations ?? null;
 
   if (!raw) return [];
 
-  if (Array.isArray(raw)) return raw.map(normalizeStation).filter(s => s.id && s.name);
-  if (typeof raw === "object") return [normalizeStation(raw)].filter(s => s.id && s.name);
+  if (Array.isArray(raw))
+    return raw.map(normalizeStation).filter((s) => s.id && s.name);
+  if (typeof raw === "object")
+    return [normalizeStation(raw)].filter((s) => s.id && s.name);
 
   return [];
+}
+
+function fold(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ghent/g, "gent")
+    .replace(/[-/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function buildSearchIndex(stations) {
@@ -36,18 +46,18 @@ export function buildSearchIndex(stations) {
   return {
     all: list,
     search(q, limit = 15) {
-      const needle = String(q || "").trim().toLowerCase();
+      const needle = fold(q);
       if (!needle) return [];
       const hits = [];
       for (const s of list) {
-        const n = (s.name || "").toLowerCase();
-        const sn = (s.standardname || "").toLowerCase();
+        const n = fold(s.name);
+        const sn = fold(s.standardname);
         if (n.includes(needle) || sn.includes(needle)) {
           hits.push(s);
           if (hits.length >= limit) break;
         }
       }
       return hits;
-    }
+    },
   };
 }
