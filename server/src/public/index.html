@@ -14,11 +14,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Stationsbord" />
     <title>Stationsbord · België per spoor</title>
-    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.6.0" />
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.6.1" />
     <link rel="apple-touch-icon" href="/favicon.png" />
-    <link rel="manifest" href="/site.webmanifest?v=0.6.0" />
-    <link rel="stylesheet" href="/styles.css?v=0.6.0" />
-    <script type="module" src="/app.js?v=0.6.0"></script>
+    <link rel="manifest" href="/site.webmanifest?v=0.6.1" />
+    <script src="/theme.js?v=0.6.1"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.6.1" />
+    <script type="module" src="/app.js?v=0.6.1"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -27,12 +28,24 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Stationsbord"
-          ><img src="/mark.svg?v=0.6.0" alt="" width="36" height="36" /><span
+          ><img src="/mark.svg?v=0.6.1" alt="" width="36" height="36" /><span
             >stationsbord<span class="brand-dot">.</span></span
           ></a
         >
         <div class="header-right">
           <span class="clock" id="clock" aria-hidden="true"></span
+          ><label class="appearance">
+            <span class="sr-only" data-i18n="appearance">Weergave</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path
+                d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"
+              ></path>
+            </svg>
+            <select id="themeSelect">
+              <option value="system" data-i18n="themeSystem">Systeem</option>
+              <option value="light" data-i18n="themeLight">Licht</option>
+              <option value="dark" data-i18n="themeDark">Donker</option>
+            </select> </label
           ><label class="language"
             ><span class="sr-only" data-i18n="language">Taal</span
             ><select id="languageSelect">
@@ -268,7 +281,7 @@
           ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
           <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
             >iRail</a
-          ><span class="footer-version">v0.6.0</span></span
+          ><span class="footer-version">v0.6.1</span></span
         >
       </footer>
     </main>

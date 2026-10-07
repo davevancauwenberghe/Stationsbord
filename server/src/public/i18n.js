@@ -3,6 +3,10 @@ export const messages = {
   nl: {
     skip: "Naar de dienstregeling",
     language: "Taal",
+    appearance: "Weergave",
+    themeSystem: "Systeem",
+    themeLight: "Licht",
+    themeDark: "Donker",
     eyebrow: "BELGIË PER SPOOR",
     headline: "Waar gaat jouw dag heen?",
     intro: "Jouw station. Alle treinen. Helder in beeld.",
@@ -120,6 +124,10 @@ export const messages = {
   en: {
     skip: "Skip to timetable",
     language: "Language",
+    appearance: "Appearance",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
     eyebrow: "BELGIUM BY RAIL",
     headline: "Where will today take you?",
     intro: "Your station. Every train. A clearer view.",
@@ -236,6 +244,10 @@ export const messages = {
   fr: {
     skip: "Aller aux horaires",
     language: "Langue",
+    appearance: "Apparence",
+    themeSystem: "Système",
+    themeLight: "Clair",
+    themeDark: "Sombre",
     eyebrow: "LA BELGIQUE EN TRAIN",
     headline: "Où vous mène cette journée ?",
     intro: "Votre gare. Tous les trains. En un coup d’œil.",
@@ -354,6 +366,10 @@ export const messages = {
   de: {
     skip: "Zum Fahrplan",
     language: "Sprache",
+    appearance: "Darstellung",
+    themeSystem: "System",
+    themeLight: "Hell",
+    themeDark: "Dunkel",
     eyebrow: "BELGIEN MIT DER BAHN",
     headline: "Wohin führt dein Tag?",
     intro: "Dein Bahnhof. Alle Züge. Klar im Blick.",
