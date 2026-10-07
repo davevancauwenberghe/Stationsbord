@@ -1,17 +1,17 @@
 {
   "name": "Stationsbord",
   "short_name": "Stationsbord",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "description": "Belgian train schedules, clearly.",
+  "start_url": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
+  "background_color": "#f5f4ef",
+  "theme_color": "#163b36",
   "icons": [
     {
-      "src": "/favicon.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

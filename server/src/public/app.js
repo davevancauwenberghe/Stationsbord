@@ -1,1417 +1,937 @@
-// app.js
-(function () {
-  const q = document.getElementById("q");
-  const dropdown = document.getElementById("dropdown");
-  const board = document.getElementById("board");
-  // Disturbances pill (header)
-  const disturbancePill = document.getElementById("disturbancePill");
+import { languages, messages } from "./i18n.js?v=0.6.0";
+import {
+  asArray,
+  escapeHtml as h,
+  flag,
+  belgianParts,
+  validDate,
+  validTime,
+  apiDate,
+  fmtTime,
+  fmtDate,
+  safeLink,
+  departures,
+  disturbances,
+  isPlanned,
+  serviceDate,
+  delayMinutes,
+  occupancy,
+} from "./rail-utils.js?v=0.6.0";
 
-  const datePrettyEl = document.getElementById("datePretty"); // DD/MM/YYYY
-  const timePrettyEl = document.getElementById("timePretty"); // HH:MM
-  const btnNow = document.getElementById("btnNow");
-  const btnPlus1h = document.getElementById("btnPlus1h");
-  const languageSelect = document.getElementById("languageSelect");
-  const languageLabel = document.getElementById("languageLabel");
-
-  const overlay = document.getElementById("overlay");
-  const overlayClose = document.getElementById("overlayClose");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalPill = document.getElementById("modalPill");
-  const modalBody = document.getElementById("modalBody");
-
-  // Offline/stale banner (sticky under header)
-  const offlineBanner = document.getElementById("offlineBanner");
-
-  let selected = null;
-  let lastResults = [];
-  let activeIdx = -1;
-  let typingTimer = null;
-  let inFlight = null;
-  const allowedLanguages = new Set(["en", "nl", "fr", "de"]);
-  const recentStationsKey = "stationsbord.recentStations";
-  const maxRecentStations = 3;
-
-  const translations = {
-    en: { title: "Stationsbord", placeholder: "Type a station (e.g. Gent, Bruxelles)", date: "Date (DD/MM/YYYY)", time: "Time (HH:MM)", now: "Now", nowTitle: "Set to current time (local)", plusTitle: "Add one hour from the currently selected time", language: "Language", intro: "Start typing a station name or tap the field to pick a recent station. Selecting a station loads the board.", recent: "Recent", ready: "ready", disturbances: "disturbances", selected: "selected", searching: "searching…", pickStation: "pick station", noMatches: "no matches", searchError: "search error", loading: "Loading…", trainDetails: "Train details", vehicle: "vehicle", departures: "departures", at: "at", updated: "updated", occupancy: "occupancy", platform: "PLATFORM", platformLower: "platform", noResults: "No departures found for this moment.", stationAlert: "Pick a station from the dropdown first", timeAlert: "Time must be HH:MM (e.g. 07:30, 23:15).", error: "Error", ok: "ok", cancelled: "cancelled", composition: "composition", carriages: "carriages", seats: "seats", standing: "standing", length: "length", amenities: "amenities", toilets: "toilets", bikes: "bikes", accessibility: "accessibility", outlets: "outlets", airco: "airco", genericError: "Something went wrong. Please try again later.", detailsUnavailable: "Details are temporarily unavailable. Please try again later.", compositionUnavailable: "Composition is temporarily unavailable. Please try again later.", closed: "Closed." },
-    nl: { title: "Stationsbord", placeholder: "Typ een station (bv. Gent, Brussel)", date: "Datum (DD/MM/JJJJ)", time: "Tijd (UU:MM)", now: "Nu", nowTitle: "Zet op huidige tijd (lokaal)", plusTitle: "Tel één uur bij de gekozen tijd", language: "Taal", intro: "Typ een station of tik op het veld voor recente stations. Een station kiezen laadt het bord.", recent: "Recent", ready: "klaar", disturbances: "storingen", selected: "geselecteerd", searching: "zoeken…", pickStation: "kies station", noMatches: "geen resultaten", searchError: "zoekfout", loading: "Laden…", trainDetails: "Treindetails", vehicle: "voertuig", departures: "vertrekken", at: "om", updated: "bijgewerkt", occupancy: "bezetting", platform: "PERRON", platformLower: "perron", noResults: "Geen vertrekken gevonden voor dit moment.", stationAlert: "Kies eerst een station uit de lijst", timeAlert: "Tijd moet UU:MM zijn (bv. 07:30, 23:15).", error: "Fout", ok: "ok", cancelled: "afgeschaft", composition: "samenstelling", carriages: "rijtuigen", seats: "zitplaatsen", standing: "staanplaatsen", length: "lengte", amenities: "voorzieningen", toilets: "toiletten", bikes: "fietsen", accessibility: "toegankelijkheid", outlets: "stopcontacten", airco: "airco", genericError: "Er ging iets mis. Probeer het later opnieuw.", detailsUnavailable: "Details zijn tijdelijk niet beschikbaar. Probeer het later opnieuw.", compositionUnavailable: "Samenstelling is tijdelijk niet beschikbaar. Probeer het later opnieuw.", closed: "Gesloten." },
-    fr: { title: "Stationsbord", placeholder: "Tapez une gare (p. ex. Gand, Bruxelles)", date: "Date (JJ/MM/AAAA)", time: "Heure (HH:MM)", now: "Maintenant", nowTitle: "Définir l’heure actuelle (locale)", plusTitle: "Ajouter une heure à l’heure sélectionnée", language: "Langue", intro: "Tapez une gare ou touchez le champ pour voir les gares récentes. Le choix d’une gare charge le tableau.", recent: "Récent", ready: "prêt", disturbances: "perturbations", selected: "sélectionné", searching: "recherche…", pickStation: "choisir gare", noMatches: "aucun résultat", searchError: "erreur recherche", loading: "Chargement…", trainDetails: "Détails du train", vehicle: "véhicule", departures: "départs", at: "à", updated: "mis à jour", occupancy: "occupation", platform: "VOIE", platformLower: "voie", noResults: "Aucun départ trouvé pour ce moment.", stationAlert: "Choisissez d’abord une gare dans la liste", timeAlert: "L’heure doit être HH:MM (p. ex. 07:30, 23:15).", error: "Erreur", ok: "ok", cancelled: "supprimé", composition: "composition", carriages: "voitures", seats: "places assises", standing: "places debout", length: "longueur", amenities: "équipements", toilets: "toilettes", bikes: "vélos", accessibility: "accessibilité", outlets: "prises", airco: "climatisation", genericError: "Une erreur est survenue. Veuillez réessayer plus tard.", detailsUnavailable: "Les détails sont temporairement indisponibles. Veuillez réessayer plus tard.", compositionUnavailable: "La composition est temporairement indisponible. Veuillez réessayer plus tard.", closed: "Fermé." },
-    de: { title: "Stationsbord", placeholder: "Bahnhof eingeben (z. B. Gent, Brüssel)", date: "Datum (TT/MM/JJJJ)", time: "Zeit (HH:MM)", now: "Jetzt", nowTitle: "Auf aktuelle lokale Zeit setzen", plusTitle: "Eine Stunde zur ausgewählten Zeit hinzufügen", language: "Sprache", intro: "Bahnhof eingeben oder das Feld antippen, um zuletzt gesuchte Bahnhöfe zu sehen. Die Auswahl lädt die Tafel.", recent: "Zuletzt", ready: "bereit", disturbances: "Störungen", selected: "ausgewählt", searching: "suche…", pickStation: "Bahnhof wählen", noMatches: "keine Treffer", searchError: "Suchfehler", loading: "Laden…", trainDetails: "Zugdetails", vehicle: "Fahrzeug", departures: "Abfahrten", at: "um", updated: "aktualisiert", occupancy: "Auslastung", platform: "GLEIS", platformLower: "Gleis", noResults: "Keine Abfahrten für diesen Zeitpunkt gefunden.", stationAlert: "Wählen Sie zuerst einen Bahnhof aus der Liste", timeAlert: "Zeit muss HH:MM sein (z. B. 07:30, 23:15).", error: "Fehler", ok: "ok", cancelled: "fällt aus", composition: "Zusammenstellung", carriages: "Wagen", seats: "Sitzplätze", standing: "Stehplätze", length: "Länge", amenities: "Ausstattung", toilets: "Toiletten", bikes: "Fahrräder", accessibility: "Barrierefreiheit", outlets: "Steckdosen", airco: "Klimaanlage", genericError: "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut.", detailsUnavailable: "Details sind vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.", compositionUnavailable: "Zusammenstellung ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.", closed: "Geschlossen." }
-  };
-  function t(key) { return (translations[getLanguage()] && translations[getLanguage()][key]) || translations.en[key] || key; }
-
-  // Banner “don’t lie yet” state
-  let bannerWaitingForFresh = false;
-
-  // vehicle overlay fetch controller (abort on close)
-  let vehicleController = null;
-
-  // Disturbances cache
-  let lastDisturbancesAll = [];
-  let lastDisturbancesUnplanned = [];
-
-  // Body scroll lock while overlay open
-  let prevOverflowBody = "";
-  let prevOverflowHtml = "";
-  let prevBodyPosition = "";
-  let prevBodyTop = "";
-  let prevBodyWidth = "";
-  let lockedScrollY = 0;
-  let scrollLocked = false;
-
-  // Track whether last edit action was delete/backspace (for pretty input UX)
-  let lastEditWasDelete = false;
-
-  function lockScroll() {
-    if (scrollLocked) return;
-    scrollLocked = true;
-
-    // Store inline styles only (avoid computed-style traps)
-    prevOverflowBody = document.body.style.overflow || "";
-    prevOverflowHtml = document.documentElement.style.overflow || "";
-    prevBodyPosition = document.body.style.position || "";
-    prevBodyTop = document.body.style.top || "";
-    prevBodyWidth = document.body.style.width || "";
-    lockedScrollY = window.scrollY || window.pageYOffset || 0;
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = "-" + lockedScrollY + "px";
-    document.body.style.width = "100%";
-  }
-
-  function unlockScroll() {
-    document.body.style.overflow = prevOverflowBody || "";
-    document.documentElement.style.overflow = prevOverflowHtml || "";
-    document.body.style.position = prevBodyPosition || "";
-    document.body.style.top = prevBodyTop || "";
-    document.body.style.width = prevBodyWidth || "";
-
-    if (lockedScrollY) window.scrollTo(0, lockedScrollY);
-
-    prevOverflowBody = "";
-    prevOverflowHtml = "";
-    prevBodyPosition = "";
-    prevBodyTop = "";
-    prevBodyWidth = "";
-    lockedScrollY = 0;
-    scrollLocked = false;
-  }
-
-
-  function getLanguage() {
-    const value = String(languageSelect?.value || "").toLowerCase();
-    return allowedLanguages.has(value) ? value : "en";
-  }
-
-  function browserLanguage() {
-    const langs = Array.from(navigator.languages || [navigator.language || "en"]);
-    for (const lang of langs) {
-      const code = String(lang || "").toLowerCase().split("-")[0];
-      if (allowedLanguages.has(code)) return code;
-    }
-    return "en";
-  }
-
-  function setDocumentLanguage() {
-    document.documentElement.lang = getLanguage();
-  }
-
-  function applyLanguage() {
-    setDocumentLanguage();
-    document.title = t("title");
-    const heading = document.querySelector("h1");
-    if (heading) heading.textContent = t("title");
-    q.placeholder = t("placeholder");
-    btnNow.textContent = t("now");
-    btnNow.title = t("nowTitle");
-    btnPlus1h.title = t("plusTitle");
-    const labels = document.querySelectorAll(".controls label");
-    if (labels[0]) labels[0].firstChild.textContent = t("date") + " ";
-    if (labels[1]) labels[1].firstChild.textContent = t("time") + " ";
-    if (languageLabel) languageLabel.textContent = t("language");
-    if (disturbancePill && !/\d/.test(disturbancePill.textContent || "")) disturbancePill.textContent = t("disturbances") + "…";
-    const onlyMuted = board.children.length === 1 ? board.querySelector(".muted") : null;
-    if (onlyMuted) onlyMuted.textContent = t("intro");
-    refreshRecentDropdownIfOpen();
-  }
-
-  function readRecentStations() {
+const $ = (id) => document.getElementById(id);
+const storage = {
+  get(key, fallback) {
     try {
-      const parsed = JSON.parse(localStorage.getItem(recentStationsKey) || "[]");
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .filter((station) => station && station.id && station.name)
-        .slice(0, maxRecentStations);
-    } catch (_e) {
-      return [];
+      return (
+        JSON.parse(localStorage.getItem(`stationsbord.${key}`)) ?? fallback
+      );
+    } catch {
+      return fallback;
     }
-  }
-
-  function writeRecentStations(stations) {
+  },
+  set(key, value) {
     try {
-      localStorage.setItem(recentStationsKey, JSON.stringify(stations.slice(0, maxRecentStations)));
-    } catch (_e) {
-      // Ignore storage failures; recent searches are only a convenience.
-    }
-  }
-
-  function rememberRecentStation(station) {
-    if (!station || !station.id || !station.name) return;
-    const normalized = { id: station.id, name: station.name };
-    const existing = readRecentStations().filter((item) => item.id !== normalized.id);
-    writeRecentStations([normalized, ...existing]);
-    refreshRecentDropdownIfOpen();
-  }
-
-  function recentStationResults() {
-    return readRecentStations().map((station) => ({ ...station, recent: true }));
-  }
-
-  function showRecentStationsDropdown() {
-    const stations = recentStationResults();
-    if (!stations.length || q.value.trim().length >= 2) return;
-    lastResults = stations;
-    activeIdx = -1;
-    renderDropdown(lastResults);
-    setStatus(t("pickStation"));
-  }
-
-  function refreshRecentDropdownIfOpen() {
-    if (!dropdown.classList.contains("open") || q.value.trim().length >= 2) return;
-    showRecentStationsDropdown();
-  }
-
-
-  function resetStationSelectionForLanguageChange() {
-    selected = null;
-    lastResults = [];
-    activeIdx = -1;
-    dropdown.innerHTML = "";
-    closeDropdown();
-    if (q.value.trim().length >= 2) debounceSearch();
-  }
-
-  function setStatus(_text, _kind = "normal") {
-    // The old visible status pill (including the “ok” state) was removed to keep
-    // the interface focused on the board and disturbance indicator.
-  }
-
-  /* ---- Offline/stale banner based on X-Cache ---- */
-  function hideBanner() {
-    if (!offlineBanner) return;
-    offlineBanner.hidden = true;
-    offlineBanner.textContent = "";
-  }
-
-  function showBanner(message) {
-    if (!offlineBanner) return;
-    offlineBanner.hidden = false;
-    offlineBanner.textContent = message;
-  }
-
-  function updateBannerFromXCache(xcache) {
-    const raw = String(xcache || "").trim();
-    if (!raw) {
-      hideBanner();
-      return;
-    }
-
-    const v = raw.toLowerCase();
-
-    if (v.startsWith("stale")) {
-      let reason = "Offline mode: showing cached results.";
-      if (v.includes("local-rate-limit")) reason = "Offline mode: showing cached results (rate limited).";
-      else if (v.includes("upstream-502")) reason = "Offline mode: showing cached results (gateway error).";
-      else if (v.includes("upstream-503")) reason = "Offline mode: showing cached results (service unavailable).";
-      else if (v.includes("upstream-504")) reason = "Offline mode: showing cached results (timeout).";
-      else if (v.includes("upstream-err")) reason = "Offline mode: showing cached results (error).";
-
-      showBanner(reason);
-      return;
-    }
-
-    if (v === "hit" || v === "miss" || v.startsWith("revalidated")) {
-      hideBanner();
-    }
-  }
-
-  // When we come back online, don't immediately hide the banner.
-  // Only hide it after we see a *fresh* (non-STALE) response.
-  function noteFreshResponseIfAny(xcache) {
-    const raw = String(xcache || "").trim();
-    if (!raw) return;
-
-    const v = raw.toLowerCase();
-    if (bannerWaitingForFresh && !v.startsWith("stale")) {
-      bannerWaitingForFresh = false;
-      hideBanner();
-    }
-  }
-
-  function updateBannerFromNavigator() {
-    if (!offlineBanner) return;
-
-    if (navigator && navigator.onLine === false) {
-      bannerWaitingForFresh = true;
-      showBanner("Offline: no network connection.");
-      return;
-    }
-
-    if (bannerWaitingForFresh) {
-      showBanner("Back online — verifying live data…");
-    }
-  }
-
-  window.addEventListener("offline", updateBannerFromNavigator);
-  window.addEventListener("online", updateBannerFromNavigator);
-
-  /* ---- Dropdown ---- */
-  function openDropdown() {
-    dropdown.classList.add("open");
-    q.setAttribute("aria-expanded", "true");
-  }
-  function closeDropdown() {
-    dropdown.classList.remove("open");
-    q.setAttribute("aria-expanded", "false");
-    activeIdx = -1;
-    q.removeAttribute("aria-activedescendant");
-  }
-
-  function renderDropdown(results) {
-    dropdown.innerHTML = "";
-    if (!results.length) {
-      closeDropdown();
-      return;
-    }
-    for (let i = 0; i < results.length; i++) {
-      const s = results[i];
-      const div = document.createElement("div");
-      div.className = "dd-item";
-      div.dataset.idx = String(i);
-      div.id = "station-option-" + String(i);
-      div.setAttribute("role", "option");
-      div.setAttribute("aria-selected", "false");
-      div.tabIndex = -1;
-      const meta = s.recent ? t("recent") : s.id;
-      div.innerHTML =
-        '<div><div class="dd-name">' +
-        escapeHtml(s.name) +
-        "</div></div>" +
-        '<div class="dd-id">' +
-        escapeHtml(meta) +
-        "</div>";
-      div.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        pickResult(i);
-      });
-      div.addEventListener("click", () => pickResult(i));
-      div.addEventListener("touchstart", () => { activeIdx = i; highlightActive(); }, { passive: true });
-      dropdown.appendChild(div);
-    }
-    openDropdown();
-  }
-
-  function highlightActive() {
-    const items = dropdown.querySelectorAll(".dd-item");
-    items.forEach((el, idx) => {
-      const active = idx === activeIdx;
-      el.style.background = active ? "rgba(255,255,255,.08)" : "";
-      el.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    if (activeIdx >= 0) q.setAttribute("aria-activedescendant", "station-option-" + String(activeIdx));
-    else q.removeAttribute("aria-activedescendant");
-  }
-
-  function pickResult(idx) {
-    const s = lastResults[idx];
-    if (!s) return;
-    selected = { id: s.id, name: s.name };
-    q.value = s.name;
-    closeDropdown();
-    setStatus(t("selected"));
-    searchLiveboard();
-  }
-
-  function escapeHtml(str) {
-    return String(str || "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function fmtTime(unixSeconds) {
-    const d = new Date(unixSeconds * 1000);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-
-  // Normalizes iRail-ish occupancy strings into a stable label
-  function normalizeOccName(occ) {
-    const n = String(occ || "unknown").toLowerCase();
-    if (n.includes("low")) return { label: "low" };
-    if (n.includes("medium")) return { label: "medium" };
-    if (n.includes("high")) return { label: "high" };
-    return { label: "unknown" };
-  }
-
-  function occTierClassFromLabel(label, pillBaseClass) {
-    let cls = pillBaseClass || "pill";
-    if (label === "low") cls += " tierOk";
-    else if (label === "medium") cls += " tierWarn";
-    else if (label === "high") cls += " tierBad";
-    return cls;
-  }
-
-  // delay helpers
-  function delayMinutesFromSeconds(delaySeconds) {
-    if (delaySeconds == null) return null;
-    const s = Number(delaySeconds);
-    if (!Number.isFinite(s)) return null;
-
-    const abs = Math.abs(s);
-    if (abs > 0 && abs < 60) return 1;
-    return Math.round(abs / 60);
-  }
-
-  function delayTier(mins, cancelled) {
-    if (cancelled) return "bad";
-    if (mins == null) return null;
-    if (mins <= 0) return "ok";
-    if (mins <= 5) return "warn";
-    return "bad";
-  }
-
-  function delayPillHtml(delaySeconds, cancelled) {
-    if (cancelled) return "";
-
-    const mins = delayMinutesFromSeconds(delaySeconds);
-    const tier = delayTier(mins, false);
-    if (!tier) return "";
-
-    if (tier === "ok") return '<span class="pill tierOk pulseOk">0m</span>';
-    if (tier === "warn") return '<span class="pill tierWarn">+' + mins + 'm</span>';
-    return '<span class="pill tierBad">+' + mins + 'm</span>';
-  }
-
-  function delayMini(delaySeconds, cancelled) {
-    if (cancelled) return '<span class="miniPill tierBad">' + t("cancelled") + "</span>";
-
-    const mins = delayMinutesFromSeconds(delaySeconds);
-    if (mins == null) return "";
-
-    const tier = delayTier(mins, false);
-    if (!tier) return "";
-
-    if (tier === "ok") return '<span class="miniPill tierOk pulseOk">0m</span>';
-    if (tier === "warn") return '<span class="miniPill tierWarn">+' + mins + 'm</span>';
-    return '<span class="miniPill tierBad">+' + mins + 'm</span>';
-  }
-  
-  // Pretty date and time input
-  function clamp(n, lo, hi) {
-    n = Number(n);
-    if (!Number.isFinite(n)) return lo;
-    return Math.max(lo, Math.min(hi, n));
-  }
-
-  function getSel(el) {
-    try {
-      return {
-        start: typeof el.selectionStart === "number" ? el.selectionStart : el.value.length,
-        end: typeof el.selectionEnd === "number" ? el.selectionEnd : el.value.length,
-      };
-    } catch (_e) {
-      return { start: el.value.length, end: el.value.length };
-    }
-  }
-
-  function setCaret(el, pos) {
-    try {
-      el.setSelectionRange(pos, pos);
-    } catch (_e) {}
-  }
-
-  // Map caret position -> "digit index"
-  function digitIndexFromCaret(maskedValue, caretPos) {
-    const left = maskedValue.slice(0, caretPos);
-    const m = left.match(/\d/g);
-    return m ? m.length : 0;
-  }
-
-  // Map "digit index" -> caret position in masked string
-  function caretFromDigitIndex(maskedValue, digitIdx) {
-    if (digitIdx <= 0) return 0;
-    let seen = 0;
-    for (let i = 0; i < maskedValue.length; i++) {
-      if (/\d/.test(maskedValue[i])) {
-        seen++;
-        if (seen >= digitIdx) return i + 1;
-      }
-    }
-    return maskedValue.length;
-  }
-
-  function maskDigitsToDate(digits) {
-    digits = String(digits || "").replace(/\D/g, "").slice(0, 8);
-    let out = "";
-    for (let i = 0; i < digits.length; i++) {
-      out += digits[i];
-      if (i === 1 || i === 3) {
-        if (digits.length > i + 1) out += "/";
-      }
-    }
-    return out;
-  }
-
-  function maskDigitsToTime(digits) {
-    digits = String(digits || "").replace(/\D/g, "").slice(0, 4);
-    let out = "";
-    for (let i = 0; i < digits.length; i++) {
-      out += digits[i];
-      if (i === 1) {
-        if (digits.length > i + 1) out += ":";
-      }
-    }
-    return out;
-  }
-  
-  function smartDeleteAroundSeparator(el, sepChar, maxDigits) {
-    const v = String(el.value || "");
-    const sel = getSel(el);
-    if (sel.start !== sel.end) return false; // range delete -> let input handler do it
-
-    const pos = sel.start;
-    if (pos <= 0 || pos > v.length) return false;
-
-    // backspace right after separator
-    if (v[pos - 1] === sepChar) {
-      // remove the digit before separator as well (if any)
-      const before = v.slice(0, pos - 1);
-      const after = v.slice(pos);
-
-      // remove last digit from "before"
-      const beforeDigits = before.replace(/\D/g, "");
-      const newBeforeDigits = beforeDigits.slice(0, -1);
-
-      // keep only digits from after (user can keep editing)
-      const afterDigits = after.replace(/\D/g, "");
-
-      const newDigits = (newBeforeDigits + afterDigits).slice(0, maxDigits);
-      const isDate = maxDigits === 8;
-
-      const masked = isDate ? maskDigitsToDate(newDigits) : maskDigitsToTime(newDigits);
-
-      // caret: stay at the boundary where the digit was removed
-      const caretDigitIdx = clamp(newBeforeDigits.length, 0, maxDigits);
-      const newCaret = caretFromDigitIndex(masked, caretDigitIdx);
-
-      el.value = masked;
-      setCaret(el, newCaret);
+      localStorage.setItem(`stationsbord.${key}`, JSON.stringify(value));
       return true;
+    } catch {
+      return false;
     }
-    return false;
-  }
+  },
+};
+const params = new URLSearchParams(location.search);
+const preferred = [
+  params.get("lang"),
+  storage.get("language", ""),
+  ...(navigator.languages || ["nl"]).map((l) => l.slice(0, 2)),
+  "nl",
+];
+const state = {
+  lang: preferred.find((l) => languages.includes(l)),
+  station: null,
+  mode: params.get("mode") === "arrival" ? "arrival" : "departure",
+  live: true,
+  view: null,
+  data: null,
+  rows: [],
+  visible: 12,
+  stale: false,
+  failed: false,
+  boardController: null,
+  boardSequence: 0,
+  searchController: null,
+  searchSequence: 0,
+  searchTimer: null,
+  options: [],
+  active: -1,
+  dialogController: null,
+  dialogSequence: 0,
+  network: null,
+  networkStale: false,
+  networkController: null,
+};
+const t = (key) => messages[state.lang][key] || messages.en[key] || key;
+const popular = [
+  "Gent-Sint-Pieters",
+  "Brussel-Centraal",
+  "Antwerpen-Centraal",
+  "Brugge",
+];
+let toastTimer;
 
-  function handlePrettyInput(el, kind) {
-    const maxDigits = kind === "date" ? 8 : 4;
-    const sepChar = kind === "date" ? "/" : ":";
-
-    const prevValue = String(el.value || "");
-    const sel = getSel(el);
-    const caretPos = sel.start;
-
-    // "digit index" before we mutate
-    const caretDigitIdx = digitIndexFromCaret(prevValue, caretPos);
-
-    // Extract digits then re-mask
-    const digits = prevValue.replace(/\D/g, "").slice(0, maxDigits);
-    const masked = kind === "date" ? maskDigitsToDate(digits) : maskDigitsToTime(digits);
-
-    el.value = masked;
-
-    // Try to keep caret near the same digit position
-    const nextCaret = caretFromDigitIndex(masked, caretDigitIdx);
-    setCaret(el, nextCaret);
-  }
-
-  function wirePrettyInput(el, kind) {
-    // beforeinput gives us reliable "deleteContentBackward" on modern browsers
-    el.addEventListener("beforeinput", (e) => {
-      const t = String(e?.inputType || "");
-      lastEditWasDelete = t.startsWith("delete");
-
-      if (t === "deleteContentBackward") {
-        const handled = smartDeleteAroundSeparator(
-          el,
-          kind === "date" ? "/" : ":",
-          kind === "date" ? 8 : 4
-        );
-        if (handled) {
-          e.preventDefault();
-        }
-      }
-    });
-
-    el.addEventListener("input", () => {
-      handlePrettyInput(el, kind);
-      lastEditWasDelete = false;
-    });
-  }
-
-  wirePrettyInput(datePrettyEl, "date");
-  wirePrettyInput(timePrettyEl, "time");
-
-  function prettyToIRailDate(ddmmyyyy) {
-    const m = String(ddmmyyyy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!m) return "";
-    const dd = m[1], mm = m[2], yyyy = m[3];
-    return dd + mm + yyyy.slice(2);
-  }
-
-  function prettyToIRailTime(hhmm) {
-    const m = String(hhmm || "").match(/^(\d{2}):(\d{2})$/);
-    if (!m) return "";
-    return m[1] + m[2];
-  }
-
-  function isValidTimePretty(v) {
-    if (!/^\d{2}:\d{2}$/.test(v)) return false;
-    const hh = Number(v.slice(0, 2));
-    const mm = Number(v.slice(3, 5));
-    return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
-  }
-
-  /* ---- Now + +1h ---- */
-  function getSelectedMomentLocal() {
-    const now = new Date();
-
-    let year, month, day;
-    const dm = datePrettyEl.value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (dm) {
-      day = Number(dm[1]);
-      month = Number(dm[2]);
-      year = Number(dm[3]);
-    } else {
-      day = now.getDate();
-      month = now.getMonth() + 1;
-      year = now.getFullYear();
-    }
-
-    let hh, mm;
-    const tm = timePrettyEl.value.trim().match(/^(\d{2}):(\d{2})$/);
-    if (tm) {
-      hh = Number(tm[1]);
-      mm = Number(tm[2]);
-    } else {
-      hh = now.getHours();
-      mm = now.getMinutes();
-    }
-
-    return new Date(year, month - 1, day, hh, mm, 0, 0);
-  }
-
-  function setMomentLocal(d) {
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = String(d.getFullYear());
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-
-    datePrettyEl.value = dd + "/" + mm + "/" + yyyy;
-    timePrettyEl.value = hh + ":" + mi;
-  }
-
-  function setNow() {
-    setMomentLocal(new Date());
-  }
-
-  function shouldRefreshForDateTimeChange() {
-    if (!selected) return false;
-
-    const prettyTime = timePrettyEl.value.trim();
-    if (prettyTime && !isValidTimePretty(prettyTime)) return false;
-
-    const prettyDate = datePrettyEl.value.trim();
-    if (prettyDate && !prettyToIRailDate(prettyDate)) return false;
-
-    return true;
-  }
-
-  function refreshLiveboardForDateTimeChange() {
-    if (shouldRefreshForDateTimeChange()) searchLiveboard();
-  }
-
-  function wireDateTimeSearchRefresh(el) {
-    el.addEventListener("change", refreshLiveboardForDateTimeChange);
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        el.blur();
-      }
-    });
-  }
-
-  wireDateTimeSearchRefresh(datePrettyEl);
-  wireDateTimeSearchRefresh(timePrettyEl);
-
-  btnNow.addEventListener("click", () => {
-    setNow();
-    refreshLiveboardForDateTimeChange();
-  });
-  btnPlus1h.addEventListener("click", () => {
-    const base = getSelectedMomentLocal();
-    base.setHours(base.getHours() + 1);
-    setMomentLocal(base);
-    if (selected) searchLiveboard();
-  });
-
-  if (languageSelect) {
-    languageSelect.addEventListener("change", () => {
-      applyLanguage();
-      resetStationSelectionForLanguageChange();
-      refreshDisturbancesSafe();
-    });
-    languageSelect.value = browserLanguage();
-    applyLanguage();
-  }
-
-  /* ---- Autocomplete ---- */
-  async function searchStationsAuto() {
-    const term = q.value.trim();
-    selected = null;
-
-    if (term.length < 2) {
-      dropdown.innerHTML = "";
-      showRecentStationsDropdown();
-      if (!dropdown.classList.contains("open")) setStatus(t("ready"));
-      return;
-    }
-
-    if (inFlight && typeof inFlight.abort === "function") inFlight.abort();
-    const controller = new AbortController();
-    inFlight = controller;
-
-    setStatus(t("searching"), "loading");
-
-    const r = await fetch(
-      "/api/stations/search?q=" + encodeURIComponent(term) + "&limit=12&lang=" + encodeURIComponent(getLanguage()),
-      { signal: controller.signal }
-    ).catch((err) => {
-      if (err && err.name === "AbortError") return null;
-      throw err;
-    });
-
-    if (!r) return;
-
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || "Search failed");
-
-    lastResults = data.results || [];
-    activeIdx = -1;
-    renderDropdown(lastResults);
-    setStatus(lastResults.length ? t("pickStation") : t("noMatches"));
-  }
-
-  function debounceSearch() {
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => {
-      searchStationsAuto().catch((e) => {
-        setStatus(t("searchError"), "error");
-        closeDropdown();
-        console.error(e);
+function toast(text) {
+  $("toast").textContent = text;
+  $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    $("toast").hidden = true;
+  }, 3500);
+}
+function readStations(key) {
+  const list = storage.get(key, []);
+  return Array.isArray(list)
+    ? list
+        .filter(
+          (s) => s && typeof s.id === "string" && typeof s.name === "string",
+        )
+        .slice(0, 8)
+    : [];
+}
+function remember(station) {
+  if (!station?.id) return;
+  storage.set(
+    "recentStations",
+    [
+      station,
+      ...readStations("recentStations").filter((s) => s.id !== station.id),
+    ].slice(0, 4),
+  );
+  renderShortcuts();
+}
+function renderShortcuts() {
+  const saved = readStations("savedStations");
+  $("savedSection").hidden = !saved.length;
+  renderStationList($("savedStations"), saved, true);
+  const recent = readStations("recentStations").filter(
+    (s) => !saved.some((f) => f.id === s.id),
+  );
+  $("shortcutsTitle").textContent = t(
+    recent.length ? "recentStations" : "popularStations",
+  );
+  renderStationList(
+    $("stationShortcuts"),
+    recent.length ? recent : popular.map((name) => ({ name })),
+    false,
+  );
+}
+function renderStationList(container, stations, removable) {
+  container.replaceChildren();
+  stations.forEach((station) => {
+    const row = document.createElement("div");
+    row.className = "shortcut";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = station.name;
+    button.addEventListener("click", () => selectStation(station));
+    row.append(button);
+    if (removable) {
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "remove-saved";
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `${t("removeSaved")}: ${station.name}`);
+      remove.addEventListener("click", () => {
+        if (
+          !storage.set(
+            "savedStations",
+            readStations("savedStations").filter((s) => s.id !== station.id),
+          )
+        )
+          return toast(t("storageError"));
+        renderShortcuts();
+        updateSaveButton();
       });
-    }, 180);
-  }
-
-  q.addEventListener("input", debounceSearch);
-  q.addEventListener("focus", () => {
-    if (q.value.trim().length < 2) {
-      showRecentStationsDropdown();
-    } else if (lastResults.length) {
-      openDropdown();
+      row.append(remove);
+    } else {
+      const arrow = document.createElement("span");
+      arrow.className = "shortcut-arrow";
+      arrow.textContent = "↗";
+      arrow.setAttribute("aria-hidden", "true");
+      row.append(arrow);
     }
+    container.append(row);
   });
-  q.addEventListener("blur", () => setTimeout(() => closeDropdown(), 120));
+}
+function updateSaveButton() {
+  const station = state.data?.stationinfo;
+  const saved = readStations("savedStations").some((s) => s.id === station?.id);
+  $("saveStation").hidden = !station?.id;
+  $("saveStation").textContent = saved ? "★" : "☆";
+  $("saveStation").setAttribute("aria-pressed", String(saved));
+  $("saveStation").setAttribute("aria-label", t(saved ? "unsave" : "save"));
+  $("saveStation").title = t(saved ? "unsave" : "save");
+}
+$("saveStation").addEventListener("click", () => {
+  const info = state.data?.stationinfo;
+  if (!info?.id) return;
+  const saved = readStations("savedStations");
+  const exists = saved.some((s) => s.id === info.id);
+  if (!exists && saved.length >= 8) return toast(t("saveLimit"));
+  const next = exists
+    ? saved.filter((s) => s.id !== info.id)
+    : [...saved, { id: info.id, name: state.data.station || info.name }];
+  if (!storage.set("savedStations", next)) return toast(t("storageError"));
+  updateSaveButton();
+  renderShortcuts();
+  toast(t(exists ? "stationRemoved" : "stationSaved"));
+});
 
-  q.addEventListener("keydown", (e) => {
-    if (
-      !dropdown.classList.contains("open") &&
-      (e.key === "ArrowDown" || e.key === "ArrowUp")
-    ) {
-      if (lastResults.length) openDropdown();
-    }
+function applyLanguage() {
+  document.documentElement.lang = state.lang;
+  document.title = `Stationsbord · ${t("eyebrow")}`;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  $("languageSelect").value = state.lang;
+  $("stationInput").placeholder = t("searchPlaceholder");
+  $("clearStation").setAttribute("aria-label", t("clear"));
+  $("shareBoard").setAttribute("aria-label", t("share"));
+  $("shareBoard").title = t("share");
+  $("closeDialog").setAttribute("aria-label", t("close"));
+  document
+    .querySelector(".sidebar")
+    .setAttribute("aria-label", `${t("station")} · ${t("time")}`);
+  document.querySelector(".when-tabs").setAttribute("aria-label", t("when"));
+  document
+    .querySelector(".board-tabs")
+    .setAttribute("aria-label", `${t("departures")} / ${t("arrivals")}`);
+  $("searchStatus").textContent = t("searchHint");
+  updateModeControls();
+  renderShortcuts();
+  renderHeading();
+  updateSaveButton();
+  renderNetworkButton();
+  updateClock();
+  if (!state.view) renderEmpty();
+}
+$("languageSelect").addEventListener("change", () => {
+  state.lang = $("languageSelect").value;
+  storage.set("language", state.lang);
+  cancelSearch();
+  closeOptions();
+  closeDetails();
+  applyLanguage();
+  if (state.view) loadBoard({ ...state.view, lang: state.lang });
+  refreshNetwork();
+});
+function updateClock() {
+  const { date, time } = belgianParts();
+  $("clock").textContent = `${fmtDate(date, state.lang)} · ${time}`;
+}
 
-    if (dropdown.classList.contains("open")) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        activeIdx = Math.min(lastResults.length - 1, activeIdx + 1);
-        highlightActive();
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        activeIdx = Math.max(0, activeIdx - 1);
-        highlightActive();
-        return;
-      }
-      if (e.key === "Enter") {
-        if (activeIdx >= 0) {
-          e.preventDefault();
-          pickResult(activeIdx);
-          return;
-        }
-      }
-      if (e.key === "Escape") {
-        closeDropdown();
-        return;
-      }
-    }
-
-    if (e.key === "Enter" && !dropdown.classList.contains("open") && selected) {
+// Search is cancelled as soon as text changes, not only when the debounce fires.
+function cancelSearch() {
+  clearTimeout(state.searchTimer);
+  state.searchController?.abort();
+  state.searchSequence++;
+}
+function closeOptions() {
+  $("stationOptions").hidden = true;
+  $("stationInput").setAttribute("aria-expanded", "false");
+  $("stationInput").removeAttribute("aria-activedescendant");
+  state.active = -1;
+}
+function highlightOption() {
+  [...$("stationOptions").children].forEach((el, i) =>
+    el.setAttribute("aria-selected", String(i === state.active)),
+  );
+  if (state.active >= 0) {
+    $("stationInput").setAttribute(
+      "aria-activedescendant",
+      `station-option-${state.active}`,
+    );
+    $("stationOptions").children[state.active]?.scrollIntoView({
+      block: "nearest",
+    });
+  } else $("stationInput").removeAttribute("aria-activedescendant");
+}
+function showOptions(options) {
+  state.options = options;
+  state.active = -1;
+  $("stationOptions").replaceChildren();
+  options.forEach((station, i) => {
+    const option = document.createElement("div");
+    option.className = "station-option";
+    option.id = `station-option-${i}`;
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", "false");
+    option.textContent = station.name;
+    option.addEventListener("pointerdown", (e) => e.preventDefault());
+    option.addEventListener("click", () => selectStation(station));
+    $("stationOptions").append(option);
+  });
+  $("stationOptions").hidden = !options.length;
+  $("stationInput").setAttribute("aria-expanded", String(!!options.length));
+}
+async function findStations() {
+  const term = $("stationInput").value.trim();
+  if (term.length < 2) {
+    showOptions(readStations("recentStations"));
+    $("searchStatus").textContent = t("searchHint");
+    return;
+  }
+  const sequence = ++state.searchSequence;
+  state.searchController = new AbortController();
+  $("searchStatus").textContent = t("searching");
+  $("searchStatus").classList.remove("error");
+  try {
+    const { data } = await request(
+      `/api/stations/search?${new URLSearchParams({ q: term, lang: state.lang, limit: "10" })}`,
+      state.searchController.signal,
+    );
+    if (sequence !== state.searchSequence) return;
+    showOptions(asArray(data.results));
+    $("searchStatus").textContent = state.options.length ? "" : t("noStations");
+  } catch (error) {
+    if (sequence !== state.searchSequence || error.name === "AbortError")
+      return;
+    closeOptions();
+    $("searchStatus").textContent = t("searchError");
+    $("searchStatus").classList.add("error");
+  }
+}
+$("stationInput").addEventListener("input", () => {
+  state.station = null;
+  cancelSearch();
+  closeOptions();
+  $("clearStation").hidden = !$("stationInput").value;
+  state.searchTimer = setTimeout(findStations, 180);
+});
+$("stationInput").addEventListener("focus", () => {
+  if (!$("stationInput").value.trim())
+    showOptions(readStations("recentStations"));
+});
+$("clearStation").addEventListener("click", () => {
+  cancelSearch();
+  state.station = null;
+  $("stationInput").value = "";
+  $("clearStation").hidden = true;
+  $("stationInput").focus();
+  showOptions(readStations("recentStations"));
+  $("searchStatus").textContent = t("searchHint");
+});
+document.addEventListener("pointerdown", (e) => {
+  if (!e.target.closest(".autocomplete")) {
+    cancelSearch();
+    closeOptions();
+  }
+});
+$("stationInput").addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    cancelSearch();
+    closeOptions();
+    return;
+  }
+  if (e.key === "Tab") {
+    cancelSearch();
+    closeOptions();
+    return;
+  }
+  if (!$("stationOptions").hidden && state.options.length) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      searchLiveboard();
+      state.active =
+        (state.active +
+          (e.key === "ArrowDown" ? 1 : -1) +
+          state.options.length) %
+        state.options.length;
+      highlightOption();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      selectStation(state.options[state.active < 0 ? 0 : state.active]);
     }
+  }
+});
+function selectStation(station) {
+  cancelSearch();
+  closeOptions();
+  state.station = { ...station };
+  $("stationInput").value = station.name;
+  $("clearStation").hidden = false;
+  $("searchStatus").textContent = "";
+  $("searchStatus").classList.remove("error");
+  $("stationInput").blur();
+  submitBoard();
+}
+function updateModeControls() {
+  $("liveMode").setAttribute("aria-pressed", String(state.live));
+  $("planMode").setAttribute("aria-pressed", String(!state.live));
+  $("plannedFields").hidden = state.live;
+  $("dateInput").disabled = state.live;
+  $("timeInput").disabled = state.live;
+  $("modeHint").textContent = t(state.live ? "liveHint" : "planHint");
+}
+$("liveMode").addEventListener("click", () => {
+  state.live = true;
+  updateModeControls();
+  if (state.station) submitBoard();
+});
+$("planMode").addEventListener("click", () => {
+  state.live = false;
+  const now = belgianParts();
+  if (!$("dateInput").value) $("dateInput").value = now.date;
+  if (!$("timeInput").value) $("timeInput").value = now.time;
+  updateModeControls();
+  $("dateInput").focus();
+});
+$("stationForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  submitBoard();
+});
+function submitBoard() {
+  if (!state.station) {
+    $("searchStatus").textContent = t("chooseHint");
+    $("searchStatus").classList.add("error");
+    $("stationInput").focus();
+    findStations();
+    return;
+  }
+  const date = $("dateInput").value,
+    time = $("timeInput").value;
+  if (!state.live && (!validDate(date) || !validTime(time)))
+    return toast(t("invalidDate"));
+  loadBoard({
+    station: { ...state.station },
+    mode: state.mode,
+    lang: state.lang,
+    live: state.live,
+    date: state.live ? "" : date,
+    time: state.live ? "" : time,
   });
-
-  /* Overlay helpers (train details + disturbances) */
-  function openOverlay() {
-    const wasOpen = overlay.classList.contains("open");
-
-    overlay.classList.add("open");
-    overlay.setAttribute("aria-hidden", "false");
-
-    // Only lock scroll on the first open
-    if (!wasOpen) lockScroll();
-  }
-
-  function closeOverlay() {
-    try {
-      overlay.classList.remove("open");
-      overlay.setAttribute("aria-hidden", "true");
-      modalTitle.textContent = t("trainDetails");
-      modalPill.textContent = t("vehicle");
-      modalBody.innerHTML = '<div class="muted">' + t("closed") + '</div>'; 
-
-      if (vehicleController) {
-        try { vehicleController.abort(); } catch (_e) {}
-        vehicleController = null;
-      }
-    } finally {
-      unlockScroll();
-    }
-  }
-
-  overlayClose.addEventListener("click", closeOverlay);
-  overlay.addEventListener("mousedown", (e) => {
-    if (e.target === overlay) closeOverlay();
+}
+for (const [id, mode] of [
+  ["departuresTab", "departure"],
+  ["arrivalsTab", "arrival"],
+]) {
+  $(id).addEventListener("click", () => {
+    if (state.mode === mode) return;
+    state.mode = mode;
+    if (state.view) loadBoard({ ...state.view, mode });
+    else renderHeading();
   });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay.classList.contains("open")) closeOverlay();
-  });
-
-  function occMini(occ) {
-    const o = normalizeOccName(occ);
-    const cls = occTierClassFromLabel(o.label, "miniPill");
-    return '<span class="' + cls + '">' + t("occupancy") + ' : ' + escapeHtml(o.label) + "</span>";
-  }
-
-  function extraStopMini(flag) {
-    return String(flag || "0") === "1"
-      ? '<span class="miniPill tierWarn">extra stop</span>'
-      : "";
-  }
-
-  function asArray(value) {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
-  }
-
-  function parseCount(value) {
-    const n = Number(value || 0);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function yesFlag(value) {
-    return String(value || "0") === "1";
-  }
-
-  function sumUnits(units, key) {
-    return units.reduce((total, unit) => total + parseCount(unit && unit[key]), 0);
-  }
-
-  function compositionLookupId(vehicleId, shortName) {
-    const raw = String(shortName || vehicleId || "").trim();
-    return raw.replace(/^BE\.NMBS\./i, "");
-  }
-
-  function extractCompositionSegments(data) {
-    const segments = data && data.composition && data.composition.segments;
-    return asArray(segments && segments.segment);
-  }
-
-  function renderComposition(data) {
-    const segments = extractCompositionSegments(data);
-    const units = segments.flatMap((segment) =>
-      asArray(segment && segment.composition && segment.composition.units && segment.composition.units.unit)
-    );
-
-    if (!units.length) {
-      return '<section class="compositionBox"><div class="sectionTitle">' +
-        escapeHtml(t("composition")) +
-        '</div><div class="muted">No composition details available for this vehicle.</div></section>';
-    }
-
-    const seatsFirst = sumUnits(units, "seatsFirstClass") + sumUnits(units, "seatsCoupeFirstClass");
-    const seatsSecond = sumUnits(units, "seatsSecondClass") + sumUnits(units, "seatsCoupeSecondClass");
-    const standing = sumUnits(units, "standingPlacesFirstClass") + sumUnits(units, "standingPlacesSecondClass");
-    const length = sumUnits(units, "lengthInMeter");
-
-    let html = '<section class="compositionBox">';
-    html += '<div class="sectionTitle">' + escapeHtml(t("composition")) + '</div>';
-    html += '<div class="compositionSummary">';
-    html += '<span class="pill">' + escapeHtml(String(units.length)) + ' ' + escapeHtml(t("carriages")) + '</span>';
-    html += '<span class="pill">1st ' + escapeHtml(String(seatsFirst)) + ' / 2nd ' + escapeHtml(String(seatsSecond)) + ' ' + escapeHtml(t("seats")) + '</span>';
-    html += '<span class="pill">' + escapeHtml(String(standing)) + ' ' + escapeHtml(t("standing")) + '</span>';
-    if (length) html += '<span class="pill">' + escapeHtml(String(length)) + 'm ' + escapeHtml(t("length")) + '</span>';
-    html += '</div>';
-
-    html += '<div class="compositionUnits">';
-    for (const unit of units) {
-      const material = unit.materialSubTypeName || (unit.materialType && [unit.materialType.parent_type, unit.materialType.sub_type].filter(Boolean).join("_")) || unit.tractionType || "unit";
-      const seats = parseCount(unit.seatsFirstClass) + parseCount(unit.seatsSecondClass) + parseCount(unit.seatsCoupeFirstClass) + parseCount(unit.seatsCoupeSecondClass);
-      const features = [];
-      if (yesFlag(unit.hasToilets)) features.push(t("toilets"));
-      if (yesFlag(unit.hasBikeSection)) features.push(t("bikes"));
-      if (yesFlag(unit.hasPrmSection)) features.push(t("accessibility"));
-      if (yesFlag(unit.hasFirstClassOutlets) || yesFlag(unit.hasSecondClassOutlets)) features.push(t("outlets"));
-      if (yesFlag(unit.hasAirco)) features.push(t("airco"));
-
-      html += '<div class="compositionUnit">';
-      html += '<div><div class="unitTitle">' + escapeHtml(material) + '</div>';
-      html += '<div class="unitMeta">#' + escapeHtml(unit.materialNumber || unit.id || "?") +
-        (unit.materialType && unit.materialType.orientation ? ' · ' + escapeHtml(unit.materialType.orientation) : '') + '</div></div>';
-      html += '<div class="unitBadges"><span class="miniPill">' + escapeHtml(String(seats)) + ' ' + escapeHtml(t("seats")) + '</span>';
-      for (const feature of features) html += '<span class="miniPill">' + escapeHtml(feature) + '</span>';
-      html += '</div></div>';
-    }
-    html += '</div></section>';
-    return html;
-  }
-
-  async function fetchCompositionSafe(vehicleId, shortName, signal) {
-    const id = compositionLookupId(vehicleId, shortName);
-    if (!id) return null;
-
-    const r = await fetch(
-      "/api/composition?id=" + encodeURIComponent(id) + "&lang=" + encodeURIComponent(getLanguage()),
-      { signal }
-    );
-
-    const xcache = r.headers.get("X-Cache");
-    updateBannerFromXCache(xcache);
-    noteFreshResponseIfAny(xcache);
-
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || "Composition request failed");
-    return data;
-  }
-
-  async function loadVehicleDetails(vehicleId) {
-    const prettyDate = datePrettyEl.value.trim();
-    const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
-
-    modalTitle.textContent = t("trainDetails");
-    modalPill.textContent = "loading…";
-    modalBody.innerHTML = '<div class="muted">' + t("loading") + '</div>';
-    openOverlay();
-
-    if (vehicleController) {
-      try { vehicleController.abort(); } catch (_e) {}
-    }
-    vehicleController = new AbortController();
-
-    let url =
-      "/api/vehicle?id=" +
-      encodeURIComponent(vehicleId) +
-      "&lang=" +
-      encodeURIComponent(getLanguage()) +
-      "&alerts=false";
-    if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
-
-    const r = await fetch(url, { signal: vehicleController.signal });
-
-    const xcache = r.headers.get("X-Cache");
-    updateBannerFromXCache(xcache);
-    noteFreshResponseIfAny(xcache);
-
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || "Vehicle request failed");
-
-    const vinfo = data.vehicleinfo || {};
-    const short = vinfo.shortname || vinfo.name || data.vehicle || vehicleId;
-
-    modalTitle.textContent = short;
-    modalPill.textContent = "stops";
-
-    const compositionPromise = fetchCompositionSafe(vehicleId, short, vehicleController.signal).catch((e) => ({ __error: e }));
-
-    const stops = data.stops && data.stops.stop ? data.stops.stop : [];
-    if (!stops.length) {
-      modalBody.innerHTML =
-        '<div class="muted">No stop list available for this vehicle.</div>' +
-        '<div class="muted" style="margin-top:6px;">' + t("detailsUnavailable") + '</div>';
-      return;
-    }
-
-    let html = "";
-    html += '<div class="row" style="gap:8px; align-items:center;">';
-    html += '<span class="pill">' + t("vehicle") + '</span>';
-    html += '<span class="pill">' + escapeHtml(String(stops.length)) + " " + t("stops") + "</span>";
-    if (data.timestamp) {
-      html += '<span class="muted">' + t("updated") + ' : ' + new Date(data.timestamp * 1000).toLocaleString() + "</span>";
-    }
-    html += "</div>";
-
-    html += '<div class="stops">';
-    for (const s of stops) {
-      const station =
-        s.station ||
-        (s.stationinfo && (s.stationinfo.name || s.stationinfo.standardname)) ||
-        "Unknown";
-      const platform = s.platform != null ? String(s.platform) : "?";
-
-      const depT = s.scheduledDepartureTime
-        ? fmtTime(s.scheduledDepartureTime)
-        : s.departuretime
-        ? fmtTime(s.departuretime)
-        : "";
-      const arrT = s.scheduledArrivalTime
-        ? fmtTime(s.scheduledArrivalTime)
-        : s.arrivaltime
-        ? fmtTime(s.arrivaltime)
-        : "";
-      const fallbackT = s.time != null ? fmtTime(s.time) : "";
-
-      const depLine = depT ? "Dep " + escapeHtml(depT) : fallbackT ? "Dep " + escapeHtml(fallbackT) : "Dep —";
-      const arrLine = arrT ? "Arr " + escapeHtml(arrT) : "Arr —";
-
-      const depDelay = s.departureDelay;
-      const arrDelay = s.arrivalDelay;
-
-      const depCan = String(s.departureCanceled || "0") === "1";
-      const arrCan = String(s.arrivalCanceled || "0") === "1";
-
-      const depBadges = delayMini(depDelay, depCan);
-      const arrBadges = delayMini(arrDelay, arrCan);
-
-      const occ =
-        s.occupancy && (s.occupancy.name || s.occupancy["@id"])
-          ? s.occupancy.name || "unknown"
-          : "unknown";
-
-      html += '<div class="stopRow">';
-      html += "<div>";
-      html += '<div class="timeStack">';
-      html += '  <div class="depLine">' + depLine + (depBadges ? ' ' + depBadges : '') + "</div>";
-      html += '  <div class="arrLine">' +
-        '<span class="miniPill">' + arrLine + "</span>" +
-        (arrBadges ? ' ' + arrBadges : '') +
-        "</div>";
-      html += "</div>";
-      const extra = extraStopMini(s.isExtraStop);
-      html += extra
-        ? '<div class="stopMeta">' + extra + "</div>"
-        : '<div class="stopMeta"></div>';
-      html += "</div>";
-
-      html += "<div>";
-      html += '<div class="stopStack">';
-      html += '  <div class="stopStation">' + escapeHtml(station) + "</div>";
-      html += '  <div class="stopOcc">' + occMini(occ) + "</div>";
-      html += "</div>";
-      html += "</div>";
-
-      html += '<div style="justify-self:end; text-align:right;">';
-      html += '<span class="miniPill">platform ' + escapeHtml(platform) + "</span>";
-      html += "</div>";
-
-      html += "</div>";
-    }
-    html += "</div>";
-
-    const composition = await compositionPromise;
-    if (composition && !composition.__error) {
-      html += renderComposition(composition);
-      modalPill.textContent = "stops + " + t("composition");
-    } else if (composition && composition.__error) {
-      html += '<section class="compositionBox"><div class="sectionTitle">' + escapeHtml(t("composition")) + '</div><div class="muted">' + escapeHtml(t("compositionUnavailable")) + '</div></section>';
-    }
-
-    modalBody.innerHTML = html;
-  }
-
-
-  /* ---- Disturbances (pill + overlay) ---- */
-  function extractDisturbances(data) {
-    const root =
-      data && (data.disturbances || data.disturbance || data.disruption || data.disruptions);
-
-    if (!root) return [];
-
-    if (Array.isArray(root)) return root;
-
-    if (Array.isArray(root.disturbance)) return root.disturbance;
-    if (Array.isArray(root.disruption)) return root.disruption;
-    if (Array.isArray(root.disruptions)) return root.disruptions;
-
-    if (typeof root === "object") return [root];
-    return [];
-  }
-
-  function isPlannedDisturbance(d) {
-    const hay = [
-      d && d.type,
-      d && d.category,
-      d && d.impact,
-      d && d.severity,
-      d && d.status,
-      d && d.title,
-      d && d.header,
-      d && d.description,
-      d && d.message,
-      d && d.text
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    return hay.includes("planned");
-  }
-
-  function setDisturbancePill(count) {
-    if (!disturbancePill) return;
-
-    disturbancePill.hidden = false;
-    disturbancePill.className = "pill pillBtn";
-
-    if (!Number.isFinite(count)) {
-      disturbancePill.textContent = t("disturbances") + " ?";
-      return;
-    }
-
-    disturbancePill.textContent = t("disturbances") + ": " + String(count);
-
-    if (count <= 0) disturbancePill.classList.add("tierOk");
-    else disturbancePill.classList.add("tierBad");
-  }
-
-  function bestText(d, keys) {
-    for (const k of keys) {
-      const v = d && d[k];
-      if (typeof v === "string" && v.trim()) return v.trim();
-    }
-    return "";
-  }
-
-  function renderDisturbancesOverlay(listUnplanned, countUnplanned, listAll) {
-    modalTitle.textContent = t("disturbances");
-    modalPill.textContent = String(countUnplanned);
-
-    const all = Array.isArray(listAll) ? listAll : [];
-    const unplanned = Array.isArray(listUnplanned) ? listUnplanned : [];
-    const planned = all.filter((d) => isPlannedDisturbance(d));
-
-    let showPlanned = false;
-
-    function render() {
-      let html = "";
-
-      html += '<div class="row" style="gap:8px; align-items:center; margin-bottom:10px;">';
-      html += '<span class="pill">active: ' + escapeHtml(String(unplanned.length)) + "</span>";
-
-      if (planned.length > 0) {
-        html +=
-          '<button id="distTogglePlanned" class="pill pillBtn" type="button" ' +
-          'title="Toggle planned works">' +
-          (showPlanned ? "hide planned" : "show planned") +
-          "</button>";
-        html += '<span class="pill">planned: ' + escapeHtml(String(planned.length)) + "</span>";
-      }
-      html += "</div>";
-
-      if (unplanned.length === 0) {
-        html += '<div class="muted">No active disturbances (excluding planned works).</div>';
-        if (planned.length > 0) {
-          html += '<div class="muted" style="margin-top:6px;">Tip: toggle “show planned” to view works.</div>';
-        }
-      }
-
-      const listToShow = showPlanned ? all : unplanned;
-
-      if (!listToShow.length) {
-        modalBody.innerHTML = html || '<div class="muted">No disturbances available.</div>';
-        wireToggle();
-        return;
-      }
-
-      html += '<div class="distList">';
-      for (const d of listToShow) {
-        const plannedFlag = isPlannedDisturbance(d);
-
-        const title = bestText(d, ["title", "header", "cause", "type"]) || "Disturbance";
-        const desc = bestText(d, ["description", "message", "text", "body"]) || "";
-
-        const impact = bestText(d, ["impact", "severity", "category", "status", "type"]);
-        const when = bestText(d, ["when", "timestamp", "time", "from", "starttime", "startTime"]);
-
-        const link = bestText(d, ["link", "url", "moreinfo", "moreInfo"]);
-        const attachment = bestText(d, ["attachment", "file", "pdf", "document"]);
-
-        let meta = "";
-        if (plannedFlag) meta += '<span class="pill">planned</span>';
-        if (impact) meta += '<span class="pill">' + escapeHtml(impact) + "</span>";
-        if (when) meta += '<span class="pill">' + escapeHtml(when) + "</span>";
-        if (link) meta += '<a class="distLink" href="' + escapeHtml(link) + '" target="_blank" rel="noopener">More info</a>';
-        if (attachment) meta += '<a class="distLink" href="' + escapeHtml(attachment) + '" target="_blank" rel="noopener">Attachment</a>';
-
-        html += '<div class="distItem">';
-        html += '<div class="distTitle">' + escapeHtml(title) + "</div>";
-        if (desc) html += '<div class="distDesc">' + escapeHtml(desc) + "</div>";
-        else html += '<div class="distDesc muted">No details provided.</div>';
-        if (meta) html += '<div class="distMeta">' + meta + "</div>";
-        html += "</div>";
-      }
-      html += "</div>";
-
-      modalBody.innerHTML = html;
-      wireToggle();
-    }
-
-    function wireToggle() {
-      const btn = modalBody.querySelector("#distTogglePlanned");
-      if (!btn) return;
-      btn.addEventListener("click", () => {
-        showPlanned = !showPlanned;
-        render();
-      });
-    }
-
-    render();
-  }
-
-  async function fetchDisturbances() {
-    const r = await fetch("/api/disturbances?lang=" + encodeURIComponent(getLanguage()), { cache: "no-store" });
-
-    const xcache = r.headers.get("X-Cache");
-    updateBannerFromXCache(xcache);
-    noteFreshResponseIfAny(xcache);
-
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || "Disturbances request failed");
-
-    const all = extractDisturbances(data);
-    const unplanned = all.filter((d) => !isPlannedDisturbance(d));
-
-    lastDisturbancesAll = all;
-    lastDisturbancesUnplanned = unplanned;
-
-    setDisturbancePill(unplanned.length);
-  }
-
-  async function refreshDisturbancesSafe() {
-    if (!disturbancePill) return;
-    try {
-      await fetchDisturbances();
-    } catch (e) {
-      setDisturbancePill(NaN);
-      console.warn("Disturbances failed:", e);
-    }
-  }
-
-  if (disturbancePill) {
-    disturbancePill.addEventListener("click", async () => {
-      try {
-        modalTitle.textContent = t("disturbances");
-        modalPill.textContent = "…";
-        modalBody.innerHTML = '<div class="muted">' + t("loading") + '</div>';
-        openOverlay();
-
-        try {
-          await fetchDisturbances();
-        } catch (_e) {}
-
-        renderDisturbancesOverlay(
-          lastDisturbancesUnplanned,
-          lastDisturbancesUnplanned.length,
-          lastDisturbancesAll
-        );
-      } catch (e) {
-        modalPill.textContent = "error";
-        modalBody.innerHTML =
-          '<div class="muted">' + escapeHtml(t("genericError")) + "</div>";
-      }
+}
+$("refreshBoard").addEventListener("click", () => {
+  if (state.view) loadBoard(state.view, { background: true });
+});
+
+async function request(url, signal) {
+  // A client deadline also covers response-body consumption.
+  const deadline = AbortSignal.timeout(30_000);
+  const combined = signal ? AbortSignal.any([signal, deadline]) : deadline;
+  const response = await fetch(url, { signal: combined, cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok)
+    throw Object.assign(new Error(data.error || `HTTP ${response.status}`), {
+      status: response.status,
     });
+  return { data, stale: /^stale/i.test(response.headers.get("X-Cache") || "") };
+}
+function viewKey(view) {
+  return JSON.stringify({
+    ...view,
+    station: view.station.id || view.station.name,
+  });
+}
+function renderHeading() {
+  const view = state.view;
+  $("boardEyebrow").textContent = t("schedule");
+  $("boardTitle").textContent = view
+    ? state.data?.station || view.station.name
+    : t("chooseStation");
+  $("boardSubtitle").textContent = view
+    ? view.live
+      ? `${t("live")} · ${fmtDate(belgianParts().date, state.lang)}`
+      : `${fmtDate(view.date, state.lang)} · ${view.time}`
+    : t("intro");
+  $("departuresTab").setAttribute(
+    "aria-pressed",
+    String(state.mode === "departure"),
+  );
+  $("arrivalsTab").setAttribute(
+    "aria-pressed",
+    String(state.mode === "arrival"),
+  );
+  $("shareBoard").hidden = !view;
+  $("refreshBoard").disabled = !view || !!state.boardController;
+}
+function syncURL() {
+  const view = state.view;
+  if (!view) return;
+  const query = new URLSearchParams({
+    station: view.station.id || view.station.name,
+    name: state.data?.station || view.station.name,
+    mode: view.mode,
+    lang: view.lang,
+  });
+  if (!view.live) {
+    query.set("date", view.date);
+    query.set("time", view.time);
   }
-
-  /* ---- Search liveboard (DEPARTURES ONLY) ---- */
-  async function searchLiveboard() {
-    try {
-      if (!selected) return alert(t("stationAlert"));
-
-      const arrdep = "departure";
-
-      const prettyDate = datePrettyEl.value.trim();
-      const dateIRail = prettyDate ? prettyToIRailDate(prettyDate) : "";
-
-      const prettyTime = timePrettyEl.value.trim();
-      const timeIRail = prettyTime ? prettyToIRailTime(prettyTime) : "";
-
-      if (prettyTime && !isValidTimePretty(prettyTime)) {
-        return alert(t("timeAlert"));
-      }
-
-      board.innerHTML = '<div class="muted">' + t("loading") + '</div>';
-      setStatus(t("loading"), "loading");
-
-      let url =
-        "/api/liveboard?id=" +
-        encodeURIComponent(selected.id) +
-        "&arrdep=" +
-        encodeURIComponent(arrdep) +
-        "&lang=" +
-        encodeURIComponent(getLanguage()) +
-        "&alerts=false";
-
-      if (dateIRail) url += "&date=" + encodeURIComponent(dateIRail);
-      if (timeIRail) url += "&time=" + encodeURIComponent(timeIRail);
-
-      const r = await fetch(url);
-
-      const xcache = r.headers.get("X-Cache");
-      updateBannerFromXCache(xcache);
-      noteFreshResponseIfAny(xcache);
-
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Liveboard failed");
-      rememberRecentStation(selected);
-
-      const deps =
-        data.departures && data.departures.departure
-          ? data.departures.departure
-          : [];
-
-      const title = data.station || selected.name || t("title");
-      const modeLabel = t("departures");
-
-      let momentLabel = "";
-      if (prettyDate || prettyTime) {
-        momentLabel = (prettyDate || "").trim() + (prettyTime ? " " + prettyTime : "");
-        momentLabel = momentLabel.trim();
-      }
-
-      let html =
-        '<div class="headerline">' +
-        '<div class="title">' + escapeHtml(title) + "</div>" +
-        '<span class="pill">' + modeLabel + "</span>" +
-        (momentLabel ? '<span class="pill">' + t("at") + ' ' + escapeHtml(momentLabel) + "</span>" : "") +
-        '<span class="muted">' + t("updated") + ' : ' + new Date(data.timestamp * 1000).toLocaleString() + "</span>" +
-        "</div>";
-
-      if (!deps.length) {
-        html += '<div class="muted" style="margin-top:10px;">' + t("noResults") + "</div>";
-        board.innerHTML = html;
-        setStatus(t("noResults"));
-        return;
-      }
-
-      html += '<div class="deps">';
-      for (const d of deps.slice(0, 24)) {
-        const when = fmtTime(d.time);
-
-        const cancelled = String(d.canceled || "0") === "1";
-        const cancelledPill = cancelled ? '<span class="pill tierBad">' + t("cancelled") + '</span>' : "";
-
-        const delayPill = delayPillHtml(d.delay, cancelled);
-
-        const platform = d.platform != null ? String(d.platform) : "?";
-        const to = d.direction && d.direction.name ? d.direction.name : d.station || "";
-
-        const trainShort =
-          d.vehicleinfo && (d.vehicleinfo.shortname || d.vehicleinfo.name)
-            ? d.vehicleinfo.shortname || d.vehicleinfo.name
-            : d.vehicle || "";
-
-        const vehicleId =
-          d.vehicleinfo && d.vehicleinfo.name ? d.vehicleinfo.name : d.vehicle || "";
-
-        const occName =
-          d.occupancy && (d.occupancy.name || d.occupancy["@id"])
-            ? d.occupancy.name || ""
-            : "unknown";
-        const o = normalizeOccName(occName);
-        const occCls = occTierClassFromLabel(o.label, "pill");
-
-        html +=
-          '<div class="dep">' +
-          "<div>" +
-          '<div class="when">' + escapeHtml(when) + "</div>" +
-          '<div class="meta">' +
-          escapeHtml(trainShort) +
-          (delayPill ? " " + delayPill : "") +
-          (cancelledPill ? " " + cancelledPill : "") +
-          "</div>" +
-          "</div>" +
-
-          "<div>" +
-          '<div class="to">' +
-          '<button class="toBtn" type="button" data-vehicle="' + escapeHtml(vehicleId) + '" title="Open train details">' +
-          escapeHtml(to) + ' <span class="chev">›</span>' +
-          "</button>" +
-          "</div>" +
-          '<div class="meta"><span class="' + occCls + '">' + t("occupancy") + ': ' + escapeHtml(o.label) + "</span></div>" +
-          "</div>" +
-
-          '<div class="right">' +
-          '<div class="platform-badge">' +
-          '<div class="label">' + t("platform") + '</div>' +
-          '<div class="num">' + escapeHtml(platform) + "</div>" +
-          "</div>" +
-          "</div>" +
-          "</div>";
-      }
-      html += "</div>";
-
-      board.innerHTML = html;
-
-      const btns = board.querySelectorAll(".toBtn");
-      btns.forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          try {
-            const vid = btn.getAttribute("data-vehicle") || "";
-            if (!vid) return;
-            await loadVehicleDetails(vid);
-          } catch (e) {
-            modalPill.textContent = "error";
-            modalBody.innerHTML = '<div class="muted">' + escapeHtml(t("genericError")) + "</div>";
-          }
-        });
-      });
-
-      setStatus(t("ok"));
-    } catch (e) {
-      board.innerHTML = '<div class="muted">' + escapeHtml(t("genericError")) + "</div>";
-      setStatus(t("error"), "error");
+  history.replaceState(null, "", `${location.pathname}?${query}`);
+}
+function renderNotice() {
+  const notice = $("boardNotice");
+  notice.className = "notice";
+  if (!state.view) {
+    notice.hidden = true;
+    return;
+  }
+  const key = !navigator.onLine
+    ? "offline"
+    : state.failed
+      ? state.data
+        ? "stale"
+        : "loadError"
+      : state.stale
+        ? "stale"
+        : "";
+  notice.hidden = !key;
+  notice.textContent = key ? t(key) : "";
+  if (state.failed && navigator.onLine) {
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = t("retry");
+    retry.addEventListener("click", () =>
+      loadBoard(state.view, { background: !!state.data }),
+    );
+    notice.append(retry);
+  }
+  if (state.failed && !state.data) notice.classList.add("error");
+  const status = $("updateStatus");
+  status.className = state.data ? `freshness${key ? " stale" : ""}` : "";
+  status.textContent = state.data
+    ? `${t("updated")} ${fmtTime(state.data.timestamp, state.lang)}${state.view.live && !key ? " · 60 s" : ""}`
+    : "";
+}
+function renderEmpty(title = "emptyTitle", body = "emptyBody") {
+  $("boardContent").innerHTML =
+    `<div class="empty-state"><div class="empty-sign" aria-hidden="true">↗</div><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+}
+function renderLoading() {
+  $("boardContent").innerHTML =
+    `<div class="skeleton" aria-label="${h(t("loading"))}">${Array.from({ length: 5 }, () => '<div class="skeleton-row" aria-hidden="true"><span></span><span></span><span></span></div>').join("")}</div>`;
+}
+async function loadBoard(view, { background = false } = {}) {
+  const same = state.view && viewKey(view) === viewKey(state.view);
+  state.boardController?.abort();
+  const controller = new AbortController();
+  state.boardController = controller;
+  const sequence = ++state.boardSequence;
+  state.view = { ...view, station: { ...view.station } };
+  state.mode = view.mode;
+  if (!same) {
+    state.data = null;
+    state.rows = [];
+    state.visible = 12;
+    state.failed = false;
+    state.stale = false;
+  }
+  renderHeading();
+  updateSaveButton();
+  syncURL();
+  renderNotice();
+  if (!background || !state.data) renderLoading();
+  if (!background) {
+    $("board").focus({ preventScroll: true });
+    if (matchMedia("(max-width: 760px)").matches) {
+      $("board").scrollIntoView({ block: "start", behavior: "smooth" });
     }
   }
+  $("board").setAttribute("aria-busy", "true");
+  const query = new URLSearchParams({
+    lang: view.lang,
+    arrdep: view.mode,
+    alerts: "false",
+  });
+  query.set(
+    view.station.id ? "id" : "station",
+    view.station.id || view.station.name,
+  );
+  if (!view.live) {
+    query.set("date", apiDate(view.date));
+    query.set("time", view.time.replace(":", ""));
+  }
+  try {
+    const result = await request(`/api/liveboard?${query}`, controller.signal);
+    if (sequence !== state.boardSequence) return;
+    state.data = result.data;
+    state.rows = departures(result.data, view.mode);
+    state.stale = result.stale;
+    state.failed = false;
+    const info = result.data.stationinfo;
+    if (info?.id) {
+      const station = {
+        id: info.id,
+        name: result.data.station || info.name || view.station.name,
+      };
+      state.view.station = station;
+      remember(station);
+      if (
+        state.station &&
+        (state.station.id === view.station.id ||
+          state.station.name === view.station.name)
+      ) {
+        state.station = station;
+        $("stationInput").value = station.name;
+      }
+    }
+    renderBoard();
+    renderHeading();
+    updateSaveButton();
+    syncURL();
+  } catch (error) {
+    if (sequence !== state.boardSequence || error.name === "AbortError") return;
+    state.failed = true;
+    if (state.data) renderBoard();
+    else renderEmpty("loadError", "liveUnavailable");
+  } finally {
+    if (sequence === state.boardSequence) {
+      state.boardController = null;
+      $("board").setAttribute("aria-busy", "false");
+      $("refreshBoard").disabled = false;
+      renderNotice();
+    }
+  }
+}
+function statusFor(row, mode = state.mode) {
+  if (flag(row.canceled))
+    return { text: t("cancelled"), className: "cancelled" };
+  if (flag(mode === "arrival" ? row.arrived : row.left))
+    return {
+      text: t(mode === "arrival" ? "arrived" : "departed"),
+      className: "unknown",
+    };
+  const delay = delayMinutes(row.delay);
+  if (delay === null) return { text: "—", className: "unknown" };
+  return delay === 0
+    ? { text: t("onTime"), className: "" }
+    : {
+        text: `${delay > 0 ? "+" : "−"}${Math.abs(delay)} ${t("minute")}`,
+        className: "delay",
+      };
+}
+function platformHTML(row) {
+  const changed =
+    row.platforminfo?.normal != null && !flag(row.platforminfo.normal);
+  const platform =
+    row.platform == null || row.platform === "" ? "—" : row.platform;
+  return `<span class="platform${changed ? " changed" : ""}" title="${h(t(changed ? "changedPlatform" : "platform"))}" aria-label="${h(t(changed ? "changedPlatform" : "platform"))} ${h(platform)}">${h(platform)}</span>`;
+}
+function renderBoard() {
+  if (!state.rows.length) {
+    renderEmpty("noTrains", "noTrainsBody");
+    return;
+  }
+  const view = state.view;
+  const rows = state.rows
+    .slice(0, state.visible)
+    .map((row, i) => {
+      const when = fmtTime(row.time, state.lang),
+        delay = Number(row.delay) || 0;
+      const expected =
+        delay && !flag(row.canceled)
+          ? fmtTime(Number(row.time) + delay, state.lang)
+          : "";
+      const status = statusFor(row, view.mode);
+      const destination =
+        (view.mode === "departure" ? row.direction?.name : "") ||
+        row.station ||
+        row.stationinfo?.name ||
+        "—";
+      const train =
+        row.vehicleinfo?.shortname ||
+        String(row.vehicleinfo?.name || row.vehicle || "").replace(
+          /^BE\.NMBS\./,
+          "",
+        );
+      const statusMarkup = `<span class="status-text ${status.className}">${h(status.text)}</span>`;
+      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span>${h(expected)}` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
+    })
+    .join("");
+  $("boardContent").innerHTML =
+    `<table class="timetable"><caption class="sr-only">${h(t(view.mode === "arrival" ? "arrivals" : "departures"))} · ${h(state.data.station || view.station.name)}</caption><colgroup><col class="time-col"><col><col class="train-col"><col class="status-col"><col class="platform-col"></colgroup><thead><tr><th scope="col">${h(t("time"))}</th><th scope="col">${h(t(view.mode === "arrival" ? "origin" : "destination"))}</th><th scope="col" class="train-column">${h(t("train"))}</th><th scope="col" class="status-column">${h(t("status"))}</th><th scope="col">${h(t("platform"))}</th></tr></thead><tbody>${rows}</tbody></table>${state.rows.length > 12 ? `<div class="more-row"><button class="text-button" type="button" id="showMore">${h(t(state.visible < state.rows.length ? "more" : "less"))} (${state.visible < state.rows.length ? state.rows.length - state.visible : 12})</button></div>` : ""}`;
+  $("showMore")?.addEventListener("click", () => {
+    state.visible = state.visible < state.rows.length ? state.visible + 12 : 12;
+    renderBoard();
+    $("showMore")?.focus();
+  });
+}
+$("boardContent").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-train]");
+  if (!button) return;
+  const row = state.rows[Number(button.dataset.train)];
+  if (row) openTrain(row, state.view);
+});
 
-  /* ---- Init ---- */
-  setNow();
-  setStatus(t("ready"));
-  updateBannerFromNavigator();
+function openDetails(title, eyebrow) {
+  state.dialogController?.abort();
+  state.dialogController = new AbortController();
+  const sequence = ++state.dialogSequence;
+  $("dialogTitle").textContent = title;
+  $("dialogEyebrow").textContent = eyebrow;
+  $("dialogContent").innerHTML =
+    `<p class="muted" role="status">${h(t("loading"))}</p>`;
+  if (!$("detailsDialog").open) $("detailsDialog").showModal();
+  $("closeDialog").focus();
+  return { sequence, signal: state.dialogController.signal };
+}
+function dialogCurrent(sequence) {
+  return sequence === state.dialogSequence && $("detailsDialog").open;
+}
+function closeDetails() {
+  $("detailsDialog").close();
+  state.dialogController?.abort();
+  state.dialogSequence++;
+}
+$("closeDialog").addEventListener("click", closeDetails);
+$("detailsDialog").addEventListener("close", () => {
+  state.dialogController?.abort();
+  state.dialogSequence++;
+});
+$("detailsDialog").addEventListener("click", (event) => {
+  if (event.target !== $("detailsDialog")) return;
+  const rect = event.target.getBoundingClientRect();
+  if (
+    event.clientX < rect.left ||
+    event.clientX > rect.right ||
+    event.clientY < rect.top ||
+    event.clientY > rect.bottom
+  )
+    closeDetails();
+});
+async function openTrain(row, view) {
+  const id = row.vehicleinfo?.name || row.vehicle;
+  const short =
+    row.vehicleinfo?.shortname || String(id || "").replace(/^BE\.NMBS\./, "");
+  const date = serviceDate(row, view.live ? belgianParts().date : view.date);
+  const { sequence, signal } = openDetails(short || t("train"), t("details"));
+  if (!id) {
+    $("dialogContent").textContent = t("detailError");
+    return;
+  }
+  try {
+    const query = new URLSearchParams({
+      id,
+      lang: state.lang,
+      date: apiDate(date),
+      alerts: "false",
+    });
+    const result = await request(`/api/vehicle?${query}`, signal);
+    if (!dialogCurrent(sequence)) return;
+    const stops = asArray(result.data.stops?.stop);
+    const html = stops
+      .map((stop) => {
+        const dep =
+          stop.scheduledDepartureTime || stop.departuretime || stop.time;
+        const arr = stop.scheduledArrivalTime || stop.arrivaltime;
+        const current = stop.stationinfo?.id === view.station.id;
+        const status = statusFor(
+          {
+            delay: dep ? stop.departureDelay : stop.arrivalDelay,
+            canceled: dep ? stop.departureCanceled : stop.arrivalCanceled,
+          },
+          "departure",
+        );
+        const occ = occupancy(stop);
+        return `<li class="stop${current ? " current" : ""}"><div class="stop-times">${h(fmtTime(dep || arr, state.lang))}<small>${h(t(dep ? "departure" : "arrival"))}</small>${dep && arr && Number(arr) !== Number(dep) ? `<small>${h(t("arrival"))} ${h(fmtTime(arr, state.lang))}</small>` : ""}</div><div class="stop-name">${h(stop.station || stop.stationinfo?.name || "—")}<small><span class="status-text ${status.className}">${h(status.text)}</span>${current ? ` · ${h(t("selectedStop"))}` : ""}${flag(stop.isExtraStop) ? ` · ${h(t("extraStop"))}` : ""}${occ ? ` · ${h(t(occ))}` : ""}</small></div>${platformHTML(stop)}</li>`;
+      })
+      .join("");
+    $("dialogContent").innerHTML =
+      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("allTimes"))}</span></p>${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
+    // Show stops immediately; composition must never delay or overwrite a newer dialog.
+    if (date !== belgianParts().date) return;
+    try {
+      const composition = await request(
+        `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang })}`,
+        signal,
+      );
+      if (!dialogCurrent(sequence)) return;
+      $("composition").innerHTML =
+        `<h3 class="section-title">${h(t("composition"))}</h3>${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data)}`;
+    } catch (error) {
+      if (!dialogCurrent(sequence) || signal.aborted) return;
+      $("composition").innerHTML =
+        `<h3 class="section-title">${h(t("composition"))}</h3><p class="muted">${h(t("compositionError"))}</p>`;
+    }
+  } catch (error) {
+    if (!dialogCurrent(sequence) || signal.aborted) return;
+    $("dialogContent").innerHTML =
+      `<p class="notice error">${h(t("detailError"))}</p><button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
+    $("retryDetails").addEventListener("click", () => openTrain(row, view));
+  }
+}
+function renderComposition(data) {
+  const segments = asArray(data.composition?.segments?.segment);
+  const number = (value) =>
+    Number.isFinite(Number(value)) ? Number(value) : 0;
+  const result = segments
+    .map((segment) => {
+      const units = asArray(segment.composition?.units?.unit);
+      if (!units.length) return "";
+      // Each segment is a separate formation; never add the same train across segments.
+      const first = units.reduce(
+        (sum, u) =>
+          sum + number(u.seatsFirstClass) + number(u.seatsCoupeFirstClass),
+        0,
+      );
+      const second = units.reduce(
+        (sum, u) =>
+          sum + number(u.seatsSecondClass) + number(u.seatsCoupeSecondClass),
+        0,
+      );
+      const label = [
+        segment.origin?.name || segment.origin,
+        segment.destination?.name || segment.destination,
+      ]
+        .filter((v) => typeof v === "string")
+        .join(" → ");
+      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div>${units
+        .map((unit) => {
+          const features = [
+            ["hasToilets", "toilets"],
+            ["hasBikeSection", "bikes"],
+            ["hasPrmSection", "accessible"],
+            ["hasAirco", "airco"],
+          ]
+            .filter(([key]) => flag(unit[key]))
+            .map(([, key]) => t(key));
+          if (
+            flag(unit.hasFirstClassOutlets) ||
+            flag(unit.hasSecondClassOutlets)
+          )
+            features.push(t("outlets"));
+          const name =
+            unit.materialSubTypeName ||
+            [unit.materialType?.parent_type, unit.materialType?.sub_type]
+              .filter(Boolean)
+              .join(" ") ||
+            "—";
+          return `<div class="carriage"><div><strong>${h(name)}</strong><small>${h(unit.materialNumber || "")}</small></div><div><small>${h(features.join(" · "))}</small></div></div>`;
+        })
+        .join("")}</div>`;
+    })
+    .join("");
+  return result || `<p class="muted">${h(t("compositionError"))}</p>`;
+}
 
-  // Disturbances: load once + refresh periodically
-  refreshDisturbancesSafe();
-  setInterval(refreshDisturbancesSafe, 60_000);
-})();
+function renderNetworkButton() {
+  const button = $("networkButton");
+  button.className = "network-button";
+  if (!state.network) {
+    $("networkLabel").textContent = t(
+      state.network === null ? "network" : "networkUnknown",
+    );
+    return;
+  }
+  const count = state.network.filter((d) => !isPlanned(d)).length;
+  $("networkLabel").textContent = count
+    ? `${count} ${t("networkIssues")}`
+    : t("networkClear");
+  if (state.networkStale) $("networkLabel").textContent = t("networkUnknown");
+  else button.classList.add(count ? "has-issues" : "network-ok");
+}
+async function refreshNetwork() {
+  state.networkController?.abort();
+  const controller = new AbortController();
+  state.networkController = controller;
+  try {
+    const result = await request(
+      `/api/disturbances?lang=${state.lang}`,
+      controller.signal,
+    );
+    if (controller !== state.networkController) return;
+    state.network = disturbances(result.data);
+    state.networkStale = result.stale;
+  } catch {
+    if (controller !== state.networkController || controller.signal.aborted)
+      return;
+    state.networkStale = true;
+    if (!state.network) state.network = false;
+  } finally {
+    if (controller === state.networkController) {
+      state.networkController = null;
+      renderNetworkButton();
+    }
+  }
+}
+$("networkButton").addEventListener("click", async () => {
+  const { sequence } = openDetails(t("disturbances"), t("network"));
+  await refreshNetwork();
+  if (!dialogCurrent(sequence)) return;
+  const list = Array.isArray(state.network) ? state.network : [];
+  $("dialogContent").innerHTML =
+    `${state.networkStale ? `<div class="notice">${h(t(list.length ? "stale" : "networkUnknown"))}</div>` : ""}<p class="dialog-summary">${h(t("networkIntro"))}</p>${
+      list.length
+        ? list
+            .map((d) => {
+              const link = safeLink(d.link),
+                attachment = safeLink(d.attachment);
+              return `<article class="disturbance"><span class="category">${h(t(isPlanned(d) ? "works" : "disturbance"))}</span><h3>${h(d.title || t("disturbance"))}</h3><p>${h(d.description || "")}</p>${link ? `<a href="${h(link)}" target="_blank" rel="noopener noreferrer">${h(t("moreInfo"))} ↗</a>` : ""}${attachment ? `<a href="${h(attachment)}" target="_blank" rel="noopener noreferrer">${h(t("attachment"))} ↗</a>` : ""}</article>`;
+            })
+            .join("")
+        : `<p class="muted">${h(t(state.networkStale ? "networkUnknown" : "noDisturbances"))}</p>`
+    }`;
+});
+$("shareBoard").addEventListener("click", async () => {
+  syncURL();
+  try {
+    await navigator.clipboard.writeText(location.href);
+    toast(t("copied"));
+  } catch {
+    openDetails(t("share"), t("schedule"));
+    $("dialogContent").innerHTML =
+      `<p class="muted">${h(t("shareFallback"))}</p><input class="share-input" id="shareURL" aria-label="URL" readonly value="${h(location.href)}">`;
+    $("shareURL").focus();
+    $("shareURL").select();
+  }
+});
+function refreshVisible() {
+  if (document.hidden) return;
+  updateClock();
+  if (state.view?.live && !state.boardController && navigator.onLine)
+    loadBoard(state.view, { background: true });
+  if (!state.networkController && navigator.onLine) refreshNetwork();
+}
+window.addEventListener("offline", () => {
+  renderNotice();
+  state.networkStale = true;
+  renderNetworkButton();
+});
+window.addEventListener("online", () => {
+  if (state.view && !document.hidden)
+    loadBoard(state.view, { background: true });
+  refreshNetwork();
+});
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshVisible();
+});
+setInterval(refreshVisible, 60_000);
+
+// A shared link restores the displayed station, language, arrivals/departures and planned moment.
+const initialStation = params.get("station");
+const date = params.get("date"),
+  time = params.get("time");
+if (validDate(date || "") && validTime(time || "")) {
+  state.live = false;
+  $("dateInput").value = date;
+  $("timeInput").value = time;
+}
+applyLanguage();
+if (initialStation && initialStation.length <= 150) {
+  state.station = /^BE\.NMBS\.[A-Za-z0-9]+$/.test(initialStation)
+    ? { id: initialStation, name: params.get("name") || initialStation }
+    : { name: initialStation };
+  $("stationInput").value = state.station.name;
+  $("clearStation").hidden = false;
+  submitBoard();
+}
+refreshNetwork();

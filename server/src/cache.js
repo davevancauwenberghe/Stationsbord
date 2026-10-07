@@ -1,6 +1,8 @@
 // cache.js
 export class MemoryCache {
-  constructor() {
+  constructor({ maxEntries = 500, staleMs = 5 * 60_000 } = {}) {
+    this.maxEntries = maxEntries;
+    this.staleMs = staleMs;
     /** @type {Map<string, { expiresAt: number, etag?: string, value?: any }>} */
     this.map = new Map();
   }
@@ -15,6 +17,9 @@ export class MemoryCache {
 
   set(key, { ttlMs, etag, value }) {
     const safeTtl = Number.isFinite(ttlMs) ? ttlMs : 30_000;
+    this.map.delete(key);
+    while (this.map.size >= this.maxEntries)
+      this.map.delete(this.map.keys().next().value);
     this.map.set(key, {
       expiresAt: Date.now() + Math.max(1, safeTtl),
       etag,
@@ -24,14 +29,19 @@ export class MemoryCache {
 
   // Returns even expired entries (stale).
   peek(key) {
-    return this.map.get(key) ?? null;
+    const entry = this.map.get(key);
+    if (!entry || Date.now() > entry.expiresAt + this.staleMs) {
+      this.map.delete(key);
+      return null;
+    }
+    return entry;
   }
 
   // Optional: manual cleanup if you ever want it
   pruneExpired() {
     const now = Date.now();
     for (const [k, v] of this.map) {
-      if (now > v.expiresAt) this.map.delete(k);
+      if (now > v.expiresAt + this.staleMs) this.map.delete(k);
     }
   }
 }
@@ -47,6 +57,6 @@ export function parseMaxAgeSeconds(cacheControl) {
 export function ttlFromHeaders(headers, fallbackSeconds = 30) {
   const cc = headers.get("cache-control");
   const maxAge = parseMaxAgeSeconds(cc);
-  const seconds = (maxAge != null ? maxAge : fallbackSeconds);
-  return Math.max(1, Number(seconds) || fallbackSeconds) * 1000;
+  const seconds = maxAge != null ? maxAge : fallbackSeconds;
+  return Math.max(0, seconds) * 1000;
 }

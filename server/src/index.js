@@ -6,13 +6,13 @@ import { fileURLToPath } from "url";
 import { MemoryCache } from "./cache.js";
 import { fetchIRailJSON, buildUserAgent } from "./irail.js";
 import { extractStations, buildSearchIndex } from "./stationIndex.js";
-import { createSimpleRateLimiter } from "./rateLimit.js";
+import { createSimpleRateLimiter, pruneLimiterMap } from "./rateLimit.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.5.0c";
+const APP_VERSION = process.env.APP_VERSION || "0.6.0";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -23,15 +23,34 @@ const USER_AGENT = buildUserAgent({
   email: APP_EMAIL,
 });
 
+app.disable("x-powered-by");
+// Fly has one trusted ingress hop. Leave direct/self-hosted installs untrusted.
+if (process.env.FLY_APP_NAME) app.set("trust proxy", 1);
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+  );
+  next();
+});
 const cache = new MemoryCache();
+const pending = new Map();
+async function sharedFetch(key, pathQ, options) {
+  if (!pending.has(key)) {
+    const promise = fetchIRailJSON(pathQ, options).finally(() =>
+      pending.delete(key),
+    );
+    pending.set(key, promise);
+  }
+  return pending.get(key);
+}
 
 const takeGlobalToken = createSimpleRateLimiter({ perSecond: 3, burst: 5 });
 
 const ipBuckets = new Map();
 function getIp(req) {
-  // If you deploy behind Fly/Cloudflare, you *may* want to trust proxy
-  // app.set("trust proxy", 1);
-  // Then req.ip becomes more reliable.
   return String(req.ip || req.socket?.remoteAddress || "unknown");
 }
 function takeIpToken(req) {
@@ -44,6 +63,11 @@ function takeIpToken(req) {
   return bucket();
 }
 
+const cleanup = setInterval(() => {
+  cache.pruneExpired();
+  pruneLimiterMap(ipBuckets);
+}, 60_000);
+cleanup.unref();
 const stationIndexes = new Map();
 function getStationIndex(lang) {
   return stationIndexes.get(lang) || buildSearchIndex([]);
@@ -60,7 +84,12 @@ const __dirname = path.dirname(__filename);
 function isTransientUpstreamError(e) {
   const status = Number(e?.status || 0);
   const msg = String(e?.message || "").toLowerCase();
-  return status === 502 || status === 503 || status === 504 || msg.includes("timeout");
+  return (
+    status === 429 ||
+    status >= 500 ||
+    msg.includes("timeout") ||
+    msg.includes("fetch failed")
+  );
 }
 
 /** Keep cache keys stable even if param insertion order changes later */
@@ -68,33 +97,51 @@ function stableParamsKey(params) {
   // URLSearchParams -> sorted key string
   const entries = [];
   for (const [k, v] of params.entries()) entries.push([k, v]);
-  entries.sort((a, b) => (a[0] === b[0] ? String(a[1]).localeCompare(String(b[1])) : a[0].localeCompare(b[0])));
+  entries.sort((a, b) =>
+    a[0] === b[0]
+      ? String(a[1]).localeCompare(String(b[1]))
+      : a[0].localeCompare(b[0]),
+  );
   return entries.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 }
 
 function normalizeLang(raw) {
-  const v = String(raw || "en").toLowerCase().trim();
+  const v = String(raw || "en")
+    .toLowerCase()
+    .trim();
   // Keep it strict so we don't fragment the cache with nonsense
   const allowed = new Set(["en", "nl", "fr", "de"]);
   return allowed.has(v) ? v : "en";
 }
 
-
 function normalizeArrdep(raw) {
-  const v = String(raw || "departure").toLowerCase().trim();
+  const v = String(raw || "departure")
+    .toLowerCase()
+    .trim();
   const allowed = new Set(["departure", "arrival"]);
   return allowed.has(v) ? v : "departure";
 }
 
 function normalizeAlerts(raw) {
-  const v = String(raw ?? "false").toLowerCase().trim();
+  const v = String(raw ?? "false")
+    .toLowerCase()
+    .trim();
   return v === "true" ? "true" : "false";
 }
 
 function normalizeDateDDMMYY(raw) {
   if (raw == null || raw === "") return null;
   const s = String(raw).trim();
-  return /^\d{6}$/.test(s) ? s : null;
+  if (!/^\d{6}$/.test(s)) return null;
+  const day = Number(s.slice(0, 2)),
+    month = Number(s.slice(2, 4)),
+    year = 2000 + Number(s.slice(4));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? s
+    : null;
 }
 
 function normalizeTimeHHMM(raw) {
@@ -107,7 +154,11 @@ function normalizeTimeHHMM(raw) {
   return s;
 }
 
-async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs, transformJson }) {
+async function cachedProxy(
+  req,
+  res,
+  { keyPrefix, pathQ, params, timeoutMs, transformJson },
+) {
   const stableKey = stableParamsKey(params);
   const key = `${keyPrefix}:${stableKey}`;
 
@@ -121,17 +172,18 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs, tran
   const etag = peek?.etag;
 
   // fairness + upstream protection
-  if (!takeIpToken(req) || !takeGlobalToken()) {
+  if (!pending.has(key) && (!takeIpToken(req) || !takeGlobalToken())) {
     if (peek?.value) {
       res.setHeader("X-Cache", "STALE(local-rate-limit)");
       return res.json(peek.value);
     }
+    res.setHeader("Retry-After", "2");
     return res.status(429).json({ error: "Local rate limit reached" });
   }
 
   let out;
   try {
-    out = await fetchIRailJSON(pathQ, {
+    out = await sharedFetch(key, pathQ, {
       userAgent: USER_AGENT,
       etag,
       ...(timeoutMs ? { timeoutMs } : {}),
@@ -146,7 +198,8 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs, tran
   }
 
   const { status, etag: newEtag, ttlMs, json } = out;
-  const responseJson = typeof transformJson === "function" ? transformJson(json) : json;
+  const responseJson =
+    typeof transformJson === "function" ? transformJson(json) : json;
 
   if (status === 304 && peek?.value) {
     cache.set(key, { ttlMs, etag: newEtag ?? etag, value: peek.value });
@@ -160,7 +213,19 @@ async function cachedProxy(req, res, { keyPrefix, pathQ, params, timeoutMs, tran
 }
 
 /* Health */
-app.get("/health", (_req, res) => res.json({ ok: true, name: APP_NAME, version: APP_VERSION }));
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, name: APP_NAME, version: APP_VERSION }),
+);
+
+// Reject arrays/objects and oversized query values before building upstream URLs.
+app.use("/api", (req, res, next) => {
+  for (const value of Object.values(req.query)) {
+    if (typeof value !== "string" || value.length > 200) {
+      return res.status(400).json({ error: "Invalid query parameter" });
+    }
+  }
+  next();
+});
 
 /* Stations: fetch + cache */
 async function getStationsFresh(lang = "en") {
@@ -173,9 +238,15 @@ async function getStationsFresh(lang = "en") {
 
   const etag = peek?.etag;
 
-  if (!takeGlobalToken()) throw Object.assign(new Error("Local rate limit reached"), { status: 429 });
+  if (!pending.has(key) && !takeGlobalToken())
+    throw Object.assign(new Error("Local rate limit reached"), { status: 429 });
 
-  const { status, etag: newEtag, ttlMs, json } = await fetchIRailJSON(`/stations/?format=json&lang=${safeLang}`, {
+  const {
+    status,
+    etag: newEtag,
+    ttlMs,
+    json,
+  } = await sharedFetch(key, `/stations/?format=json&lang=${safeLang}`, {
     userAgent: USER_AGENT,
     etag,
   });
@@ -213,7 +284,10 @@ app.get("/api/stations/search", async (req, res) => {
       stationIndex = getStationIndex(lang);
     }
     const q = String(req.query.q || "");
-    const limit = Math.min(50, Number(req.query.limit || 15));
+    const limit = Math.max(
+      1,
+      Math.min(50, Math.floor(Number(req.query.limit)) || 15),
+    );
     res.json({ q, lang, results: stationIndex.search(q, limit) });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
@@ -228,8 +302,14 @@ app.get("/api/liveboard", async (req, res) => {
     const id = req.query.id;
     const station = req.query.station;
 
-    if (id && station) return res.status(400).json({ error: "Use either id OR station, not both." });
-    if (!id && !station) return res.status(400).json({ error: "Missing required parameter: id or station" });
+    if (id && station)
+      return res
+        .status(400)
+        .json({ error: "Use either id OR station, not both." });
+    if (!id && !station)
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: id or station" });
 
     const lang = normalizeLang(req.query.lang);
     const arrdep = normalizeArrdep(req.query.arrdep);
@@ -237,12 +317,16 @@ app.get("/api/liveboard", async (req, res) => {
 
     const date = normalizeDateDDMMYY(req.query.date);
     if (req.query.date && !date) {
-      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Expected DDMMYY." });
     }
 
     const timeNorm = normalizeTimeHHMM(req.query.time);
     if (req.query.time && !timeNorm) {
-      return res.status(400).json({ error: "Invalid time format. Expected HHMM." });
+      return res
+        .status(400)
+        .json({ error: "Invalid time format. Expected HHMM." });
     }
 
     const params = new URLSearchParams();
@@ -307,14 +391,17 @@ app.get("/api/vehicle", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
 
     const id = req.query.id;
-    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
+    if (!id)
+      return res.status(400).json({ error: "Missing required parameter: id" });
 
     const lang = normalizeLang(req.query.lang);
     const alerts = normalizeAlerts(req.query.alerts);
 
     const date = normalizeDateDDMMYY(req.query.date);
     if (req.query.date && !date) {
-      return res.status(400).json({ error: "Invalid date format. Expected DDMMYY." });
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Expected DDMMYY." });
     }
 
     const params = new URLSearchParams();
@@ -338,19 +425,23 @@ app.get("/api/vehicle", async (req, res) => {
   }
 });
 
-
 /* Composition proxy (cached, on-demand) */
 app.get("/api/composition", async (req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");
 
     const id = req.query.id;
-    if (!id) return res.status(400).json({ error: "Missing required parameter: id" });
+    if (!id)
+      return res.status(400).json({ error: "Missing required parameter: id" });
 
     const lang = normalizeLang(req.query.lang);
-    const data = String(req.query.data || "").toLowerCase().trim();
+    const data = String(req.query.data || "")
+      .toLowerCase()
+      .trim();
     if (data && data !== "all") {
-      return res.status(400).json({ error: "Invalid data parameter. Expected empty or all." });
+      return res
+        .status(400)
+        .json({ error: "Invalid data parameter. Expected empty or all." });
     }
 
     const params = new URLSearchParams();
@@ -386,9 +477,9 @@ app.use(
       }
 
       // aggressive cache for assets (best with versioned filenames or ?v=...)
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
     },
-  })
+  }),
 );
 
 app.listen(PORT, () => {
