@@ -85,7 +85,7 @@ test("query text is escaped in HTML and cannot break out of metadata or replacem
     search,
     origin,
   );
-  assert.doesNotMatch(html, /<script>/);
+  assert.doesNotMatch(html, /<script\b/i);
   assert.match(html, /&lt;script&gt;/);
   assert.match(html, /&quot;/);
   assert.match(html, /<html lang="en">/);
