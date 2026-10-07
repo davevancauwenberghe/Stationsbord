@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>Stationsbord · België per spoor</title>
+  <desc>Belgische treinen, helder in beeld. Een rustig stationsbord met groene en gouden spoorlijnen.</desc>
+  <rect width="1200" height="630" fill="#f5f4ef"/>
+  <g transform="translate(72 64)">
+    <rect width="58" height="58" rx="13" fill="#163b36"/>
+    <g transform="scale(1.45)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+      <rect x="11" y="7" width="18" height="24" rx="5"/>
+      <path d="M12 20h16M20 8v12M14 33l2-3m10 3-2-3M15 25h1m8 0h1"/>
+    </g>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="146" y="108" fill="#182d32" font-size="45" font-weight="700" letter-spacing="-2">stationsbord<tspan fill="#b18b32">.</tspan></text>
+    <text x="72" y="204" fill="#163b36" font-size="14" font-weight="700" letter-spacing="3">BELGIË PER SPOOR</text>
+    <text x="68" y="294" fill="#182d32" font-size="76" font-weight="700" letter-spacing="-3">Jouw station.</text>
+    <text x="68" y="382" fill="#182d32" font-size="76" font-weight="700" letter-spacing="-3">Alle treinen.</text>
+    <text x="72" y="438" fill="#63716f" font-size="25">Belgische treinen, helder in beeld.</text>
+    <path d="M72 504H748" stroke="#dedfd8"/>
+    <text x="72" y="542" fill="#163b36" font-size="13" font-weight="700" letter-spacing="1.8">VERTREKKEN · AANKOMSTEN · PERRONS</text>
+    <text x="72" y="574" fill="#63716f" font-size="15">Onafhankelijke dienst · data via iRail</text>
+  </g>
+  <rect x="820" y="64" width="308" height="510" rx="12" fill="#163b36"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M906 64V209Q906 249 946 289L1003 346Q1042 385 1042 425V574" stroke="#496b60" stroke-width="3"/>
+    <path d="M1042 64V183Q1042 221 1004 259L947 316Q906 357 906 398V574" stroke="#496b60" stroke-width="3"/>
+    <path d="M974 64V574" stroke="#e4bc52" stroke-width="4"/>
+    <g fill="#163b36" stroke="#e4bc52" stroke-width="4">
+      <circle cx="974" cy="160" r="10"/>
+      <circle cx="974" cy="319" r="15" fill="#e4bc52"/>
+      <circle cx="974" cy="478" r="10"/>
+    </g>
+    <path d="M862 124V98m-8 8 8-8 8 8M1086 514v26m-8-8 8 8 8-8" stroke="#aad4c0" stroke-width="2"/>
+  </g>
+</svg>

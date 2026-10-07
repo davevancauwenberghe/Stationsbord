@@ -2,6 +2,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import { readFileSync } from "node:fs";
+import { publicOrigin, renderPage } from "./social.js";
 
 import { MemoryCache } from "./cache.js";
 import { fetchIRailJSON, buildUserAgent } from "./irail.js";
@@ -14,7 +16,7 @@ app.set("query parser", "extended");
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.6.1";
+const APP_VERSION = process.env.APP_VERSION || "0.6.2";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -464,6 +466,19 @@ app.get("/api/composition", async (req, res) => {
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }
+});
+
+// Social crawlers receive the complete preview without running JavaScript or
+// requesting live data. Use the configured public origin for every crawler.
+const PUBLIC_ORIGIN = publicOrigin(process.env.PUBLIC_BASE_URL);
+const pageTemplate = readFileSync(
+  path.join(__dirname, "public/index.html"),
+  "utf8",
+);
+app.get(["/", "/index.html"], (req, res) => {
+  const query = req.originalUrl.split("?").slice(1).join("?");
+  res.setHeader("Cache-Control", "no-cache");
+  res.type("html").send(renderPage(pageTemplate, query, PUBLIC_ORIGIN));
 });
 
 /* Static frontend (public/) — keep LAST */
