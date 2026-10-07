@@ -1196,7 +1196,9 @@ body:has(dialog[open]) {
   }
   .timetable col.train-col,
   .timetable col.status-col {
-    width: 0;
+    /* Remove the column definitions alongside their hidden cells. Keeping
+       zero-width columns shifts the platform cell into a collapsed column. */
+    display: none;
   }
   .mobile-meta {
     display: flex;
@@ -1645,6 +1647,10 @@ body:has(dialog[open]) {
   .timetable .train-column,
   .timetable .status-column {
     display: table-cell;
+  }
+  .timetable col.train-col,
+  .timetable col.status-col {
+    display: table-column;
   }
   .mobile-meta {
     display: none;
