@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#163b36" />
+    <meta name="theme-color" content="#f6f3eb" />
     <!-- page-meta:start -->
     <title>Stationsbord · België per spoor</title>
     <meta
@@ -16,12 +16,12 @@
     <!-- page-meta:end -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Stationsbord" />
-    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.6.2" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
-    <link rel="manifest" href="/site.webmanifest?v=0.6.2" />
-    <script src="/theme.js?v=0.6.2"></script>
-    <link rel="stylesheet" href="/styles.css?v=0.6.2" />
-    <script type="module" src="/app.js?v=0.6.2"></script>
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.7.0" />
+    <link rel="apple-touch-icon" href="/favicon.png?v=0.7.0" />
+    <link rel="manifest" href="/site.webmanifest?v=0.7.0" />
+    <script src="/theme.js?v=0.7.0"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.7.0" />
+    <script type="module" src="/app.js?v=0.7.0"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -30,7 +30,7 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Stationsbord"
-          ><img src="/mark.svg?v=0.6.2" alt="" width="36" height="36" /><span
+          ><img src="/mark.svg?v=0.7.0" alt="" width="36" height="36" /><span
             >stationsbord<span class="brand-dot">.</span></span
           ></a
         >
@@ -64,9 +64,9 @@
       <div class="page-intro">
         <div>
           <p class="eyebrow" data-i18n="eyebrow">BELGIË PER SPOOR</p>
-          <h1 data-i18n="headline">Waar gaat jouw dag heen?</h1>
+          <h1 data-i18n="headline">Even de treinen checken.</h1>
           <p class="intro-copy" data-i18n="intro">
-            Jouw station. Alle treinen. Helder in beeld.
+            Voor de dagelijkse rit. Of zomaar een dagje weg.
           </p>
         </div>
         <button class="network-button" id="networkButton" type="button">
@@ -78,93 +78,91 @@
       <div class="workspace">
         <aside class="sidebar" aria-label="Station en tijd">
           <form id="stationForm" class="search-panel" autocomplete="off">
-            <p class="section-kicker">
-              <span class="step-number">01</span
-              ><span data-i18n="yourStation">Jouw station</span>
-            </p>
-            <label for="stationInput" class="field-label" data-i18n="station"
-              >Station</label
-            >
-            <div class="autocomplete">
-              <div class="search-field">
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <circle cx="10.5" cy="10.5" r="6.5"></circle>
-                  <path d="m16 16 4 4"></path></svg
-                ><input
-                  id="stationInput"
-                  type="text"
-                  role="combobox"
-                  aria-autocomplete="list"
-                  aria-expanded="false"
-                  aria-controls="stationOptions"
-                  aria-describedby="searchStatus"
-                  placeholder="Zoek een station…"
-                  spellcheck="false"
-                  enterkeyhint="search"
-                /><button
-                  id="clearStation"
-                  class="clear-input"
-                  type="button"
-                  aria-label="Wis zoekveld"
+            <div class="station-field">
+              <label for="stationInput" class="field-label" data-i18n="station"
+                >Station</label
+              >
+              <div class="autocomplete">
+                <div class="search-field">
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                    <path d="m16 16 4 4"></path></svg
+                  ><input
+                    id="stationInput"
+                    type="text"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="stationOptions"
+                    aria-describedby="searchStatus"
+                    placeholder="Zoek een station…"
+                    spellcheck="false"
+                    enterkeyhint="search"
+                  /><button
+                    id="clearStation"
+                    class="clear-input"
+                    type="button"
+                    aria-label="Wis zoekveld"
+                    hidden
+                  >
+                    ×
+                  </button>
+                </div>
+                <div
+                  id="stationOptions"
+                  class="station-options"
+                  role="listbox"
                   hidden
+                ></div>
+              </div>
+              <p id="searchStatus" class="field-hint" role="status"></p>
+              <p class="search-key">
+                <kbd>/</kbd>
+                <span data-i18n="searchShortcut">Zoek zonder muis</span>
+              </p>
+            </div>
+            <div class="when-field">
+              <span class="field-label" data-i18n="when">Wanneer?</span>
+              <div class="segmented when-tabs" aria-label="Wanneer">
+                <button
+                  id="liveMode"
+                  type="button"
+                  aria-pressed="true"
+                  data-i18n="now"
                 >
-                  ×
+                  Nu</button
+                ><button
+                  id="planMode"
+                  type="button"
+                  aria-pressed="false"
+                  data-i18n="plan"
+                >
+                  Andere tijd
                 </button>
               </div>
-              <div
-                id="stationOptions"
-                class="station-options"
-                role="listbox"
-                hidden
-              ></div>
+              <div id="plannedFields" class="date-fields" hidden>
+                <label
+                  ><span class="field-label" data-i18n="date">Datum</span
+                  ><input
+                    id="dateInput"
+                    type="date"
+                    required
+                    min="2000-01-01"
+                    max="2099-12-31"
+                    disabled /></label
+                ><label
+                  ><span class="field-label" data-i18n="time">Tijd</span
+                  ><input id="timeInput" type="time" required disabled
+                /></label>
+              </div>
             </div>
-            <p id="searchStatus" class="field-hint" role="status"></p>
-            <div class="when-heading">
-              <p class="section-kicker">
-                <span class="step-number">02</span
-                ><span data-i18n="when">Wanneer?</span>
-              </p>
-              <span class="timezone" data-i18n="belgianTime"
-                >Belgische tijd</span
-              >
-            </div>
-            <div class="segmented when-tabs" aria-label="Wanneer">
-              <button
-                id="liveMode"
-                type="button"
-                aria-pressed="true"
-                data-i18n="now"
-              >
-                Nu</button
-              ><button
-                id="planMode"
-                type="button"
-                aria-pressed="false"
-                data-i18n="plan"
-              >
-                Andere tijd
+            <div class="submit-field">
+              <button class="primary-button" type="submit">
+                <span data-i18n="showBoard">Toon dienstregeling</span
+                ><span aria-hidden="true">→</span>
               </button>
             </div>
-            <div id="plannedFields" class="date-fields" hidden>
-              <label
-                ><span class="field-label" data-i18n="date">Datum</span
-                ><input
-                  id="dateInput"
-                  type="date"
-                  required
-                  min="2000-01-01"
-                  max="2099-12-31"
-                  disabled /></label
-              ><label
-                ><span class="field-label" data-i18n="time">Tijd</span
-                ><input id="timeInput" type="time" required disabled
-              /></label>
-            </div>
             <p class="field-hint mode-hint" id="modeHint"></p>
-            <button class="primary-button" type="submit">
-              <span data-i18n="showBoard">Toon dienstregeling</span
-              ><span aria-hidden="true">→</span>
-            </button>
           </form>
           <section class="station-shortcuts" id="savedSection" hidden>
             <h2 data-i18n="savedStations">Bewaarde stations</h2>
@@ -176,12 +174,6 @@
             </h2>
             <div id="stationShortcuts"></div>
           </section>
-          <div class="sidebar-note">
-            <span class="note-line" aria-hidden="true"></span>
-            <p data-i18n="stationTip">
-              Tik op een trein voor de haltes, perrons en samenstelling.
-            </p>
-          </div>
         </aside>
         <section
           class="board-panel"
@@ -196,6 +188,18 @@
               <p id="boardSubtitle" class="board-subtitle"></p>
             </div>
             <div class="board-actions">
+              <button
+                id="focusBoard"
+                class="focus-button"
+                type="button"
+                aria-pressed="false"
+                hidden
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+                </svg>
+                <span id="focusLabel">Bordweergave</span>
+              </button>
               <button
                 id="saveStation"
                 class="icon-button"
@@ -253,6 +257,36 @@
               ><span data-i18n="refresh">Vernieuwen</span>
             </button>
           </div>
+          <div class="board-tools" id="boardTools" hidden>
+            <div class="board-filter">
+              <label class="sr-only" for="boardFilter" id="filterLabel"
+                >Filter op bestemming of treinnummer</label
+              >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+              <input
+                id="boardFilter"
+                type="search"
+                autocomplete="off"
+                spellcheck="false"
+                aria-describedby="filterHint"
+              />
+              <button
+                id="clearFilter"
+                type="button"
+                class="clear-filter"
+                hidden
+              >
+                ×
+              </button>
+            </div>
+            <span id="filterCount" class="filter-count" role="status"></span>
+            <p id="filterHint" class="sr-only" data-i18n="filterHint">
+              Filtert alleen de opgehaalde treinen van dit station.
+            </p>
+          </div>
           <div id="boardNotice" class="notice" role="status" hidden></div>
           <div id="boardContent">
             <div class="empty-state">
@@ -283,7 +317,7 @@
           ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
           <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
             >iRail</a
-          ><span class="footer-version">v0.6.2</span></span
+          ><span class="footer-version">v0.7.0</span></span
         >
       </footer>
     </main>

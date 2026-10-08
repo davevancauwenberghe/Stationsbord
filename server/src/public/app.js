@@ -1,4 +1,4 @@
-import { languages, messages } from "./i18n.js?v=0.6.2";
+import { languages, messages } from "./i18n.js?v=0.7.0";
 import {
   asArray,
   escapeHtml as h,
@@ -16,7 +16,8 @@ import {
   serviceDate,
   delayMinutes,
   occupancy,
-} from "./rail-utils.js?v=0.6.2";
+  filterBoardRows,
+} from "./rail-utils.js?v=0.7.0";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -54,6 +55,8 @@ const state = {
   data: null,
   rows: [],
   visible: 12,
+  filter: "",
+  focus: false,
   stale: false,
   failed: false,
   boardController: null,
@@ -196,7 +199,10 @@ function applyLanguage() {
   $("clearStation").setAttribute("aria-label", t("clear"));
   $("shareBoard").setAttribute("aria-label", t("share"));
   $("shareBoard").title = t("share");
+  $("refreshBoard").setAttribute("aria-label", t("refresh"));
+  $("refreshBoard").title = t("refresh");
   $("closeDialog").setAttribute("aria-label", t("close"));
+  updateBoardControls();
   document
     .querySelector(".sidebar")
     .setAttribute("aria-label", `${t("station")} · ${t("time")}`);
@@ -451,7 +457,7 @@ function renderHeading() {
     ? view.live
       ? `${t("live")} · ${fmtDate(belgianParts().date, state.lang)}`
       : `${fmtDate(view.date, state.lang)} · ${view.time}`
-    : t("intro");
+    : t("searchHint");
   $("departuresTab").setAttribute(
     "aria-pressed",
     String(state.mode === "departure"),
@@ -462,7 +468,68 @@ function renderHeading() {
   );
   $("shareBoard").hidden = !view;
   $("refreshBoard").disabled = !view || !!state.boardController;
+  $("focusBoard").hidden = !view;
+  $("boardTools").hidden = !state.data;
+  updateBoardControls();
 }
+
+function updateBoardControls() {
+  const label = t(
+    state.mode === "arrival" ? "filterArrival" : "filterDeparture",
+  );
+  $("boardFilter").placeholder = label;
+  $("filterLabel").textContent = label;
+  $("clearFilter").setAttribute("aria-label", t("clearFilter"));
+  $("clearFilter").title = t("clearFilter");
+  const focusLabel = t(state.focus ? "exitFocus" : "focusBoard");
+  $("focusLabel").textContent = focusLabel;
+  $("focusBoard").setAttribute("aria-label", focusLabel);
+  $("focusBoard").title = focusLabel;
+  $("focusBoard").setAttribute("aria-pressed", String(state.focus));
+}
+function setFocusMode(enabled) {
+  state.focus = enabled;
+  document.body.classList.toggle("board-focus", enabled);
+  updateBoardControls();
+  $("board").scrollIntoView({ block: "start", behavior: "auto" });
+  $("focusBoard").focus({ preventScroll: true });
+}
+$("focusBoard").addEventListener("click", () => setFocusMode(!state.focus));
+$("boardFilter").addEventListener("input", () => {
+  state.filter = $("boardFilter").value;
+  state.visible = 12;
+  renderBoard();
+});
+$("clearFilter").addEventListener("click", () => {
+  state.filter = "";
+  $("boardFilter").value = "";
+  state.visible = 12;
+  renderBoard();
+  $("boardFilter").focus();
+});
+document.addEventListener("keydown", (event) => {
+  if (
+    event.defaultPrevented ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.isComposing ||
+    $("detailsDialog").open
+  )
+    return;
+  const typing = event.target.closest(
+    "input, textarea, select, [contenteditable]",
+  );
+  if (event.key === "/" && !typing) {
+    event.preventDefault();
+    if (state.focus) setFocusMode(false);
+    $("stationInput").focus();
+    $("stationInput").select();
+  } else if (event.key === "Escape" && state.focus && !typing) {
+    event.preventDefault();
+    setFocusMode(false);
+  }
+});
 function syncURL() {
   const view = state.view;
   if (!view) return;
@@ -522,6 +589,15 @@ function renderLoading() {
 }
 async function loadBoard(view, { background = false } = {}) {
   const same = state.view && viewKey(view) === viewKey(state.view);
+  if (
+    !state.view ||
+    state.view.mode !== view.mode ||
+    (state.view.station.id || state.view.station.name) !==
+      (view.station.id || view.station.name)
+  ) {
+    state.filter = "";
+    $("boardFilter").value = "";
+  }
   state.boardController?.abort();
   const controller = new AbortController();
   state.boardController = controller;
@@ -627,14 +703,23 @@ function platformHTML(row) {
   return `<span class="platform${changed ? " changed" : ""}" title="${h(t(changed ? "changedPlatform" : "platform"))}" aria-label="${h(t(changed ? "changedPlatform" : "platform"))} ${h(platform)}">${h(platform)}</span>`;
 }
 function renderBoard() {
+  const filtered = filterBoardRows(state.rows, state.filter, state.mode);
+  $("filterCount").textContent = state.filter
+    ? `${filtered.length} / ${state.rows.length} ${t(state.rows.length === 1 ? "trainSingular" : "trains")}`
+    : `${state.rows.length} ${t(state.rows.length === 1 ? "trainSingular" : "trains")}`;
+  $("clearFilter").hidden = !state.filter;
   if (!state.rows.length) {
     renderEmpty("noTrains", "noTrainsBody");
     return;
   }
+  if (!filtered.length) {
+    renderEmpty("noFilterResults", "noFilterResultsBody");
+    return;
+  }
   const view = state.view;
-  const rows = state.rows
+  const rows = filtered
     .slice(0, state.visible)
-    .map((row, i) => {
+    .map(({ row, index: i }) => {
       const when = fmtTime(row.time, state.lang),
         delay = Number(row.delay) || 0;
       const expected =
@@ -658,9 +743,9 @@ function renderBoard() {
     })
     .join("");
   $("boardContent").innerHTML =
-    `<table class="timetable"><caption class="sr-only">${h(t(view.mode === "arrival" ? "arrivals" : "departures"))} · ${h(state.data.station || view.station.name)}</caption><colgroup><col class="time-col"><col><col class="train-col"><col class="status-col"><col class="platform-col"></colgroup><thead><tr><th scope="col">${h(t("time"))}</th><th scope="col">${h(t(view.mode === "arrival" ? "origin" : "destination"))}</th><th scope="col" class="train-column">${h(t("train"))}</th><th scope="col" class="status-column">${h(t("status"))}</th><th scope="col">${h(t("platform"))}</th></tr></thead><tbody>${rows}</tbody></table>${state.rows.length > 12 ? `<div class="more-row"><button class="text-button" type="button" id="showMore">${h(t(state.visible < state.rows.length ? "more" : "less"))} (${state.visible < state.rows.length ? state.rows.length - state.visible : 12})</button></div>` : ""}`;
+    `<table class="timetable"><caption class="sr-only">${h(t(view.mode === "arrival" ? "arrivals" : "departures"))} · ${h(state.data.station || view.station.name)}</caption><colgroup><col class="time-col"><col><col class="train-col"><col class="status-col"><col class="platform-col"></colgroup><thead><tr><th scope="col">${h(t("time"))}</th><th scope="col">${h(t(view.mode === "arrival" ? "origin" : "destination"))}</th><th scope="col" class="train-column">${h(t("train"))}</th><th scope="col" class="status-column">${h(t("status"))}</th><th scope="col">${h(t("platform"))}</th></tr></thead><tbody>${rows}</tbody></table>${filtered.length > 12 ? `<div class="more-row"><button class="text-button" type="button" id="showMore">${h(t(state.visible < filtered.length ? "more" : "less"))} (${state.visible < filtered.length ? filtered.length - state.visible : 12})</button></div>` : ""}`;
   $("showMore")?.addEventListener("click", () => {
-    state.visible = state.visible < state.rows.length ? state.visible + 12 : 12;
+    state.visible = state.visible < filtered.length ? state.visible + 12 : 12;
     renderBoard();
     $("showMore")?.focus();
   });
@@ -834,7 +919,7 @@ function renderNetworkButton() {
   }
   const count = state.network.filter((d) => !isPlanned(d)).length;
   $("networkLabel").textContent = count
-    ? `${count} ${t("networkIssues")}`
+    ? `${count} ${t(count === 1 ? "networkIssue" : "networkIssues")}`
     : t("networkClear");
   if (state.networkStale) $("networkLabel").textContent = t("networkUnknown");
   else button.classList.add(count ? "has-issues" : "network-ok");

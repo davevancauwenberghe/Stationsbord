@@ -20,7 +20,7 @@
         : preference;
     document.documentElement.dataset.theme = theme;
     document.querySelector('meta[name="theme-color"]').content =
-      theme === "dark" ? "#192525" : "#163b36";
+      theme === "dark" ? "#182226" : "#f6f3eb";
   }
   apply();
   system.addEventListener("change", () => {

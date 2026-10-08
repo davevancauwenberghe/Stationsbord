@@ -83,6 +83,32 @@ export function departures(data, mode) {
     .filter((row) => row && typeof row === "object")
     .sort((a, b) => Number(a.time) - Number(b.time));
 }
+
+// Keep the original index so a filtered result still opens the correct train.
+export function filterBoardRows(rows, query, mode) {
+  const normalize = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, "");
+  const needle = normalize(query);
+  return rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => {
+      const destination =
+        (mode === "departure" ? row.direction?.name : "") ||
+        row.station ||
+        row.stationinfo?.name ||
+        "";
+      const train =
+        row.vehicleinfo?.shortname ||
+        row.vehicleinfo?.name ||
+        row.vehicle ||
+        "";
+      return !needle || normalize(`${destination} ${train}`).includes(needle);
+    });
+}
 export function disturbances(data) {
   const root = data?.disturbances ?? data?.disturbance ?? [];
   return asArray(root?.disturbance ?? root).filter(

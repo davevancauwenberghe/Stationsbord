@@ -163,7 +163,7 @@ test("HTTP pages expose station previews to crawlers without iRail, and serve th
       assert.equal((html.match(/name="description"/g) || []).length, 1);
       assert.match(html, /id="boardContent"/);
     }
-    const image = await fetch(`${base}/social-card.png?v=0.6.2`);
+    const image = await fetch(`${base}/social-card.png?v=0.7.0`);
     assert.equal(image.status, 200);
     assert.equal(image.headers.get("content-type"), "image/png");
     const bytes = Buffer.from(await image.arrayBuffer());
