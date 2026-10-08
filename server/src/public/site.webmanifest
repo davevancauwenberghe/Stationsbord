@@ -4,13 +4,19 @@
   "description": "Belgian train schedules, clearly.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f4ef",
-  "theme_color": "#163b36",
+  "background_color": "#f6f3eb",
+  "theme_color": "#284c60",
   "icons": [
     {
-      "src": "/mark.svg",
+      "src": "/mark.svg?v=0.7.0",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png?v=0.7.0",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

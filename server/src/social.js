@@ -13,7 +13,7 @@ const copy = {
     planned: "Geplande dienstregeling",
     zone: "Belgische tijd",
     imageAlt:
-      "Stationsbord: Belgische treinen, helder in beeld. Groen met gouden spoorlijnen en het Stationsbord-logo.",
+      "Stationsbord: Belgische treinen, helder in beeld. Crème en blauw met koperkleurige spoorlijnen en het Stationsbord-logo.",
   },
   fr: {
     locale: "fr_BE",
@@ -27,7 +27,7 @@ const copy = {
     planned: "Horaires prévus",
     zone: "heure belge",
     imageAlt:
-      "Stationsbord : horaires des trains belges. Fond vert, lignes ferroviaires dorées et logo Stationsbord.",
+      "Stationsbord : horaires des trains belges. Fond crème et bleu, lignes ferroviaires cuivrées et logo Stationsbord.",
   },
   de: {
     locale: "de_BE",
@@ -41,7 +41,7 @@ const copy = {
     planned: "Geplanter Fahrplan",
     zone: "belgische Zeit",
     imageAlt:
-      "Stationsbord: belgische Zugfahrpläne. Grüner Hintergrund mit goldenen Bahnlinien und Stationsbord-Logo.",
+      "Stationsbord: belgische Zugfahrpläne. Cremefarbener und blauer Hintergrund mit kupferfarbenen Bahnlinien und Stationsbord-Logo.",
   },
   en: {
     locale: "en_GB",
@@ -55,7 +55,7 @@ const copy = {
     planned: "Planned timetable",
     zone: "Belgian time",
     imageAlt:
-      "Stationsbord, Belgian train schedules. Green artwork with gold railway lines and the Stationsbord logo.",
+      "Stationsbord, Belgian train schedules. Cream and blue artwork with copper railway lines and the Stationsbord logo.",
   },
 };
 
@@ -126,7 +126,7 @@ export function pageMetadata(search, origin) {
     description,
     url: url.href,
     locale: text.locale,
-    image: new URL("/social-card.png?v=0.6.2", origin).href,
+    image: new URL("/social-card.png?v=0.7.0", origin).href,
     imageAlt: text.imageAlt,
   };
 }

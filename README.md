@@ -19,7 +19,10 @@ Live boards refresh every minute while the page is visible. Planned searches sta
 - View disruptions and engineering works across the rail network.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
-- Responsive timetable, keyboard station search, native date/time pickers and accessible train-detail dialogs.
+- A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.
+- Filter the loaded trains by destination (or origin for arrivals) and train number. Filtering keeps cancelled services visible when they match.
+- Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
+- Press `/` outside a text field to jump to station search. Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
 
 Stationsbord is an independent service. Schedule availability depends on iRail/NMBS; searches far into the past or future may not be available. Train composition is queried only for today, because that endpoint does not accept a service date. Cached or failed refreshes are explicitly labelled rather than presented as fresh data.
 

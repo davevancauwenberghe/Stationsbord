@@ -125,3 +125,32 @@ test("all supported languages cover the complete UI vocabulary", () => {
   for (const [lang, dictionary] of Object.entries(messages))
     assert.deepEqual(Object.keys(dictionary).sort(), keys, lang);
 });
+
+test("board filtering retains original train indexes, cancellations and accent-insensitive matches", async () => {
+  const { filterBoardRows } = await import("../src/public/rail-utils.js");
+  const rows = [
+    { station: "Brussel-Centraal", vehicle: "BE.NMBS.IC100" },
+    {
+      station: "Liège-Guillemins",
+      vehicleinfo: { shortname: "IC 200" },
+      canceled: "1",
+    },
+    { station: "Gent-Sint-Pieters", vehicle: "BE.NMBS.IC300" },
+  ];
+  assert.deepEqual(filterBoardRows(rows, "liege", "departure"), [
+    { row: rows[1], index: 1 },
+  ]);
+  assert.deepEqual(filterBoardRows(rows, "IC 300", "departure"), [
+    { row: rows[2], index: 2 },
+  ]);
+  assert.equal(filterBoardRows(rows, "", "arrival").length, 3);
+  assert.equal(filterBoardRows(rows, "nothing", "departure").length, 0);
+});
+
+test("arrival filtering uses the origin, and departure filtering uses the displayed direction", async () => {
+  const { filterBoardRows } = await import("../src/public/rail-utils.js");
+  const rows = [{ station: "Gent", direction: { name: "Brugge" } }];
+  assert.equal(filterBoardRows(rows, "brugge", "departure").length, 1);
+  assert.equal(filterBoardRows(rows, "brugge", "arrival").length, 0);
+  assert.equal(filterBoardRows(rows, "gent", "arrival").length, 1);
+});
