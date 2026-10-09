@@ -1,4 +1,8 @@
-import { languages, messages } from "./i18n.js?v=0.7.0";
+import {
+  renderComposition,
+  installArtworkFallbacks,
+} from "./composition.js?v=0.8.0";
+import { languages, messages } from "./i18n.js?v=0.8.0";
 import {
   asArray,
   escapeHtml as h,
@@ -17,7 +21,7 @@ import {
   delayMinutes,
   occupancy,
   filterBoardRows,
-} from "./rail-utils.js?v=0.7.0";
+} from "./rail-utils.js?v=0.8.0";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -841,7 +845,8 @@ async function openTrain(row, view) {
       );
       if (!dialogCurrent(sequence)) return;
       $("composition").innerHTML =
-        `<h3 class="section-title">${h(t("composition"))}</h3>${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data)}`;
+        `<h3 class="section-title">${h(t("composition"))}</h3>${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t)}`;
+      installArtworkFallbacks($("composition"));
     } catch (error) {
       if (!dialogCurrent(sequence) || signal.aborted) return;
       $("composition").innerHTML =
@@ -853,59 +858,6 @@ async function openTrain(row, view) {
       `<p class="notice error">${h(t("detailError"))}</p><button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
     $("retryDetails").addEventListener("click", () => openTrain(row, view));
   }
-}
-function renderComposition(data) {
-  const segments = asArray(data.composition?.segments?.segment);
-  const number = (value) =>
-    Number.isFinite(Number(value)) ? Number(value) : 0;
-  const result = segments
-    .map((segment) => {
-      const units = asArray(segment.composition?.units?.unit);
-      if (!units.length) return "";
-      // Each segment is a separate formation; never add the same train across segments.
-      const first = units.reduce(
-        (sum, u) =>
-          sum + number(u.seatsFirstClass) + number(u.seatsCoupeFirstClass),
-        0,
-      );
-      const second = units.reduce(
-        (sum, u) =>
-          sum + number(u.seatsSecondClass) + number(u.seatsCoupeSecondClass),
-        0,
-      );
-      const label = [
-        segment.origin?.name || segment.origin,
-        segment.destination?.name || segment.destination,
-      ]
-        .filter((v) => typeof v === "string")
-        .join(" → ");
-      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div>${units
-        .map((unit) => {
-          const features = [
-            ["hasToilets", "toilets"],
-            ["hasBikeSection", "bikes"],
-            ["hasPrmSection", "accessible"],
-            ["hasAirco", "airco"],
-          ]
-            .filter(([key]) => flag(unit[key]))
-            .map(([, key]) => t(key));
-          if (
-            flag(unit.hasFirstClassOutlets) ||
-            flag(unit.hasSecondClassOutlets)
-          )
-            features.push(t("outlets"));
-          const name =
-            unit.materialSubTypeName ||
-            [unit.materialType?.parent_type, unit.materialType?.sub_type]
-              .filter(Boolean)
-              .join(" ") ||
-            "—";
-          return `<div class="carriage"><div><strong>${h(name)}</strong><small>${h(unit.materialNumber || "")}</small></div><div><small>${h(features.join(" · "))}</small></div></div>`;
-        })
-        .join("")}</div>`;
-    })
-    .join("");
-  return result || `<p class="muted">${h(t("compositionError"))}</p>`;
 }
 
 function renderNetworkButton() {

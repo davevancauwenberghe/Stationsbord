@@ -1086,22 +1086,151 @@ body:has(dialog[open]) {
   font-size: 12px;
   margin-bottom: 12px;
 }
-.carriage {
+.composition-scroll-hint {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 12px;
-}
-.carriage small {
-  display: block;
+  gap: 12px;
+  margin: 0 0 8px;
   color: var(--muted);
-  line-height: 1.7;
-  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.6;
 }
-.carriage > div:last-child {
-  text-align: right;
+.composition-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-color: var(--muted) var(--soft);
+  scrollbar-width: thin;
+  padding-bottom: 12px;
+}
+.composition-train {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.carriage-card {
+  flex: 0 0 252px;
+  width: 252px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.carriage-card + .carriage-card .carriage-caption,
+.carriage-card + .carriage-card .carriage-classes,
+.carriage-card + .carriage-card .carriage-features {
+  border-left: 1px solid var(--line);
+}
+.carriage-image {
+  height: 96px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px 2px 5px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--soft);
+}
+.carriage-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 76px;
+  object-fit: contain;
+  object-position: bottom;
+  image-rendering: pixelated;
+}
+.carriage-image img[hidden],
+.carriage-placeholder[hidden] {
+  display: none;
+}
+.carriage-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 54px;
+  border: 1px dashed var(--muted);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  padding: 8px;
+}
+.carriage-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 12px 8px;
+}
+.carriage-caption strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.carriage-caption small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.carriage-position {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.carriage-classes {
+  display: grid;
+  gap: 8px;
+  min-height: 65px;
+  align-content: start;
+  padding: 8px 12px 12px;
+}
+.carriage-class {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.carriage-class b {
+  border: 1px solid var(--muted);
+  border-radius: 2px;
+  min-width: 18px;
+  text-align: center;
+}
+.carriage-features {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  padding: 0 12px 14px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.carriage-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.carriage-features svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.composition-note,
+.artwork-credit {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+.artwork-credit a {
+  color: inherit;
+  text-underline-offset: 3px;
 }
 .muted {
   font-size: 12px;
@@ -1521,11 +1650,9 @@ body:has(dialog[open]) {
   .stop-name small {
     font-size: 9px;
   }
-  .carriage {
-    flex-wrap: wrap;
-  }
-  .carriage > div:last-child {
-    text-align: left;
+  .carriage-card {
+    flex-basis: 220px;
+    width: 220px;
   }
 }
 @media (max-width: 360px) {
