@@ -1,5 +1,5 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.0";
-import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.0";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.1";
+import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.1";
 
 const seats = (value) =>
   Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);

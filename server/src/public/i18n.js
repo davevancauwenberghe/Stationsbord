@@ -1,6 +1,7 @@
 export const languages = ["nl", "fr", "de", "en"];
 export const messages = {
   nl: {
+    stopTimesHint: "Belgische tijd · inclusief gemelde vertraging",
     trainNotices: "Meldingen voor deze trein",
     scheduledTime: "Gepland",
     expectedTime: "Verwacht",
@@ -156,6 +157,7 @@ export const messages = {
     trainSingular: "trein",
   },
   en: {
+    stopTimesHint: "Belgian time · includes reported delays",
     trainNotices: "Notices for this train",
     scheduledTime: "Scheduled",
     expectedTime: "Expected",
@@ -309,6 +311,7 @@ export const messages = {
     trainSingular: "train",
   },
   fr: {
+    stopTimesHint: "Heure belge · retards signalés inclus",
     trainNotices: "Informations pour ce train",
     scheduledTime: "Prévu",
     expectedTime: "Estimé",
@@ -465,6 +468,7 @@ export const messages = {
     trainSingular: "train",
   },
   de: {
+    stopTimesHint: "Belgische Zeit · gemeldete Verspätungen berücksichtigt",
     trainNotices: "Hinweise zu diesem Zug",
     scheduledTime: "Geplant",
     expectedTime: "Erwartet",

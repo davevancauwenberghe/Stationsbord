@@ -175,7 +175,8 @@ test("arrival and departure retain their own delays and cancellations, even at e
   assert.match(html, /data-event="arrival"/);
   assert.match(html, /data-event="departure"/);
   assert.equal((html.match(/cancelled-event/g) || []).length, 1);
-  assert.equal((html.match(/<small>Expected<\/small>/g) || []).length, 1);
+  assert.equal((html.match(/secondary-event/g) || []).length, 1);
+  assert.ok(!html.includes("<small>Expected</small>"));
 });
 
 test("endpoint duplicates, arrival-only stops and legacy fields do not invent missing events", () => {
@@ -262,10 +263,40 @@ test("passed events, extra stops and selected station labels are preserved in ev
   };
   for (const language of ["en", "nl", "fr", "de"]) {
     const html = render([stop], { language, t: (k) => messages[language][k] });
-    assert.ok(html.includes(messages[language].arrived));
     assert.ok(html.includes(messages[language].departed));
     assert.ok(html.includes(messages[language].selectedStop));
     assert.ok(html.includes(messages[language].extraStop));
     assert.ok(!html.includes("undefined"));
+    const arrival = render([stop], { mode: "arrival", language, t: (k) => messages[language][k] });
+    assert.ok(arrival.includes(messages[language].arrived));
+  }
+});
+
+test("ordinary stops show one time for the selected board mode, including the terminal fallback", () => {
+  const stop = { scheduledArrivalTime: base, scheduledDepartureTime: base + 60, arrivalDelay: 120, departureDelay: 300 };
+  let html = render([stop]);
+  assert.equal((html.match(/data-event=/g) || []).length, 1);
+  assert.match(html, /data-event="departure"/);
+  assert.match(html, /22:06/);
+  assert.match(html, /title="Scheduled: 22:01"/);
+  assert.match(html, /\+5 min/);
+  assert.ok(!html.includes("<small>Scheduled</small>"));
+  html = render([stop], { mode: "arrival" });
+  assert.equal((html.match(/data-event=/g) || []).length, 1);
+  assert.match(html, /data-event="arrival"/);
+  assert.match(html, /22:02/);
+  html = render([{ scheduledArrivalTime: base, arrivalDelay: 0 }]);
+  assert.match(html, /data-event="arrival"/);
+});
+
+test("a full cancellation stays a single row while both partial cancellation directions remain explicit", () => {
+  const stop = { scheduledArrivalTime: base, scheduledDepartureTime: base + 60, arrivalDelay: 0, departureDelay: 0 };
+  const full = render([{ ...stop, arrivalCanceled: "1", departureCanceled: "1" }]);
+  assert.equal((full.match(/data-event=/g) || []).length, 1);
+  for (const arrivalCanceled of ["0", "1"]) {
+    const html = render([{ ...stop, arrivalCanceled, departureCanceled: arrivalCanceled === "1" ? "0" : "1" }]);
+    assert.equal((html.match(/data-event=/g) || []).length, 2);
+    assert.equal((html.match(/cancelled-event/g) || []).length, 1);
+    assert.equal((html.match(/secondary-event/g) || []).length, 1);
   }
 });
