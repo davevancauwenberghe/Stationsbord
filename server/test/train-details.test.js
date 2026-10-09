@@ -75,6 +75,48 @@ test("notices preserve readable line breaks and entities, escape HTML and reject
   assert.ok(!html.includes("<a "));
 });
 
+test("malformed, nested and encoded notice markup remains escaped at the final rendering boundary", () => {
+  for (const payload of [
+    "<script",
+    '<iframe src="https://example.invalid"',
+    "&lt;script&gt;alert(1)&lt;/script&gt;",
+    "&#x3c;img src=x onerror=alert(1)&#x3e;",
+    "<scrip<script>t>alert(1)</script>",
+    "<<img src=x onerror=alert(1)>script>alert(1)</script>",
+  ]) {
+    const html = renderTrainNotices(
+      { alerts: { alert: { header: payload, lead: payload } } },
+      {},
+      t,
+    );
+    assert.ok(!/<(?:script|iframe|img)\b/i.test(html), payload);
+    assert.ok(!html.includes('<iframe src="'), payload);
+    assert.ok(!html.includes("<img src="), payload);
+  }
+  const html = renderTrainNotices(
+    { alerts: { alert: { header: "&lt;script&gt;", lead: "<script" } } },
+    {},
+    t,
+  );
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /<p>&lt;script<\/p>/);
+});
+
+test("notice cleanup preserves readable text across adjacent tags and invalid entities", () => {
+  const notices = trainNotices({
+    alerts: {
+      alert: {
+        header: "<b>Works</b>",
+        lead: "<p>First</p><p>Second<br />Third &amp; final &#x110000;</p>",
+      },
+    },
+  });
+  assert.deepEqual(
+    notices.map(({ header, body }) => ({ header, body })),
+    [{ header: "Works", body: "First\nSecond\nThird & final &#x110000;" }],
+  );
+});
+
 test("crowding uses the three API levels, excludes unknown and cancelled trains, and has a text label", () => {
   for (const [level, bars] of [
     ["low", 1],

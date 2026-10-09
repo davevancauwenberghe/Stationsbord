@@ -27,8 +27,9 @@ export function renderCrowding(row, t) {
   return `<span class="crowding" role="img" title="${h(t("occupancy"))}" aria-label="${h(`${t("occupancy")}: ${t(level)}`)}"><span class="crowding-bars" aria-hidden="true">${[1, 2, 3].map((n) => `<i${n <= { low: 1, medium: 2, high: 3 }[level] ? ' class="filled"' : ""}></i>`).join("")}</span>${h(t(level))}</span>`;
 }
 
-// Treat notices as text, never as upstream HTML. Preserve line breaks and decode
-// common entities before escaping the final output.
+// Display-only cleanup: strip complete tags until stable, preserve line breaks
+// and decode common entities. This is not an HTML sanitizer: every result must
+// still pass through escapeHtml when it is rendered, including decoded markup.
 function plainText(value) {
   if (typeof value !== "string") return "";
   const entities = {
@@ -39,9 +40,13 @@ function plainText(value) {
     apos: "'",
     nbsp: " ",
   };
-  return value
-    .replace(/<br\s*\/?\s*>|<\/p\s*>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
+  let cleaned = value.replace(/<br\s*\/?\s*>|<\/p\s*>/gi, "\n");
+  let previous;
+  do {
+    previous = cleaned;
+    cleaned = cleaned.replace(/<[^>]*>/g, "");
+  } while (cleaned !== previous);
+  return cleaned
     .replace(
       /&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi,
       (match, entity) => {
