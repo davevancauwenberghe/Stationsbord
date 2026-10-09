@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Third-party artwork exception
+-----------------------------
+The PNG train illustrations in server/src/public/assets/trains are created by
+Marc Le Gad / MLGTraffic and licensed separately under CC BY-NC-SA 3.0, not MIT.
+See server/src/public/assets/trains/ATTRIBUTION.md and sources.json for credits,
+source URLs, licence information, and changes.

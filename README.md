@@ -81,3 +81,27 @@ The server renders Open Graph and large-image card metadata for the homepage and
 ## License
 
 [MIT](LICENSE)
+
+## Train illustrations
+
+The composition view shows original **MLGTraffic / Marc Le Gad** train drawings
+with per-unit seat counts and amenities. It supports AM08, AM75, AM80, AM86,
+AM96, AR41, M4, M6, M7 (including motor cars), I6/I10/I11 and selected HLE
+locomotives. Unknown types and failed images retain their text and show a
+labelled fallback. Each composition segment has its own horizontally scrollable,
+keyboard-focusable train strip. Drawings are indicative: actual livery, order
+and orientation may differ from the upstream data.
+
+The 94 PNGs are committed under `server/src/public/assets/trains/`, served from
+Stationsbord itself, and imported directly from the [MLGTraffic Benelux
+collection](http://www.mlgtraffic.net/Coll_BNL_E.htm). No HyperRail code or assets
+are used. `composition.js` contains Stationsbord's own field-based matching and
+rendering; labels, seats and amenities always use the API response.
+
+**Artwork is CC BY-NC-SA 3.0, excluded from the project's MIT licence.** Keep the
+visible credits and licence links when redistributing, use the artwork only for
+noncommercial purposes, and preserve the artwork licence for adaptations.
+[Attribution and changes](server/src/public/assets/trains/ATTRIBUTION.md) and
+[sources.json](server/src/public/assets/trains/sources.json) record provenance,
+source hashes and the lossless GIF-to-PNG conversion. Re-import with
+`python scripts/import-train-artwork.py` (development prerequisite: Pillow).
