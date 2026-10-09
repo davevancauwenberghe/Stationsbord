@@ -1,8 +1,13 @@
 import {
   renderComposition,
   installArtworkFallbacks,
-} from "./composition.js?v=0.8.0";
-import { languages, messages } from "./i18n.js?v=0.8.0";
+} from "./composition.js?v=0.9.0";
+import {
+  renderCrowding,
+  renderTrainNotices,
+  renderStopList,
+} from "./train-details.js?v=0.9.0";
+import { languages, messages } from "./i18n.js?v=0.9.0";
 import {
   asArray,
   escapeHtml as h,
@@ -19,9 +24,8 @@ import {
   isPlanned,
   serviceDate,
   delayMinutes,
-  occupancy,
   filterBoardRows,
-} from "./rail-utils.js?v=0.8.0";
+} from "./rail-utils.js?v=0.9.0";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -630,7 +634,7 @@ async function loadBoard(view, { background = false } = {}) {
   const query = new URLSearchParams({
     lang: view.lang,
     arrdep: view.mode,
-    alerts: "false",
+    alerts: "true",
   });
   query.set(
     view.station.id ? "id" : "station",
@@ -743,7 +747,7 @@ function renderBoard() {
           "",
         );
       const statusMarkup = `<span class="status-text ${status.className}">${h(status.text)}</span>`;
-      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span>${h(expected)}` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
+      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span>${h(expected)}` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="board-row-meta">${renderCrowding(row, t)}<div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
     })
     .join("");
   $("boardContent").innerHTML =
@@ -812,30 +816,23 @@ async function openTrain(row, view) {
       id,
       lang: state.lang,
       date: apiDate(date),
-      alerts: "false",
+      alerts: "true",
     });
     const result = await request(`/api/vehicle?${query}`, signal);
     if (!dialogCurrent(sequence)) return;
-    const stops = asArray(result.data.stops?.stop);
-    const html = stops
-      .map((stop) => {
-        const dep =
-          stop.scheduledDepartureTime || stop.departuretime || stop.time;
-        const arr = stop.scheduledArrivalTime || stop.arrivaltime;
-        const current = stop.stationinfo?.id === view.station.id;
-        const status = statusFor(
-          {
-            delay: dep ? stop.departureDelay : stop.arrivalDelay,
-            canceled: dep ? stop.departureCanceled : stop.arrivalCanceled,
-          },
-          "departure",
-        );
-        const occ = occupancy(stop);
-        return `<li class="stop${current ? " current" : ""}"><div class="stop-times">${h(fmtTime(dep || arr, state.lang))}<small>${h(t(dep ? "departure" : "arrival"))}</small>${dep && arr && Number(arr) !== Number(dep) ? `<small>${h(t("arrival"))} ${h(fmtTime(arr, state.lang))}</small>` : ""}</div><div class="stop-name">${h(stop.station || stop.stationinfo?.name || "—")}<small><span class="status-text ${status.className}">${h(status.text)}</span>${current ? ` · ${h(t("selectedStop"))}` : ""}${flag(stop.isExtraStop) ? ` · ${h(t("extraStop"))}` : ""}${occ ? ` · ${h(t(occ))}` : ""}</small></div>${platformHTML(stop)}</li>`;
-      })
-      .join("");
+    const stops = asArray(result.data.stops?.stop).filter(
+      (stop) => stop && typeof stop === "object",
+    );
+    const html = renderStopList(stops, {
+      stationId: view.station.id,
+      mode: view.mode,
+      serviceDay: date,
+      language: state.lang,
+      t,
+      platformHTML,
+    });
     $("dialogContent").innerHTML =
-      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("allTimes"))}</span></p>${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
+      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("allTimes"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
     try {
@@ -855,7 +852,7 @@ async function openTrain(row, view) {
   } catch (error) {
     if (!dialogCurrent(sequence) || signal.aborted) return;
     $("dialogContent").innerHTML =
-      `<p class="notice error">${h(t("detailError"))}</p><button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
+      `<p class="notice error">${h(t("detailError"))}</p>${renderTrainNotices(null, row, t)}<button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
     $("retryDetails").addEventListener("click", () => openTrain(row, view));
   }
 }

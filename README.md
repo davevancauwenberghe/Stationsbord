@@ -17,6 +17,14 @@ Live boards refresh every minute while the page is visible. Planned searches sta
 - Share a link containing the station, arrivals/departures, language and optional date/time, using the native share sheet where supported or copying the link.
 - Shared URLs include a branded image and localized station/timetable previews, available to social crawlers without JavaScript.
 - View disruptions and engineering works across the rail network.
+- Train details include service notices returned by iRail, with repeated notices
+  combined and links to further information. Missing notices do not imply that a
+  service is unaffected.
+- Crowding indicators appear on the board when iRail supplies a quiet, moderate
+  or busy level. Unknown levels and cancelled services have no indicator.
+- Each stop shows scheduled and expected arrival/departure times separately,
+  including separate cancellation states and dates when a time crosses midnight.
+  Missing delay data is labelled unknown rather than on time.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.
@@ -85,7 +93,11 @@ The server renders Open Graph and large-image card metadata for the homepage and
 ## Train illustrations
 
 The composition view shows original **MLGTraffic / Marc Le Gad** train drawings
-with per-unit seat counts and amenities. It supports AM08, AM75, AM80, AM86,
+with per-unit seat counts and amenities, including priority seats and tables or
+luggage areas when supplied. Standing capacity is separate from seats; neither
+is an estimate of free places. Approximate unit lengths are shown when supplied,
+and formation length/standing totals only appear when every unit has valid data.
+It supports AM08, AM75, AM80, AM86,
 AM96, AR41, M4, M6, M7 (including motor cars), I6/I10/I11 and selected HLE
 locomotives. Unknown types and failed images retain their text and show a
 labelled fallback. Each composition segment has its own horizontally scrollable,
