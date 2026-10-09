@@ -22,9 +22,12 @@ Live boards refresh every minute while the page is visible. Planned searches sta
   service is unaffected.
 - Crowding indicators appear on the board when iRail supplies a quiet, moderate
   or busy level. Unknown levels and cancelled services have no indicator.
-- Each stop shows scheduled and expected arrival/departure times separately,
-  including separate cancellation states and dates when a time crosses midnight.
-  Missing delay data is labelled unknown rather than on time.
+- Each stop shows one main time with its delay or status: departure on a departure
+  board, arrival on an arrival board, or the available event at a terminus.
+  Expected times are used when delay data is available. A second line appears
+  only for different arrival/departure cancellation states. The original
+  scheduled time remains in the time's tooltip and screen-reader text when it
+  differs. Dates appear across midnight; missing delay data stays labelled unknown.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.

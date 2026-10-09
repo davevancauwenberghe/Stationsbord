@@ -8,7 +8,7 @@ import {
   delayMinutes,
   occupancy,
   safeLink,
-} from "./rail-utils.js?v=0.9.0";
+} from "./rail-utils.js?v=0.9.1";
 
 const number = (value) =>
   ["number", "string"].includes(typeof value) &&
@@ -158,7 +158,7 @@ function timeMarkup(value, language, t, serviceDay) {
   return `${h(fmtTime(value, language))}${serviceDay && day !== serviceDay ? `<small class="stop-day">${h(fmtDate(day, language))}</small>` : ""}`;
 }
 
-function renderEvent(event, t, language, serviceDay) {
+function renderEvent(event, t, language, serviceDay, secondary = false) {
   let status,
     statusClass = "";
   if (event.canceled) {
@@ -179,7 +179,13 @@ function renderEvent(event, t, language, serviceDay) {
     status = `${event.delay > 0 ? "+" : "−"}${Math.abs(delayMinutes(event.delay))} ${t("minute")}`;
     statusClass = "delay";
   }
-  return `<div class="stop-event${event.canceled ? " cancelled-event" : ""}" data-event="${event.kind}"><span class="stop-event-label">${h(t(event.kind))}</span><div class="stop-clock"><span><small>${h(t("scheduledTime"))}</small><span class="stop-scheduled">${timeMarkup(event.planned, language, t, serviceDay)}</span></span>${event.expected !== null ? `<span><small>${h(t("expectedTime"))}</small><strong>${timeMarkup(event.expected, language, t, serviceDay)}</strong></span>` : ""}</div><span class="status-text ${statusClass}">${h(status)}</span></div>`;
+  const displayed = event.expected ?? event.planned;
+  const plannedHint =
+    event.expected !== null && event.expected !== event.planned
+      ? `${t("scheduledTime")}: ${fmtTime(event.planned, language)}`
+      : "";
+  const time = timeMarkup(displayed, language, t, serviceDay);
+  return `<div class="stop-event${secondary ? " secondary-event" : ""}${event.canceled ? " cancelled-event" : ""}" data-event="${event.kind}"><span class="stop-clock"><span class="sr-only">${h(t(event.expected !== null ? "expectedTime" : "scheduledTime"))}: </span>${event.canceled ? `<span class="stop-scheduled">${time}</span>` : `<strong${plannedHint ? ` title="${h(plannedHint)}"` : ""}>${time}</strong>`}${plannedHint ? `<span class="sr-only"> · ${h(plannedHint)}</span>` : ""}</span><span class="stop-event-label">${h(t(event.kind))}</span><span class="status-text ${statusClass}">${h(status)}</span></div>`;
 }
 
 export function renderStopList(
@@ -190,11 +196,18 @@ export function renderStopList(
     .map((stop, index) => {
       const current = stop.stationinfo?.id === stationId;
       const events = stopEvents(stop, index, stops.length, mode);
+      const primary =
+        events.find((event) => event.kind === mode) || events.at(-1);
+      // Keep the everyday view compact. The other event is shown only when its
+      // cancellation state differs, so a partial cancellation remains explicit.
+      const secondary = events.filter(
+        (event) => event !== primary && event.canceled !== primary.canceled,
+      );
       const metadata = [
         current ? t("selectedStop") : "",
         flag(stop.isExtraStop) ? t("extraStop") : "",
       ].filter(Boolean);
-      return `<li class="stop${current ? " current" : ""}"><div class="stop-name"><strong>${h(stop.station || stop.stationinfo?.name || "—")}</strong>${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${events.map((event) => renderEvent(event, t, language, serviceDay)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
+      return `<li class="stop${current ? " current" : ""}"><div class="stop-name"><strong>${h(stop.station || stop.stationinfo?.name || "—")}</strong>${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
     })
     .join("");
 }

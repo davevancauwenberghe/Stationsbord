@@ -1048,9 +1048,8 @@ body:has(dialog[open]) {
 }
 .stop-times {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 10px 0 6px;
+  gap: 5px;
+  margin: 8px 0 6px;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   font-weight: 400;
@@ -1062,25 +1061,26 @@ body:has(dialog[open]) {
   margin: 0 0 2px;
 }
 .stop-event {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   min-width: 0;
 }
 .stop-event-label {
-  display: block;
   font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: var(--ink);
+  color: var(--muted);
 }
 .stop-clock {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
+  font-size: 17px;
   line-height: 1.5;
-  margin-bottom: 4px;
   color: var(--ink);
 }
-.stop-clock > span {
-  min-width: 0;
+.secondary-event .stop-clock {
+  font-size: 12px;
+}
+.stop-event .status-text {
+  font-size: 11px;
 }
 .cancelled-event .stop-scheduled {
   text-decoration: line-through;
@@ -1753,7 +1753,6 @@ body:has(dialog[open]) {
     font-size: 12px;
   }
   .stop-times {
-    grid-template-columns: 1fr;
     font-size: 12px;
   }
   .stop-name small {

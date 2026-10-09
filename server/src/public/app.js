@@ -1,13 +1,13 @@
 import {
   renderComposition,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.0";
+} from "./composition.js?v=0.9.1";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
-} from "./train-details.js?v=0.9.0";
-import { languages, messages } from "./i18n.js?v=0.9.0";
+} from "./train-details.js?v=0.9.1";
+import { languages, messages } from "./i18n.js?v=0.9.1";
 import {
   asArray,
   escapeHtml as h,
@@ -25,7 +25,7 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.0";
+} from "./rail-utils.js?v=0.9.1";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -832,7 +832,7 @@ async function openTrain(row, view) {
       platformHTML,
     });
     $("dialogContent").innerHTML =
-      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("allTimes"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
+      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("stopTimesHint"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
     try {
