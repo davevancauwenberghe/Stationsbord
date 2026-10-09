@@ -172,6 +172,57 @@ test("empty formations show the existing unavailable state without misleading cr
   }
 });
 
+test("standing capacity and length are separate from seats, complete per formation and tolerate missing fields", () => {
+  const unit = {
+    materialSubTypeName: "AM08_b",
+    seatsSecondClass: 100,
+    standingPlacesFirstClass: "2",
+    standingPlacesSecondClass: "30",
+    lengthInMeter: "26.5",
+    hasPriorityPlaces: "1",
+    hasTables: true,
+    hasLuggageSection: "0",
+  };
+  const wrap = (units) => ({ composition: { units: { unit: units } } });
+  let html = renderComposition(
+    {
+      composition: {
+        segments: { segment: [wrap([unit, unit]), wrap([unit])] },
+      },
+    },
+    t,
+  );
+  assert.match(html, /2nd class: 200 seats/);
+  assert.match(html, /64 standing places/);
+  assert.match(html, /Train length: ≈ 53 m/);
+  assert.match(html, /32 standing places/);
+  assert.match(html, /Train length: ≈ 27 m/);
+  assert.match(html, /Priority seats/);
+  assert.match(html, /Tables/);
+  assert.ok(!html.includes("<span>Luggage area</span>"));
+  assert.match(html, /not the number of free places/);
+  html = renderComposition(
+    {
+      composition: {
+        segments: {
+          segment: wrap([
+            unit,
+            { lengthInMeter: "invalid", standingPlacesSecondClass: "30" },
+          ]),
+        },
+      },
+    },
+    t,
+  );
+  assert.ok(
+    !html.includes("Train length:"),
+    "A partial length must not be presented as the full train",
+  );
+  assert.ok(!html.includes("64 standing places"));
+  assert.match(html, /Length: ≈ 26.5 m/);
+  assert.ok(!html.includes("NaN"));
+});
+
 test("all committed PNGs retain their imported dimensions and provenance hashes", () => {
   const root = new URL("../src/public/assets/trains/", import.meta.url);
   const manifest = JSON.parse(
