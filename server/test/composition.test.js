@@ -17,6 +17,46 @@ const type = (parent_type, sub_type, orientation = "LEFT") => ({
 });
 const t = (key) => messages.en[key];
 
+test("I11 AUH/BVUH aliases use service-specific liveries in every API type layout", () => {
+  for (const [subtype, drawing] of [
+    ["AUH", "first"],
+    ["BVUH", "second"],
+    ["BUH", "second"],
+  ]) {
+    for (const unit of [
+      { materialType: type("I11", subtype) },
+      { materialType: type(`I11${subtype}`, "unknown") },
+      { materialSubTypeName: `I11${subtype} unknown` },
+    ]) {
+      for (const orientation of ["LEFT", "RIGHT"]) {
+        const oriented = {
+          ...unit,
+          materialType: { ...unit.materialType, orientation },
+        };
+        for (const [trainId, prefix] of [
+          ["BE.NMBS.OTC1000", "i11-ouigo-"],
+          ["OTC1001", "i11-ouigo-"],
+          ["BE.NMBS.IC515", "i11-"],
+          ["515", "i11-"],
+        ]) {
+          const asset = matchArtwork(oriented, { trainId });
+          assert.equal(asset.key, prefix + drawing);
+          assert.match(
+            asset.file,
+            new RegExp(`-${orientation === "LEFT" ? "l" : "r"}\\.png$`),
+          );
+        }
+      }
+    }
+  }
+  assert.equal(
+    matchArtwork({ materialType: type("I11", "BDXH") }, { trainId: "OTC1000" })
+      .key,
+    "i11-cab",
+  );
+  assert.equal(matchArtwork({ materialType: type("I11", "unreviewed") }), null);
+});
+
 test("AM08 variants and AM96 voltage equipment use their own original drawings", () => {
   const dc = matchArtwork({
     materialSubTypeName: "AM08_b",

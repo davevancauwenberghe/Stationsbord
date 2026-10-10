@@ -16,12 +16,12 @@
     <!-- page-meta:end -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Stationsbord" />
-    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.2" />
-    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.2" />
-    <link rel="manifest" href="/site.webmanifest?v=0.9.2" />
-    <script src="/theme.js?v=0.9.2"></script>
-    <link rel="stylesheet" href="/styles.css?v=0.9.2-r3" />
-    <script type="module" src="/app.js?v=0.9.2-r4"></script>
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.3" />
+    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.3" />
+    <link rel="manifest" href="/site.webmanifest?v=0.9.3" />
+    <script src="/theme.js?v=0.9.3"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.9.3" />
+    <script type="module" src="/app.js?v=0.9.3"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -30,7 +30,7 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Stationsbord"
-          ><img src="/mark.svg?v=0.9.2" alt="" width="36" height="36" /><span
+          ><img src="/mark.svg?v=0.9.3" alt="" width="36" height="36" /><span
             >stationsbord<span class="brand-dot">.</span></span
           ></a
         >
@@ -72,7 +72,35 @@
           ><span aria-hidden="true">↗</span>
         </button>
       </div>
-      <div class="workspace">
+      <div
+        class="view-navigation glass-surface"
+        role="group"
+        aria-label="Zoeken"
+        id="viewNavigation"
+      >
+        <button
+          type="button"
+          id="stationViewButton"
+          aria-pressed="true"
+          aria-controls="stationView"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6M9 10h6" /></svg
+          ><span data-i18n="stationBoard">Stationsbord</span>
+        </button>
+        <button
+          type="button"
+          id="trainViewButton"
+          aria-pressed="false"
+          aria-controls="trainView"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="16" rx="4" />
+            <path d="M5 11h14M9 3v8m6-8V3M8 22l2-3m6 3-2-3M8 15h1m6 0h1" /></svg
+          ><span data-i18n="trainLookup">Trein opzoeken</span>
+        </button>
+      </div>
+      <div class="workspace" id="stationView">
         <aside class="sidebar" aria-label="Station en tijd">
           <form id="stationForm" class="search-panel" autocomplete="off">
             <div class="station-field">
@@ -309,6 +337,134 @@
           </div>
         </section>
       </div>
+      <div id="trainView" class="train-workspace" hidden>
+        <form id="trainForm" class="search-panel" autocomplete="off">
+          <div class="station-field">
+            <label class="field-label" for="trainInput" data-i18n="trainNumber"
+              >Treinnummer</label
+            >
+            <div class="search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 3 7 21M17 3l-2 18M4 9h17M3 15h17" /></svg
+              ><input
+                id="trainInput"
+                type="text"
+                maxlength="40"
+                required
+                spellcheck="false"
+                autocapitalize="characters"
+                enterkeyhint="search"
+                aria-describedby="trainInputHint trainSearchStatus"
+                placeholder="515 of IC515"
+              />
+            </div>
+            <p
+              class="field-hint"
+              id="trainInputHint"
+              data-i18n="trainInputHint"
+            >
+              Nummer of volledige treincode, ook voor S- en OTC-treinen.
+            </p>
+            <p
+              class="field-hint error"
+              id="trainSearchStatus"
+              role="status"
+            ></p>
+          </div>
+          <div class="when-field">
+            <span class="field-label" data-i18n="when">Wanneer?</span>
+            <div
+              class="segmented train-when-tabs"
+              role="group"
+              aria-label="Wanneer"
+            >
+              <button
+                type="button"
+                id="trainLiveMode"
+                aria-pressed="true"
+                data-i18n="now"
+              >
+                Nu</button
+              ><button
+                type="button"
+                id="trainPlanMode"
+                aria-pressed="false"
+                data-i18n="plan"
+              >
+                Andere tijd
+              </button>
+            </div>
+            <div id="trainPlannedFields" class="date-fields" hidden>
+              <label
+                ><span class="field-label" data-i18n="date">Datum</span
+                ><input
+                  id="trainDateInput"
+                  type="date"
+                  required
+                  min="2000-01-01"
+                  max="2099-12-31"
+                  disabled
+              /></label>
+              <label
+                ><span class="field-label" data-i18n="time">Tijd</span
+                ><input id="trainTimeInput" type="time" required disabled
+              /></label>
+            </div>
+          </div>
+          <div class="submit-field">
+            <button class="primary-button" type="submit">
+              <span data-i18n="findTrain">Zoek de trein</span
+              ><span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+        <section
+          class="train-panel"
+          id="trainResult"
+          tabindex="-1"
+          aria-labelledby="trainTitle"
+        >
+          <div class="train-heading">
+            <div>
+              <p class="eyebrow" data-i18n="details">TREINDETAILS</p>
+              <h2 id="trainTitle">Welke trein zoek je?</h2>
+              <p id="trainSubtitle" class="board-subtitle"></p>
+            </div>
+            <div class="train-actions">
+              <button
+                type="button"
+                class="icon-button glass-surface"
+                id="shareTrain"
+                hidden
+                aria-label="Deel trein"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-button glass-surface"
+                id="refreshTrain"
+                hidden
+                aria-label="Vernieuwen"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div id="trainNotice" class="notice" role="status" hidden></div>
+          <div id="trainContent" class="train-content">
+            <p class="muted" data-i18n="trainEmptyBody">
+              De volledige rit, haltes en samenstelling op één plek.
+            </p>
+          </div>
+        </section>
+      </div>
       <footer class="site-footer">
         <span
           >with love from
@@ -323,7 +479,16 @@
           ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
           <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
             >iRail</a
-          ><span class="footer-version">v0.9.2</span></span
+          ><span class="footer-version">v0.9.3</span
+          ><button
+            type="button"
+            id="glassToggle"
+            class="glass-toggle"
+            aria-pressed="true"
+            data-i18n="glassEffects"
+          >
+            Glaseffecten
+          </button></span
         >
       </footer>
     </main>

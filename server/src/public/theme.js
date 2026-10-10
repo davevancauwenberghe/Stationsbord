@@ -23,10 +23,23 @@
       theme === "dark" ? "#182226" : "#f6f3eb";
   }
   apply();
+  function applyGlass() {
+    let enabled = true;
+    try {
+      enabled =
+        JSON.parse(localStorage.getItem("stationsbord.glass")) !== false;
+    } catch {}
+    document.documentElement.dataset.glass = enabled ? "on" : "off";
+    document
+      .getElementById("glassToggle")
+      ?.setAttribute("aria-pressed", String(enabled));
+  }
+  applyGlass();
   system.addEventListener("change", () => {
     if (preference === "system") apply();
   });
   window.addEventListener("storage", (event) => {
+    if (event.key === "stationsbord.glass" || event.key === null) applyGlass();
     if (event.key !== key && event.key !== null) return;
     try {
       const saved = JSON.parse(event.newValue);
@@ -39,6 +52,17 @@
     apply();
   });
   document.addEventListener("DOMContentLoaded", () => {
+    applyGlass();
+    document.getElementById("glassToggle").addEventListener("click", () => {
+      const enabled = document.documentElement.dataset.glass !== "on";
+      document.documentElement.dataset.glass = enabled ? "on" : "off";
+      document
+        .getElementById("glassToggle")
+        .setAttribute("aria-pressed", String(enabled));
+      try {
+        localStorage.setItem("stationsbord.glass", JSON.stringify(enabled));
+      } catch {}
+    });
     const select = document.getElementById("themeSelect");
     select.value = preference;
     select.addEventListener("change", () => {

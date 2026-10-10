@@ -1,5 +1,5 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.2-r4";
-import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.2";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.3";
+import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.3";
 
 const seats = (value) =>
   Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -150,6 +150,8 @@ export function matchArtwork(unit, { trainId = "" } = {}) {
   } else if (["I6", "I10", "I11"].includes(family)) {
     if (family === "I11" && ["BDX", "BX", "BDXH"].includes(subtype))
       key = "i11-cab";
+    else if (family === "I11" && ["AUH", "BVUH"].includes(subtype))
+      key = subtype === "AUH" ? "i11-first" : "i11-second";
     else if (["A", "AU", "B", "BU", "BUH", "BYU"].includes(subtype))
       key =
         family.toLowerCase() +
