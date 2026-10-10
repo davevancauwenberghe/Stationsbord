@@ -48,7 +48,9 @@ their textual information and display an explicit illustration fallback.
 
 Display sizing uses a common source-pixel scale for locomotives, EMUs and
 coaches. The stored artwork is unchanged. Cab orientation selects the matching
-original drawing, including AM96 BX and M5 BDx whose `L`/`R` filenames are
-opposite to the visible cab direction. M5 is matched as M5; historical M4
+original drawing by reviewed `cabFacing` metadata for each supported EMU/DMU
+cab and cab coach. AM96 BX, M4 ADx and M5 BDx have `L`/`R` filenames opposite
+to their visible cab direction. Intermediate vehicles are explicitly marked
+with a null cab direction. Metadata changes do not alter the original artwork. M5 is matched as M5; historical M4
 records keep M4 illustrations. Only OTC services select Ouigo I11 A/B drawings;
 I11 cab cars use the standard I11 BDx artwork.

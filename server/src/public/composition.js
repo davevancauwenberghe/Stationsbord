@@ -1,4 +1,4 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.2-r3";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.2-r4";
 import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.2";
 
 const seats = (value) =>
@@ -42,9 +42,15 @@ function material(unit) {
   };
 }
 
-// MLGTraffic's AM96 BX and M5 BDx side names run opposite to their cab direction.
-// Select the other original drawing instead of flipping or editing its pixels.
-const invertedCabArtwork = new Set(["am96-second", "m5-cab"]);
+// Cab direction is reviewed per drawing, independent of its source-side filename.
+// Intermediate vehicles retain the requested source side; formation order stays intact.
+export function selectArtworkVariant(variants, orientation) {
+  return (
+    Object.values(variants || {}).find(
+      (entry) => entry.cabFacing === orientation,
+    ) || variants?.[orientation]
+  );
+}
 const isOtc = (trainId) => /^(?:BE\.NMBS\.)?OTC\d+$/i.test(text(trainId));
 
 // Written for Stationsbord from iRail's public fields and the original MLGTraffic
@@ -82,13 +88,13 @@ export function matchArtwork(unit, { trainId = "" } = {}) {
     if (subtype === "B") key = "am80-middle";
     else if (["A", "C"].includes(subtype) && (first || second))
       key = first ? "am80-first" : "am80-second";
-  } else if (family === "AM75") {
+  } else if (/^AM75[MP]?$/.test(family)) {
     if (subtype === "B" || subtype === "C")
       key = `am75-middle-${subtype.toLowerCase()}`;
     else if (["A", "D"].includes(subtype) && (first || second))
       key = first ? "am75-first" : "am75-second";
   } else if (
-    family === "AM86" &&
+    /^AM86[MP]?$/.test(family) &&
     ["A", "B"].includes(subtype) &&
     (first || second)
   ) {
@@ -156,12 +162,7 @@ export function matchArtwork(unit, { trainId = "" } = {}) {
     ["i11-first", "i11-second"].includes(key)
   )
     key = key.replace("i11-", "i11-ouigo-");
-  const side = invertedCabArtwork.has(key)
-    ? orientation === "L"
-      ? "R"
-      : "L"
-    : orientation;
-  const entry = artwork[key]?.[side];
+  const entry = selectArtworkVariant(artwork[key], orientation);
   return entry ? { ...entry, key, src: `/assets/trains/${entry.file}` } : null;
 }
 

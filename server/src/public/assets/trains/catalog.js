@@ -5,11 +5,13 @@ export const artwork = {
       file: "am08-a-l.png",
       width: 268,
       height: 58,
+      cabFacing: "L",
     },
     R: {
       file: "am08-a-r.png",
       width: 268,
       height: 58,
+      cabFacing: "R",
     },
   },
   "am08-ac-b": {
@@ -17,11 +19,13 @@ export const artwork = {
       file: "am08-ac-b-l.png",
       width: 258,
       height: 43,
+      cabFacing: null,
     },
     R: {
       file: "am08-ac-b-r.png",
       width: 258,
       height: 43,
+      cabFacing: null,
     },
   },
   "am08-ac-c": {
@@ -29,11 +33,13 @@ export const artwork = {
       file: "am08-ac-c-l.png",
       width: 268,
       height: 58,
+      cabFacing: "L",
     },
     R: {
       file: "am08-ac-c-r.png",
       width: 268,
       height: 58,
+      cabFacing: "R",
     },
   },
   "am08-dc-b": {
@@ -41,11 +47,13 @@ export const artwork = {
       file: "am08-dc-b-l.png",
       width: 258,
       height: 43,
+      cabFacing: null,
     },
     R: {
       file: "am08-dc-b-r.png",
       width: 258,
       height: 43,
+      cabFacing: null,
     },
   },
   "am08-dc-c": {
@@ -53,11 +61,13 @@ export const artwork = {
       file: "am08-dc-c-l.png",
       width: 268,
       height: 42,
+      cabFacing: "L",
     },
     R: {
       file: "am08-dc-c-r.png",
       width: 268,
       height: 42,
+      cabFacing: "R",
     },
   },
   "am75-first": {
@@ -65,11 +75,13 @@ export const artwork = {
       file: "am75-first-l.png",
       width: 252,
       height: 44,
+      cabFacing: "L",
     },
     R: {
       file: "am75-first-r.png",
       width: 252,
       height: 44,
+      cabFacing: "R",
     },
   },
   "am75-middle-b": {
@@ -77,11 +89,13 @@ export const artwork = {
       file: "am75-middle-b-l.png",
       width: 244,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "am75-middle-b-r.png",
       width: 244,
       height: 58,
+      cabFacing: null,
     },
   },
   "am75-middle-c": {
@@ -89,11 +103,13 @@ export const artwork = {
       file: "am75-middle-c-l.png",
       width: 244,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "am75-middle-c-r.png",
       width: 244,
       height: 40,
+      cabFacing: null,
     },
   },
   "am75-second": {
@@ -101,11 +117,13 @@ export const artwork = {
       file: "am75-second-l.png",
       width: 251,
       height: 44,
+      cabFacing: "L",
     },
     R: {
       file: "am75-second-r.png",
       width: 251,
       height: 44,
+      cabFacing: "R",
     },
   },
   "am80-first": {
@@ -113,11 +131,13 @@ export const artwork = {
       file: "am80-first-l.png",
       width: 252,
       height: 58,
+      cabFacing: "L",
     },
     R: {
       file: "am80-first-r.png",
       width: 252,
       height: 58,
+      cabFacing: "R",
     },
   },
   "am80-middle": {
@@ -125,11 +145,13 @@ export const artwork = {
       file: "am80-middle-l.png",
       width: 248,
       height: 41,
+      cabFacing: null,
     },
     R: {
       file: "am80-middle-r.png",
       width: 248,
       height: 41,
+      cabFacing: null,
     },
   },
   "am80-second": {
@@ -137,11 +159,13 @@ export const artwork = {
       file: "am80-second-l.png",
       width: 252,
       height: 42,
+      cabFacing: "L",
     },
     R: {
       file: "am80-second-r.png",
       width: 252,
       height: 41,
+      cabFacing: "R",
     },
   },
   "am86-motor": {
@@ -149,11 +173,13 @@ export const artwork = {
       file: "am86-motor-l.png",
       width: 263,
       height: 58,
+      cabFacing: "L",
     },
     R: {
       file: "am86-motor-r.png",
       width: 263,
       height: 58,
+      cabFacing: "R",
     },
   },
   "am86-trailer": {
@@ -161,11 +187,13 @@ export const artwork = {
       file: "am86-trailer-l.png",
       width: 263,
       height: 41,
+      cabFacing: "L",
     },
     R: {
       file: "am86-trailer-r.png",
       width: 263,
       height: 41,
+      cabFacing: "R",
     },
   },
   "am96-ac-middle": {
@@ -173,11 +201,13 @@ export const artwork = {
       file: "am96-ac-middle-l.png",
       width: 264,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "am96-ac-middle-r.png",
       width: 264,
       height: 58,
+      cabFacing: null,
     },
   },
   "am96-dc-middle": {
@@ -185,11 +215,13 @@ export const artwork = {
       file: "am96-dc-middle-l.png",
       width: 264,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "am96-dc-middle-r.png",
       width: 264,
       height: 58,
+      cabFacing: null,
     },
   },
   "am96-first": {
@@ -197,11 +229,13 @@ export const artwork = {
       file: "am96-first-l.png",
       width: 264,
       height: 40,
+      cabFacing: "L",
     },
     R: {
       file: "am96-first-r.png",
       width: 264,
       height: 40,
+      cabFacing: "R",
     },
   },
   "am96-second": {
@@ -209,11 +243,13 @@ export const artwork = {
       file: "am96-second-l.png",
       width: 264,
       height: 40,
+      cabFacing: "R",
     },
     R: {
       file: "am96-second-r.png",
       width: 264,
       height: 40,
+      cabFacing: "L",
     },
   },
   "ar41-first": {
@@ -221,11 +257,13 @@ export const artwork = {
       file: "ar41-first-l.png",
       width: 248,
       height: 41,
+      cabFacing: "L",
     },
     R: {
       file: "ar41-first-r.png",
       width: 249,
       height: 41,
+      cabFacing: "R",
     },
   },
   "ar41-second": {
@@ -233,11 +271,13 @@ export const artwork = {
       file: "ar41-second-l.png",
       width: 248,
       height: 41,
+      cabFacing: "L",
     },
     R: {
       file: "ar41-second-r.png",
       width: 249,
       height: 41,
+      cabFacing: "R",
     },
   },
   hle13: {
@@ -245,11 +285,13 @@ export const artwork = {
       file: "hle13-l.png",
       width: 193,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "hle13-r.png",
       width: 193,
       height: 58,
+      cabFacing: null,
     },
   },
   hle18: {
@@ -257,11 +299,13 @@ export const artwork = {
       file: "hle18-l.png",
       width: 194,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "hle18-r.png",
       width: 194,
       height: 58,
+      cabFacing: null,
     },
   },
   hle21: {
@@ -269,11 +313,13 @@ export const artwork = {
       file: "hle21-l.png",
       width: 187,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "hle21-r.png",
       width: 187,
       height: 58,
+      cabFacing: null,
     },
   },
   hle27: {
@@ -281,11 +327,13 @@ export const artwork = {
       file: "hle27-l.png",
       width: 187,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "hle27-r.png",
       width: 187,
       height: 58,
+      cabFacing: null,
     },
   },
   hle28: {
@@ -293,11 +341,13 @@ export const artwork = {
       file: "hle28-l.png",
       width: 189,
       height: 58,
+      cabFacing: null,
     },
     R: {
       file: "hle28-r.png",
       width: 189,
       height: 58,
+      cabFacing: null,
     },
   },
   "i10-first": {
@@ -305,11 +355,13 @@ export const artwork = {
       file: "i10-first-l.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i10-first-r.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
   },
   "i10-second": {
@@ -317,11 +369,13 @@ export const artwork = {
       file: "i10-second-l.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i10-second-r.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
   },
   "i11-cab": {
@@ -329,11 +383,13 @@ export const artwork = {
       file: "i11-cab-l.png",
       width: 263,
       height: 42,
+      cabFacing: "L",
     },
     R: {
       file: "i11-cab-r.png",
       width: 263,
       height: 42,
+      cabFacing: "R",
     },
   },
   "i11-first": {
@@ -341,11 +397,13 @@ export const artwork = {
       file: "i11-first-l.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i11-first-r.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
   },
   "i11-ouigo-first": {
@@ -353,11 +411,13 @@ export const artwork = {
       file: "i11-ouigo-first-l.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i11-ouigo-first-r.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
   },
   "i11-ouigo-second": {
@@ -365,11 +425,13 @@ export const artwork = {
       file: "i11-ouigo-second-l.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i11-ouigo-second-r.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
   },
   "i11-second": {
@@ -377,11 +439,13 @@ export const artwork = {
       file: "i11-second-l.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i11-second-r.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
   },
   "i6-first": {
@@ -389,11 +453,13 @@ export const artwork = {
       file: "i6-first-l.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i6-first-r.png",
       width: 263,
       height: 40,
+      cabFacing: null,
     },
   },
   "i6-second": {
@@ -401,11 +467,13 @@ export const artwork = {
       file: "i6-second-l.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "i6-second-r.png",
       width: 264,
       height: 40,
+      cabFacing: null,
     },
   },
   "m4-cab": {
@@ -413,11 +481,13 @@ export const artwork = {
       file: "m4-cab-l.png",
       width: 241,
       height: 40,
+      cabFacing: "R",
     },
     R: {
       file: "m4-cab-r.png",
       width: 241,
       height: 40,
+      cabFacing: "L",
     },
   },
   "m4-first": {
@@ -425,11 +495,13 @@ export const artwork = {
       file: "m4-first-l.png",
       width: 241,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "m4-first-r.png",
       width: 241,
       height: 40,
+      cabFacing: null,
     },
   },
   "m4-luggage-first": {
@@ -437,11 +509,13 @@ export const artwork = {
       file: "m4-luggage-first-l.png",
       width: 241,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "m4-luggage-first-r.png",
       width: 241,
       height: 40,
+      cabFacing: null,
     },
   },
   "m4-luggage-second": {
@@ -449,11 +523,13 @@ export const artwork = {
       file: "m4-luggage-second-l.png",
       width: 243,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "m4-luggage-second-r.png",
       width: 243,
       height: 40,
+      cabFacing: null,
     },
   },
   "m4-second": {
@@ -461,11 +537,13 @@ export const artwork = {
       file: "m4-second-l.png",
       width: 243,
       height: 40,
+      cabFacing: null,
     },
     R: {
       file: "m4-second-r.png",
       width: 243,
       height: 40,
+      cabFacing: null,
     },
   },
   "m5-cab": {
@@ -473,11 +551,13 @@ export const artwork = {
       file: "m5-cab-l.png",
       width: 267,
       height: 45,
+      cabFacing: "R",
     },
     R: {
       file: "m5-cab-r.png",
       width: 267,
       height: 45,
+      cabFacing: "L",
     },
   },
   "m5-first": {
@@ -485,11 +565,13 @@ export const artwork = {
       file: "m5-first-l.png",
       width: 262,
       height: 45,
+      cabFacing: null,
     },
     R: {
       file: "m5-first-r.png",
       width: 262,
       height: 45,
+      cabFacing: null,
     },
   },
   "m5-second": {
@@ -497,11 +579,13 @@ export const artwork = {
       file: "m5-second-l.png",
       width: 262,
       height: 45,
+      cabFacing: null,
     },
     R: {
       file: "m5-second-r.png",
       width: 262,
       height: 45,
+      cabFacing: null,
     },
   },
   "m6-cab": {
@@ -509,11 +593,13 @@ export const artwork = {
       file: "m6-cab-l.png",
       width: 271,
       height: 47,
+      cabFacing: "L",
     },
     R: {
       file: "m6-cab-r.png",
       width: 271,
       height: 47,
+      cabFacing: "R",
     },
   },
   "m6-first": {
@@ -521,11 +607,13 @@ export const artwork = {
       file: "m6-first-l.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m6-first-r.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
   },
   "m6-luggage-mixed": {
@@ -533,11 +621,13 @@ export const artwork = {
       file: "m6-luggage-mixed-l.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m6-luggage-mixed-r.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
   },
   "m6-luggage-second": {
@@ -545,11 +635,13 @@ export const artwork = {
       file: "m6-luggage-second-l.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m6-luggage-second-r.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
   },
   "m6-second": {
@@ -557,11 +649,13 @@ export const artwork = {
       file: "m6-second-l.png",
       width: 267,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m6-second-r.png",
       width: 267,
       height: 47,
+      cabFacing: null,
     },
   },
   "m7-cab": {
@@ -569,11 +663,13 @@ export const artwork = {
       file: "m7-cab-l.png",
       width: 271,
       height: 47,
+      cabFacing: "L",
     },
     R: {
       file: "m7-cab-r.png",
       width: 271,
       height: 47,
+      cabFacing: "R",
     },
   },
   "m7-luggage": {
@@ -581,11 +677,13 @@ export const artwork = {
       file: "m7-luggage-l.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m7-luggage-r.png",
       width: 267,
       height: 47,
+      cabFacing: null,
     },
   },
   "m7-mixed": {
@@ -593,11 +691,13 @@ export const artwork = {
       file: "m7-mixed-l.png",
       width: 267,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m7-mixed-r.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
   },
   "m7-motor": {
@@ -605,11 +705,13 @@ export const artwork = {
       file: "m7-motor-l.png",
       width: 242,
       height: 58,
+      cabFacing: "L",
     },
     R: {
       file: "m7-motor-r.png",
       width: 242,
       height: 58,
+      cabFacing: "R",
     },
   },
   "m7-second": {
@@ -617,11 +719,13 @@ export const artwork = {
       file: "m7-second-l.png",
       width: 268,
       height: 47,
+      cabFacing: null,
     },
     R: {
       file: "m7-second-r.png",
       width: 267,
       height: 47,
+      cabFacing: null,
     },
   },
 };

@@ -114,7 +114,12 @@ use their own drawings; M4 is retained for historical/legacy API types. OTC
 services use Ouigo I11 A/B artwork and the standard I11 cab car; other services
 use the standard I11 livery. Combined type names such as `I11BDXH` and M7 `BXH`
 are recognized. Cab direction follows iRail's orientation while accounting for
-original source filenames whose side names face the opposite way. Artwork
+original source filenames whose side names face the opposite way. This is
+shared across AM08/75/80/86/96, AR41/MW41 and M7 motor cars through explicit
+`cabFacing` metadata. Intermediate units have `cabFacing: null`; new EMU/DMU
+imports must explicitly classify the cab direction before they can be imported.
+Use `python scripts/import-train-artwork.py --metadata-only` to rebuild the
+catalogue after reviewing direction metadata without changing PNGs. Artwork
 shares a common display pixel scale, so shorter HLE locomotives are no longer
 stretched to the width of a full coach. Stored PNGs retain the original pixels.
 

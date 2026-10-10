@@ -15,3 +15,9 @@ baseline alignment across seven formations. Responsive WCAG A/AA checks cover
 320/390/1280 pixels, NL/EN/FR/DE, and light/dark themes. Image failures retain
 an explicit fallback. Stored PNGs remain lossless conversions of the original
 MLGTraffic drawings; attribution and provenance remain in the asset directory.
+
+The follow-up cab metadata update adds 32 focused browser checks: each supported
+EMU/DMU family in both orientations at 390/1280 pixels. Loaded filenames, equal
+pixel scale and the original unit order are verified. New EMU/DMU imports are
+rejected until their cab direction (or an explicit intermediate-unit null) has
+been reviewed in the importer. PNG files remain unchanged.

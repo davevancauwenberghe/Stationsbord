@@ -2,7 +2,7 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.2-r3";
+} from "./composition.js?v=0.9.2-r4";
 import {
   renderCrowding,
   renderTrainNotices,
