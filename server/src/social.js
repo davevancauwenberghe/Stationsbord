@@ -3,21 +3,20 @@ import { escapeHtml, validDate, validTime } from "./public/rail-utils.js";
 const copy = {
   nl: {
     locale: "nl_BE",
-    tagline: "België per spoor",
+    tagline: "It’s on the board",
     departures: "Vertrekken",
     arrivals: "Aankomsten",
     description:
-      "Belgische treinen, helder in beeld. Bekijk vertrekken, aankomsten, perrons en vertragingen voor jouw station.",
-    board: "Bekijk de dienstregeling, perrons en vertragingen.",
+      "Belgische treinen, helder in beeld. Bekijk vertrekken, aankomsten, sporen en vertragingen voor jouw station.",
+    board: "Bekijk de dienstregeling, sporen en vertragingen.",
     live: "Open de link voor de actuele treinen.",
     planned: "Geplande dienstregeling",
-    zone: "Belgische tijd",
     imageAlt:
       "Stationsbord: Belgische treinen, helder in beeld. Crème en blauw met koperkleurige spoorlijnen en het Stationsbord-logo.",
   },
   fr: {
     locale: "fr_BE",
-    tagline: "La Belgique en train",
+    tagline: "It’s on the board",
     departures: "Départs",
     arrivals: "Arrivées",
     description:
@@ -25,13 +24,12 @@ const copy = {
     board: "Consultez les horaires, voies et retards.",
     live: "Ouvrez le lien pour les trains en temps réel.",
     planned: "Horaires prévus",
-    zone: "heure belge",
     imageAlt:
       "Stationsbord : horaires des trains belges. Fond crème et bleu, lignes ferroviaires cuivrées et logo Stationsbord.",
   },
   de: {
     locale: "de_BE",
-    tagline: "Belgien auf Schienen",
+    tagline: "It’s on the board",
     departures: "Abfahrten",
     arrivals: "Ankünfte",
     description:
@@ -39,13 +37,12 @@ const copy = {
     board: "Fahrplan, Gleise und Verspätungen im Überblick.",
     live: "Öffne den Link für aktuelle Zugdaten.",
     planned: "Geplanter Fahrplan",
-    zone: "belgische Zeit",
     imageAlt:
       "Stationsbord: belgische Zugfahrpläne. Cremefarbener und blauer Hintergrund mit kupferfarbenen Bahnlinien und Stationsbord-Logo.",
   },
   en: {
     locale: "en_GB",
-    tagline: "Belgium by rail",
+    tagline: "It’s on the board",
     departures: "Departures",
     arrivals: "Arrivals",
     description:
@@ -53,7 +50,6 @@ const copy = {
     board: "See train times, platforms and delays.",
     live: "Open the link for current train information.",
     planned: "Planned timetable",
-    zone: "Belgian time",
     imageAlt:
       "Stationsbord, Belgian train schedules. Cream and blue artwork with copper railway lines and the Stationsbord logo.",
   },
@@ -117,7 +113,7 @@ export function pageMetadata(search, origin) {
         year: "numeric",
         timeZone: "Europe/Brussels",
       }).format(new Date(`${date}T12:00:00Z`));
-      description = `${text.planned}: ${formatted}, ${time} (${text.zone}). ${text.board}`;
+      description = `${text.planned}: ${formatted}, ${time}. ${text.board}`;
     }
   } else if (lang !== "nl") url.searchParams.set("lang", lang);
   return {
@@ -126,7 +122,7 @@ export function pageMetadata(search, origin) {
     description,
     url: url.href,
     locale: text.locale,
-    image: new URL("/social-card.png?v=0.7.0", origin).href,
+    image: new URL("/social-card.png?v=0.9.2", origin).href,
     imageAlt: text.imageAlt,
   };
 }

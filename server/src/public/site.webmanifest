@@ -1,7 +1,7 @@
 {
   "name": "Stationsbord",
   "short_name": "Stationsbord",
-  "description": "Belgian train schedules, clearly.",
+  "description": "It’s on the board. Belgian train schedules.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f3eb",

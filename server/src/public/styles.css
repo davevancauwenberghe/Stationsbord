@@ -240,6 +240,8 @@ svg {
 }
 .page-intro .eyebrow {
   color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0.3px;
 }
 h1 {
   font:
@@ -251,11 +253,6 @@ h1 {
 }
 p {
   line-height: 1.6;
-}
-.intro-copy {
-  font-size: 15px;
-  color: var(--muted);
-  margin: 12px 0 0;
 }
 .network-button {
   display: inline-flex;
@@ -356,17 +353,9 @@ p {
 .field-hint.error {
   color: var(--red);
 }
-.search-key {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 11px;
-}
-kbd {
-  padding: 1px 6px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font-family: inherit;
-  margin-right: 4px;
+.field-hint:empty,
+.board-subtitle:empty {
+  display: none;
 }
 .station-options {
   position: absolute;
@@ -463,10 +452,6 @@ kbd {
 .primary-button > span:last-child {
   font-size: 21px;
 }
-.mode-hint {
-  grid-column: 2/-1;
-  margin-top: 9px;
-}
 .station-shortcuts {
   display: flex;
   align-items: baseline;
@@ -511,6 +496,58 @@ kbd {
   padding: 0;
   font-size: 18px;
   color: var(--muted);
+}
+#savedSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 10px;
+}
+#savedSection h2 {
+  min-width: 0;
+  margin: 0;
+  color: var(--accent);
+}
+#savedSection .station-chip-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+}
+.station-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: clip;
+}
+.station-chip > button:first-child {
+  padding: 5px 11px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.station-chip:has([aria-pressed="true"]) {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+.station-chip button:focus-visible {
+  outline-offset: -3px;
+}
+.station-chip:hover {
+  border-color: var(--accent);
+}
+.manage-saved {
+  flex-shrink: 0;
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .board-panel {
   background: var(--white);
@@ -965,6 +1002,20 @@ kbd {
 .site-footer a {
   text-underline-offset: 3px;
 }
+.site-footer .creator-logo {
+  font-weight: 650;
+  text-decoration: none;
+}
+.site-footer .creator-logo:hover {
+  text-decoration: underline;
+}
+.schedule-disclaimer {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 720px;
+  margin: 12px 0 0;
+}
 .footer-version {
   margin-left: 12px;
 }
@@ -972,6 +1023,9 @@ body.board-focus .site-header,
 body.board-focus .page-intro,
 body.board-focus .sidebar,
 body.board-focus .site-footer {
+  display: none;
+}
+body.board-focus .schedule-disclaimer {
   display: none;
 }
 body.board-focus .page {
@@ -1072,12 +1126,55 @@ body:has(dialog[open]) {
   color: var(--muted);
 }
 .stop-clock {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 17px;
   line-height: 1.5;
   color: var(--ink);
 }
 .secondary-event .stop-clock {
   font-size: 12px;
+}
+.secondary-event .stop-clock strong {
+  font-weight: 400;
+}
+.stop-clock .stop-scheduled {
+  color: var(--muted);
+  font-size: 12px;
+}
+.expected-time.delay,
+.stop-expected.delay,
+.stop-event .status-text.delay {
+  color: var(--red);
+}
+.expected-time.early,
+.stop-expected.early,
+.stop-event .status-text.early {
+  color: var(--success);
+}
+.completed-stop,
+.completed-row {
+  opacity: 0.82;
+}
+.completed-stop .stop-event-label,
+.completed-stop .stop-clock,
+.completed-stop .stop-clock .stop-scheduled,
+.completed-stop .stop-name,
+.completed-stop .stop-name small,
+.completed-stop .platform,
+.completed-stop .crowding,
+.completed-stop .status-text.unknown,
+.completed-stop .stop-day,
+.completed-stop .cancelled-event .stop-scheduled,
+.completed-row .crowding,
+.completed-row .scheduled,
+.completed-row .train-code {
+  color: var(--ink);
+}
+.completed-row:hover {
+  opacity: 1;
 }
 .stop-event .status-text {
   font-size: 11px;
@@ -1088,6 +1185,29 @@ body:has(dialog[open]) {
 }
 .stop-clock .stop-day {
   font-size: 10px;
+}
+.network-issues > .section-title {
+  margin-top: 0;
+}
+.network-count {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 6px;
+  font-size: 12px;
+}
+.network-works {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.network-works summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 650;
+  min-height: 44px;
+}
+.network-works > div {
+  padding-top: 6px;
 }
 .train-notices {
   margin-bottom: 24px;
@@ -1186,16 +1306,6 @@ body:has(dialog[open]) {
   gap: 8px 18px;
   font-size: 12px;
   margin-bottom: 12px;
-}
-.composition-scroll-hint {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
 }
 .composition-scroll {
   max-width: 100%;
@@ -1307,13 +1417,6 @@ body:has(dialog[open]) {
   color: var(--muted);
   font-size: 11px;
 }
-.carriage-capacity {
-  margin: 0;
-  padding: 0 12px 12px;
-  font-size: 11px;
-  line-height: 1.7;
-  color: var(--muted);
-}
 .carriage-features li {
   display: flex;
   align-items: center;
@@ -1362,12 +1465,6 @@ body:has(dialog[open]) {
   color: var(--muted);
   white-space: pre-wrap;
   margin: 10px 0;
-}
-.disturbance .category {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--amber);
 }
 .disturbance a {
   font-size: 11px;
@@ -1438,12 +1535,6 @@ body:has(dialog[open]) {
     grid-column: 1;
     grid-row: 2;
     padding-top: 0;
-  }
-  .mode-hint {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
-    margin: 0;
   }
   .primary-button {
     max-width: 240px;
@@ -1586,10 +1677,6 @@ body:has(dialog[open]) {
     letter-spacing: -1.2px;
     max-width: 340px;
   }
-  .intro-copy {
-    font-size: 13px;
-    margin-top: 11px;
-  }
   .network-button {
     font-size: 11px;
     margin-top: 8px;
@@ -1599,13 +1686,9 @@ body:has(dialog[open]) {
     padding: 20px 0 16px;
     gap: 17px;
   }
-  .search-key {
-    display: none;
-  }
   .station-field,
   .when-field,
-  .submit-field,
-  .mode-hint {
+  .submit-field {
     grid-column: 1;
     grid-row: auto;
   }
@@ -1631,9 +1714,6 @@ body:has(dialog[open]) {
   }
   .primary-button {
     max-width: none;
-  }
-  .mode-hint {
-    margin-top: -7px;
   }
   .station-shortcuts {
     display: block;

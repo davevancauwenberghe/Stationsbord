@@ -22,7 +22,7 @@ test("social metadata covers all languages with absolute image and canonical URL
     const meta = pageMetadata(`lang=${lang}`, origin);
     assert.equal(meta.lang, lang);
     assert.equal(meta.locale, locale);
-    assert.ok(meta.title.startsWith("Stationsbord"));
+    assert.equal(meta.title, "Stationsbord · It’s on the board");
     assert.ok(meta.description.length > 40);
     assert.equal(new URL(meta.image).origin, origin);
     assert.equal(new URL(meta.url).origin, origin);
@@ -42,7 +42,7 @@ test("station previews preserve direction, language and planned Belgian date/tim
   );
   assert.equal(meta.title, "Gent-Sint-Pieters · Arrivals | Stationsbord");
   assert.match(meta.description, /2026/);
-  assert.match(meta.description, /14:30 \(Belgian time\)/);
+  assert.match(meta.description, /14:30/);
   assert.doesNotMatch(meta.description, /current train/);
   const url = new URL(meta.url);
   assert.equal(url.searchParams.get("station"), "BE.NMBS.008892007");
@@ -163,7 +163,7 @@ test("HTTP pages expose station previews to crawlers without iRail, and serve th
       assert.equal((html.match(/name="description"/g) || []).length, 1);
       assert.match(html, /id="boardContent"/);
     }
-    const image = await fetch(`${base}/social-card.png?v=0.7.0`);
+    const image = await fetch(`${base}/social-card.png?v=0.9.2`);
     assert.equal(image.status, 200);
     assert.equal(image.headers.get("content-type"), "image/png");
     const bytes = Buffer.from(await image.arrayBuffer());
