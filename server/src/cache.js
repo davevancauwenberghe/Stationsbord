@@ -48,9 +48,14 @@ export class MemoryCache {
 
 export function parseMaxAgeSeconds(cacheControl) {
   if (!cacheControl) return null;
-  const m = String(cacheControl).match(/max-age=(\d+)/i);
+  const value = String(cacheControl);
+  // Responses are reused across clients: shared-cache freshness takes precedence,
+  // regardless of directive order (RFC 9111 section 5.2.2.10).
+  const m =
+    value.match(/(?:^|,)\s*s-maxage\s*=\s*(?:"(\d+)"|(\d+))(?=\s*(?:,|$))/i) ??
+    value.match(/(?:^|,)\s*max-age\s*=\s*(?:"(\d+)"|(\d+))(?=\s*(?:,|$))/i);
   if (!m) return null;
-  const s = Number(m[1]);
+  const s = Number(m[1] ?? m[2]);
   return Number.isFinite(s) ? s : null;
 }
 
@@ -58,5 +63,7 @@ export function ttlFromHeaders(headers, fallbackSeconds = 30) {
   const cc = headers.get("cache-control");
   const maxAge = parseMaxAgeSeconds(cc);
   const seconds = maxAge != null ? maxAge : fallbackSeconds;
-  return Math.max(0, seconds) * 1000;
+  const age = Number(headers.get("age"));
+  const elapsed = Number.isFinite(age) && age > 0 ? age : 0;
+  return Math.max(0, seconds - elapsed) * 1000;
 }

@@ -78,6 +78,7 @@ const state = {
   active: -1,
   dialogController: null,
   dialogSequence: 0,
+  dialogReturnKey: null,
   editingSaved: false,
   network: null,
   networkStale: false,
@@ -374,10 +375,14 @@ $("stationInput").addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       state.active =
-        (state.active +
-          (e.key === "ArrowDown" ? 1 : -1) +
-          state.options.length) %
-        state.options.length;
+        state.active < 0
+          ? e.key === "ArrowDown"
+            ? 0
+            : state.options.length - 1
+          : (state.active +
+              (e.key === "ArrowDown" ? 1 : -1) +
+              state.options.length) %
+            state.options.length;
       highlightOption();
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -725,7 +730,27 @@ function platformHTML(row) {
     row.platform == null || row.platform === "" ? "—" : row.platform;
   return `<span class="platform${changed ? " changed" : ""}" title="${h(t(changed ? "changedPlatform" : "platform"))}" aria-label="${h(t(changed ? "changedPlatform" : "platform"))} ${h(platform)}">${h(platform)}</span>`;
 }
+function trainKey(row) {
+  return JSON.stringify([
+    row.vehicleinfo?.name || row.vehicle,
+    row.time,
+    row.departureConnection || row.arrivalConnection || "",
+  ]);
+}
 function renderBoard() {
+  // Refresh replaces table nodes: restore keyboard focus by service, never row index.
+  const focused = document.activeElement;
+  const focusedTrain = focused?.dataset.trainKey;
+  const focusedMore = focused?.id === "showMore";
+  const restoreFocus = () => {
+    if (!focusedTrain && !focusedMore) return;
+    const target = focusedMore
+      ? $("showMore")
+      : [...$("boardContent").querySelectorAll("[data-train-key]")].find(
+          (button) => button.dataset.trainKey === focusedTrain,
+        );
+    (target || $("board")).focus({ preventScroll: true });
+  };
   const filtered = filterBoardRows(state.rows, state.filter, state.mode);
   $("filterCount").textContent = state.filter
     ? `${filtered.length} / ${state.rows.length} ${t(state.rows.length === 1 ? "trainSingular" : "trains")}`
@@ -733,10 +758,12 @@ function renderBoard() {
   $("clearFilter").hidden = !state.filter;
   if (!state.rows.length) {
     renderEmpty("noTrains", "noTrainsBody");
+    restoreFocus();
     return;
   }
   if (!filtered.length) {
     renderEmpty("noFilterResults", "noFilterResultsBody");
+    restoreFocus();
     return;
   }
   const view = state.view;
@@ -765,11 +792,12 @@ function renderBoard() {
         flag(view.mode === "arrival" ? row.arrived : row.left) &&
         !flag(row.canceled);
       const statusMarkup = `${completed ? `<span class="sr-only">${h(t(view.mode === "arrival" ? "arrived" : "departed"))}</span>` : ""}<span class="status-text ${status.className}">${h(status.text)}</span>`;
-      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : completed ? ' class="completed-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span><span class="expected-time ${delay > 0 ? "delay" : "early"}">${h(expected)}</span>` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="board-row-meta">${renderCrowding(row, t)}<div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
+      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : completed ? ' class="completed-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span><span class="expected-time ${delay > 0 ? "delay" : "early"}">${h(expected)}</span>` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" data-train-key="${h(trainKey(row))}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="board-row-meta">${renderCrowding(row, t)}<div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
     })
     .join("");
   $("boardContent").innerHTML =
     `<table class="timetable"><caption class="sr-only">${h(t(view.mode === "arrival" ? "arrivals" : "departures"))} · ${h(state.data.station || view.station.name)}</caption><colgroup><col class="time-col"><col><col class="train-col"><col class="status-col"><col class="platform-col"></colgroup><thead><tr><th scope="col">${h(t("time"))}</th><th scope="col">${h(t(view.mode === "arrival" ? "origin" : "destination"))}</th><th scope="col" class="train-column">${h(t("train"))}</th><th scope="col" class="status-column">${h(t("status"))}</th><th scope="col">${h(t("platform"))}</th></tr></thead><tbody>${rows}</tbody></table>${filtered.length > 12 ? `<div class="more-row"><button class="text-button" type="button" id="showMore">${h(t(state.visible < filtered.length ? "more" : "less"))} (${state.visible < filtered.length ? filtered.length - state.visible : 12})</button></div>` : ""}`;
+  restoreFocus();
   $("showMore")?.addEventListener("click", () => {
     state.visible = state.visible < filtered.length ? state.visible + 12 : 12;
     renderBoard();
@@ -784,6 +812,8 @@ $("boardContent").addEventListener("click", (event) => {
 });
 
 function openDetails(title, eyebrow) {
+  if (!$("detailsDialog").open)
+    state.dialogReturnKey = document.activeElement?.dataset.trainKey || null;
   state.dialogController?.abort();
   state.dialogController = new AbortController();
   const sequence = ++state.dialogSequence;
@@ -807,6 +837,13 @@ $("closeDialog").addEventListener("click", closeDetails);
 $("detailsDialog").addEventListener("close", () => {
   state.dialogController?.abort();
   state.dialogSequence++;
+  if (state.dialogReturnKey) {
+    const opener = [
+      ...$("boardContent").querySelectorAll("[data-train-key]"),
+    ].find((button) => button.dataset.trainKey === state.dialogReturnKey);
+    (opener || $("board")).focus({ preventScroll: true });
+    state.dialogReturnKey = null;
+  }
 });
 $("detailsDialog").addEventListener("click", (event) => {
   if (event.target !== $("detailsDialog")) return;
@@ -854,25 +891,37 @@ async function openTrain(row, view) {
       `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p>${compositionDisclaimer}</section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
-    try {
-      const composition = await request(
-        `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang })}`,
-        signal,
-      );
-      if (!dialogCurrent(sequence)) return;
-      $("composition").innerHTML =
-        `<h3 class="section-title">${h(t("composition"))}</h3>${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t)}`;
-      installArtworkFallbacks($("composition"));
-    } catch (error) {
-      if (!dialogCurrent(sequence) || signal.aborted) return;
-      $("composition").innerHTML =
-        `<h3 class="section-title">${h(t("composition"))}</h3><p class="muted">${h(t("compositionError"))}</p>${compositionDisclaimer}`;
-    }
+    await loadComposition(id, sequence, signal);
   } catch (error) {
     if (!dialogCurrent(sequence) || signal.aborted) return;
     $("dialogContent").innerHTML =
       `<p class="notice error">${h(t("detailError"))}</p>${renderTrainNotices(null, row, t)}<button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
     $("retryDetails").addEventListener("click", () => openTrain(row, view));
+  }
+}
+
+async function loadComposition(id, sequence, signal) {
+  if (!dialogCurrent(sequence)) return;
+  const section = $("composition");
+  const heading = `<h3 class="section-title">${h(t("composition"))}</h3>`;
+  section.innerHTML = `${heading}<p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}`;
+  try {
+    const composition = await request(
+      `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang })}`,
+      signal,
+    );
+    if (!dialogCurrent(sequence)) return;
+    section.innerHTML = `${heading}${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t)}`;
+    installArtworkFallbacks(section);
+  } catch {
+    if (!dialogCurrent(sequence) || signal.aborted) return;
+    section.innerHTML = `${heading}<p class="muted">${h(t("compositionError"))}</p><button type="button" class="text-button" id="retryComposition">${h(t("retry"))}</button>${renderCompositionDisclaimer(t)}`;
+    $("retryComposition").addEventListener("click", async () => {
+      // Keep a stable focus target while replacing the retry button.
+      section.tabIndex = -1;
+      section.focus({ preventScroll: true });
+      await loadComposition(id, sequence, signal);
+    });
   }
 }
 

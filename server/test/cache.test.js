@@ -40,3 +40,78 @@ test("idle rate limiter entries are pruned", (t) => {
   pruneLimiterMap(map, { ttlMs: 100 });
   assert.deepEqual([...map.keys()], ["new"]);
 });
+
+test("upstream Age reduces freshness and never gives expired data a fresh lifetime", () => {
+  assert.equal(
+    ttlFromHeaders(
+      new Headers({ "cache-control": 'public, max-age="60"', age: "45" }),
+    ),
+    15_000,
+  );
+  assert.equal(
+    ttlFromHeaders(new Headers({ "cache-control": "max-age=60", age: "90" })),
+    0,
+  );
+  assert.equal(
+    ttlFromHeaders(
+      new Headers({
+        "cache-control": "s-maxage=900, max-age=60",
+        age: "invalid",
+      }),
+    ),
+    900_000,
+  );
+  assert.equal(
+    ttlFromHeaders(new Headers({ "cache-control": "x-max-age=900" })),
+    30_000,
+  );
+});
+
+test("shared cache prefers s-maxage regardless of directive order and preserves zero", () => {
+  for (const control of [
+    "s-maxage=900, max-age=60",
+    "max-age=60, s-maxage=900",
+    'public, S-MAXAGE = "900", max-age=60',
+    "s-maxage=900",
+  ]) {
+    assert.equal(
+      ttlFromHeaders(new Headers({ "cache-control": control, age: "45" })),
+      855_000,
+      control,
+    );
+  }
+  for (const control of [
+    "max-age=60, s-maxage=0",
+    's-maxage="0", max-age=60',
+  ]) {
+    assert.equal(
+      ttlFromHeaders(new Headers({ "cache-control": control })),
+      0,
+      control,
+    );
+  }
+  assert.equal(
+    ttlFromHeaders(
+      new Headers({ "cache-control": "s-maxage=60, max-age=900", age: "90" }),
+    ),
+    0,
+  );
+});
+
+test("shared cache falls back to max-age or its default without matching similar directives", () => {
+  for (const control of [
+    "x-s-maxage=900, max-age=60",
+    "s-maxage=invalid, max-age=60",
+    's-maxage="900, max-age=60',
+  ]) {
+    assert.equal(
+      ttlFromHeaders(new Headers({ "cache-control": control })),
+      60_000,
+      control,
+    );
+  }
+  assert.equal(
+    ttlFromHeaders(new Headers({ "cache-control": "public" }), 12),
+    12_000,
+  );
+});
