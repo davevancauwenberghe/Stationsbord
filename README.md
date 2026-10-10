@@ -32,7 +32,7 @@ Live boards refresh every minute while the page is visible. Planned searches sta
 - Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
 - Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
 
-Train times and tracks may change or differ from the displayed information. Check station boards and announcements or the SNCB app before departure.
+Train times and tracks may change or differ from the displayed information. Check station boards and announcements or the SNCB app before departure. This reminder appears in the train composition section, including when composition data is unavailable.
 
 Stationsbord is an independent service. Schedule availability depends on iRail/NMBS; searches far into the past or future may not be available. Train composition is queried only for today, because that endpoint does not accept a service date. Cached or failed refreshes are explicitly labelled rather than presented as fresh data.
 

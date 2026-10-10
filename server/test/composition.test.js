@@ -154,6 +154,8 @@ test("separate formations preserve order, seats and real amenities, and escape u
   assert.ok(!html.includes("NaN"));
   assert.match(html, /Marc Le Gad \/ MLGTraffic/);
   assert.match(html, /by-nc-sa\/3\.0/);
+  assert.ok(html.includes(messages.en.scheduleDisclaimer));
+  assert.equal((html.match(/schedule-disclaimer/g) || []).length, 1);
 });
 
 test("empty formations show the existing unavailable state without misleading credits or track", () => {
@@ -169,6 +171,8 @@ test("empty formations show the existing unavailable state without misleading cr
     const html = renderComposition(data, t);
     assert.match(html, /temporarily unavailable/);
     assert.ok(!html.includes("composition-scroll"));
+    assert.ok(html.includes(messages.en.scheduleDisclaimer));
+    assert.equal((html.match(/schedule-disclaimer/g) || []).length, 1);
   }
 });
 

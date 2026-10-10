@@ -187,6 +187,10 @@ function renderUnit(unit, index, t) {
   return `<li class="carriage-card"><div class="carriage-image">${drawing ? `<img src="${h(drawing.src)}" width="${drawing.width}" height="${drawing.height}" alt="" decoding="async">` : ""}<span class="carriage-placeholder" ${drawing ? "hidden" : ""}>${h(t("artworkUnavailable"))}</span></div><div class="carriage-caption"><span class="carriage-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${h(name)}</strong>${unit.materialNumber ? `<small>${h(unit.materialNumber)}</small>` : ""}</div></div><div class="carriage-classes">${classes || `<span class="muted">${h(t(/^HLE/.test(material(unit).family) ? "locomotive" : "seatsUnknown"))}</span>`}</div>${features.length ? `<ul class="carriage-features">${features.map((key) => `<li>${icon(key)}<span>${h(t(key))}</span></li>`).join("")}</ul>` : ""}</li>`;
 }
 
+export function renderCompositionDisclaimer(t) {
+  return `<p class="composition-note schedule-disclaimer">${h(t("scheduleDisclaimer"))}</p>`;
+}
+
 export function renderComposition(data, t) {
   const segments = asArray(data?.composition?.segments?.segment);
   const result = segments
@@ -209,8 +213,8 @@ export function renderComposition(data, t) {
     })
     .join("");
   return result
-    ? `${result}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: <a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
-    : `<p class="muted">${h(t("compositionError"))}</p>`;
+    ? `${result}${renderCompositionDisclaimer(t)}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: <a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
+    : `<p class="muted">${h(t("compositionError"))}</p>${renderCompositionDisclaimer(t)}`;
 }
 
 export function installArtworkFallbacks(container) {
