@@ -48,7 +48,9 @@ export class MemoryCache {
 
 export function parseMaxAgeSeconds(cacheControl) {
   if (!cacheControl) return null;
-  const m = String(cacheControl).match(/max-age=(\d+)/i);
+  const m = String(cacheControl).match(
+    /(?:^|,)\s*max-age\s*=\s*"?(\d+)"?(?=\s*(?:,|$))/i,
+  );
   if (!m) return null;
   const s = Number(m[1]);
   return Number.isFinite(s) ? s : null;
@@ -58,5 +60,7 @@ export function ttlFromHeaders(headers, fallbackSeconds = 30) {
   const cc = headers.get("cache-control");
   const maxAge = parseMaxAgeSeconds(cc);
   const seconds = maxAge != null ? maxAge : fallbackSeconds;
-  return Math.max(0, seconds) * 1000;
+  const age = Number(headers.get("age"));
+  const elapsed = Number.isFinite(age) && age > 0 ? age : 0;
+  return Math.max(0, seconds - elapsed) * 1000;
 }

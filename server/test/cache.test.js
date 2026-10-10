@@ -40,3 +40,29 @@ test("idle rate limiter entries are pruned", (t) => {
   pruneLimiterMap(map, { ttlMs: 100 });
   assert.deepEqual([...map.keys()], ["new"]);
 });
+
+test("upstream Age reduces freshness and never gives expired data a fresh lifetime", () => {
+  assert.equal(
+    ttlFromHeaders(
+      new Headers({ "cache-control": 'public, max-age="60"', age: "45" }),
+    ),
+    15_000,
+  );
+  assert.equal(
+    ttlFromHeaders(new Headers({ "cache-control": "max-age=60", age: "90" })),
+    0,
+  );
+  assert.equal(
+    ttlFromHeaders(
+      new Headers({
+        "cache-control": "s-maxage=900, max-age=60",
+        age: "invalid",
+      }),
+    ),
+    60_000,
+  );
+  assert.equal(
+    ttlFromHeaders(new Headers({ "cache-control": "x-max-age=900" })),
+    30_000,
+  );
+});
