@@ -1,7 +1,11 @@
 import { escapeHtml, validDate, validTime } from "./public/rail-utils.js";
+import { normalizeTrainId } from "./public/train-lookup.js";
 
 const copy = {
   nl: {
+    train: "Trein",
+    journey:
+      "Bekijk de volledige rit, haltes, tijden en beschikbare samenstelling.",
     locale: "nl_BE",
     tagline: "It’s on the board",
     departures: "Vertrekken",
@@ -15,6 +19,9 @@ const copy = {
       "Stationsbord: Belgische treinen, helder in beeld. Crème en blauw met koperkleurige spoorlijnen en het Stationsbord-logo.",
   },
   fr: {
+    train: "Train",
+    journey:
+      "Consultez le trajet complet, les arrêts, les horaires et la composition disponible.",
     locale: "fr_BE",
     tagline: "It’s on the board",
     departures: "Départs",
@@ -28,6 +35,9 @@ const copy = {
       "Stationsbord : horaires des trains belges. Fond crème et bleu, lignes ferroviaires cuivrées et logo Stationsbord.",
   },
   de: {
+    train: "Zug",
+    journey:
+      "Die gesamte Fahrt, Halte, Zeiten und verfügbare Wageninformationen.",
     locale: "de_BE",
     tagline: "It’s on the board",
     departures: "Abfahrten",
@@ -41,6 +51,9 @@ const copy = {
       "Stationsbord: belgische Zugfahrpläne. Cremefarbener und blauer Hintergrund mit kupferfarbenen Bahnlinien und Stationsbord-Logo.",
   },
   en: {
+    train: "Train",
+    journey:
+      "See the full journey, stops, times and available carriage information.",
     locale: "en_GB",
     tagline: "It’s on the board",
     departures: "Departures",
@@ -87,6 +100,7 @@ export function pageMetadata(search, origin) {
   const lang = Object.hasOwn(copy, language) ? language : "nl";
   const text = copy[lang];
   const station = read("station");
+  const train = normalizeTrainId(read("train", 40));
   const name = station
     ? read("name") || (/^BE\.NMBS\.[A-Za-z0-9]+$/.test(station) ? "" : station)
     : "";
@@ -95,7 +109,24 @@ export function pageMetadata(search, origin) {
   const url = new URL("/", origin);
   let title = `Stationsbord · ${text.tagline}`;
   let description = text.description;
-  if (station) {
+  if (train) {
+    url.searchParams.set("view", "train");
+    url.searchParams.set("train", train);
+    url.searchParams.set("lang", lang);
+    title = `${text.train} ${train} | Stationsbord`;
+    description = text.journey;
+    const date = read("date", 10);
+    if (validDate(date)) {
+      url.searchParams.set("date", date);
+      const formatted = new Intl.DateTimeFormat(lang, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Brussels",
+      }).format(new Date(`${date}T12:00:00Z`));
+      description = `${formatted}. ${text.journey}`;
+    } else description += ` ${text.live}`;
+  } else if (station) {
     url.searchParams.set("station", station);
     if (name) url.searchParams.set("name", name);
     url.searchParams.set("mode", arrival ? "arrival" : "departure");

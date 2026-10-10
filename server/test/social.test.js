@@ -12,6 +12,44 @@ import {
 
 const origin = "https://stationsbord.example";
 
+test("train previews retain the number and date alone, ignoring obsolete time parameters", () => {
+  for (const lang of ["nl", "fr", "de", "en"]) {
+    for (const time of ["", "&time=14:30", "&time=invalid"]) {
+      const meta = pageMetadata(
+        `train=8013&lang=${lang}&date=2026-10-11${time}&station=Ignored&utm_source=chat`,
+        origin,
+      );
+      const url = new URL(meta.url);
+      assert.match(meta.title, /8013/);
+      assert.match(meta.description, /2026/);
+      assert.doesNotMatch(meta.description, /14:30|invalid/);
+      assert.equal(url.searchParams.get("train"), "8013");
+      assert.equal(url.searchParams.get("view"), "train");
+      assert.equal(url.searchParams.get("lang"), lang);
+      assert.equal(url.searchParams.get("date"), "2026-10-11");
+      assert.equal(url.searchParams.has("time"), false);
+      assert.equal(url.searchParams.has("station"), false);
+      assert.equal(url.searchParams.has("utm_source"), false);
+    }
+  }
+  for (const query of [
+    "train=<script>",
+    "train=515&train=516",
+    "train=BE.NMBS.OTC1000",
+    `train=${"5".repeat(41)}`,
+  ])
+    assert.equal(
+      new URL(pageMetadata(query, origin).url).searchParams.has("train"),
+      false,
+    );
+  assert.equal(
+    new URL(
+      pageMetadata("train=515&date=2026-02-30&time=25:00", origin).url,
+    ).searchParams.has("date"),
+    false,
+  );
+});
+
 test("social metadata covers all languages with absolute image and canonical URLs", () => {
   for (const [lang, locale] of [
     ["nl", "nl_BE"],

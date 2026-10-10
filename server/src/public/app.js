@@ -2,13 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.2-r4";
+} from "./composition.js?v=0.9.3";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
-} from "./train-details.js?v=0.9.2";
-import { languages, messages } from "./i18n.js?v=0.9.2";
+  stopEvents,
+} from "./train-details.js?v=0.9.3";
+import { languages, messages } from "./i18n.js?v=0.9.3-r2";
 import {
   asArray,
   escapeHtml as h,
@@ -25,9 +26,15 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.2";
+} from "./rail-utils.js?v=0.9.3";
 
-import { renderNetwork } from "./network.js?v=0.9.2";
+import { renderNetwork } from "./network.js?v=0.9.3";
+import {
+  normalizeTrainId,
+  trainStops,
+  matchesServiceDate,
+  nextStopIndex,
+} from "./train-lookup.js?v=0.9.3-r2";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -57,6 +64,15 @@ const preferred = [
   "nl",
 ];
 const state = {
+  screen:
+    params.has("train") || params.get("view") === "train" ? "train" : "station",
+  trainLive: true,
+  trainView: null,
+  trainData: null,
+  trainStale: false,
+  trainFailed: false,
+  trainController: null,
+  trainSequence: 0,
   lang: preferred.find((l) => languages.includes(l)),
   station: null,
   mode: params.get("mode") === "arrival" ? "arrival" : "departure",
@@ -231,6 +247,20 @@ function applyLanguage() {
   $("refreshBoard").setAttribute("aria-label", t("refresh"));
   $("refreshBoard").title = t("refresh");
   $("closeDialog").setAttribute("aria-label", t("close"));
+  $("viewNavigation").setAttribute("aria-label", t("searchViews"));
+  $("trainInput").placeholder = t("trainPlaceholder");
+  $("shareTrain").setAttribute("aria-label", t("shareTrain"));
+  $("shareTrain").title = t("shareTrain");
+  $("refreshTrain").setAttribute("aria-label", t("refresh"));
+  $("refreshTrain").title = t("refresh");
+  document
+    .querySelector(".train-when-tabs")
+    .setAttribute("aria-label", t("when"));
+  updateTrainModeControls();
+  document.querySelector(".skip-link").textContent = t(
+    state.screen === "train" ? "skipTrain" : "skip",
+  );
+  if (!state.trainView) renderTrainEmpty();
   updateBoardControls();
   document
     .querySelector(".sidebar")
@@ -255,7 +285,10 @@ $("languageSelect").addEventListener("change", () => {
   closeOptions();
   closeDetails();
   applyLanguage();
-  if (state.view) loadBoard({ ...state.view, lang: state.lang });
+  if (state.view && state.screen === "station")
+    loadBoard({ ...state.view, lang: state.lang });
+  if (state.trainView && state.screen === "train")
+    loadTrain({ ...state.trainView, lang: state.lang });
   refreshNetwork();
 });
 function updateClock() {
@@ -558,8 +591,27 @@ document.addEventListener("keydown", (event) => {
   }
 });
 function syncURL() {
+  if (state.screen === "train") {
+    const view = state.trainView;
+    const query = new URLSearchParams({ view: "train", lang: state.lang });
+    if (view) {
+      query.set("train", view.id);
+      if (!view.live) {
+        query.set("date", view.date);
+      }
+    }
+    history.replaceState(null, "", `${location.pathname}?${query}`);
+    return;
+  }
   const view = state.view;
-  if (!view) return;
+  if (!view) {
+    history.replaceState(
+      null,
+      "",
+      `${location.pathname}?${new URLSearchParams({ lang: state.lang })}`,
+    );
+    return;
+  }
   const query = new URLSearchParams({
     station: view.station.id || view.station.name,
     name: state.data?.station || view.station.name,
@@ -861,7 +913,6 @@ async function openTrain(row, view) {
   const short =
     row.vehicleinfo?.shortname || String(id || "").replace(/^BE\.NMBS\./, "");
   const date = serviceDate(row, view.live ? belgianParts().date : view.date);
-  const compositionDisclaimer = renderCompositionDisclaimer(t);
   const { sequence, signal } = openDetails(short || t("train"), t("details"));
   if (!id) {
     $("dialogContent").textContent = t("detailError");
@@ -876,22 +927,21 @@ async function openTrain(row, view) {
     });
     const result = await request(`/api/vehicle?${query}`, signal);
     if (!dialogCurrent(sequence)) return;
-    const stops = asArray(result.data.stops?.stop).filter(
-      (stop) => stop && typeof stop === "object",
-    );
-    const html = renderStopList(stops, {
+    if (!matchesServiceDate(result.data, date))
+      throw new Error("Service date mismatch");
+    $("dialogContent").innerHTML = renderVehicle(result, row, {
+      date,
       stationId: view.station.id,
       mode: view.mode,
-      serviceDay: date,
-      language: state.lang,
-      t,
-      platformHTML,
+      compositionId: "composition",
     });
-    $("dialogContent").innerHTML =
-      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p>${compositionDisclaimer}</section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
-    await loadComposition(id, sequence, signal);
+    await loadComposition(id, {
+      section: $("composition"),
+      current: () => dialogCurrent(sequence),
+      signal,
+    });
   } catch (error) {
     if (!dialogCurrent(sequence) || signal.aborted) return;
     $("dialogContent").innerHTML =
@@ -900,9 +950,34 @@ async function openTrain(row, view) {
   }
 }
 
-async function loadComposition(id, sequence, signal) {
-  if (!dialogCurrent(sequence)) return;
-  const section = $("composition");
+function renderVehicle(
+  result,
+  row,
+  {
+    date,
+    stationId,
+    mode = "departure",
+    nextIndex = -1,
+    stationLinks = false,
+    compositionId,
+  },
+) {
+  const stops = trainStops(result.data);
+  const html = renderStopList(stops, {
+    stationId,
+    mode,
+    serviceDay: date,
+    language: state.lang,
+    t,
+    platformHTML,
+    nextIndex,
+    stationLinks,
+  });
+  return `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="${compositionId}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p>${renderCompositionDisclaimer(t)}</section>`;
+}
+
+async function loadComposition(id, { section, current, signal }) {
+  if (!current()) return;
   const heading = `<h3 class="section-title">${h(t("composition"))}</h3>`;
   section.innerHTML = `${heading}<p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}`;
   try {
@@ -910,20 +985,251 @@ async function loadComposition(id, sequence, signal) {
       `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang })}`,
       signal,
     );
-    if (!dialogCurrent(sequence)) return;
+    if (!current()) return;
     section.innerHTML = `${heading}${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t, { trainId: id })}`;
     installArtworkFallbacks(section);
   } catch {
-    if (!dialogCurrent(sequence) || signal.aborted) return;
-    section.innerHTML = `${heading}<p class="muted">${h(t("compositionError"))}</p><button type="button" class="text-button" id="retryComposition">${h(t("retry"))}</button>${renderCompositionDisclaimer(t)}`;
-    $("retryComposition").addEventListener("click", async () => {
-      // Keep a stable focus target while replacing the retry button.
-      section.tabIndex = -1;
-      section.focus({ preventScroll: true });
-      await loadComposition(id, sequence, signal);
-    });
+    if (!current() || signal.aborted) return;
+    section.innerHTML = `${heading}<p class="muted">${h(t("compositionError"))}</p><button type="button" class="text-button" data-retry-composition>${h(t("retry"))}</button>${renderCompositionDisclaimer(t)}`;
+    section
+      .querySelector("[data-retry-composition]")
+      .addEventListener("click", async () => {
+        // Keep a stable focus target while replacing the retry button.
+        section.tabIndex = -1;
+        section.focus({ preventScroll: true });
+        await loadComposition(id, { section, current, signal });
+      });
   }
 }
+
+function setScreen(screen, { focus = true, refresh = true } = {}) {
+  state.screen = screen;
+  $("stationView").hidden = screen !== "station";
+  $("trainView").hidden = screen !== "train";
+  $("stationViewButton").setAttribute(
+    "aria-pressed",
+    String(screen === "station"),
+  );
+  $("trainViewButton").setAttribute("aria-pressed", String(screen === "train"));
+  document.querySelector(".skip-link").href =
+    screen === "train" ? "#trainResult" : "#board";
+  document.querySelector(".skip-link").textContent = t(
+    screen === "train" ? "skipTrain" : "skip",
+  );
+  if (screen === "train") {
+    cancelSearch();
+    closeOptions();
+    state.focus = false;
+    document.body.classList.remove("board-focus");
+    if (
+      refresh &&
+      state.trainView &&
+      !state.trainController &&
+      (state.trainView.live ||
+        !state.trainData ||
+        state.trainView.lang !== state.lang)
+    )
+      loadTrain(
+        { ...state.trainView, lang: state.lang },
+        { background: !!state.trainData },
+      );
+  } else {
+    state.trainController?.abort();
+    state.trainSequence++;
+    state.trainController = null;
+    $("trainResult").setAttribute("aria-busy", "false");
+    if (refresh && state.view && !state.boardController)
+      loadBoard(
+        { ...state.view, lang: state.lang },
+        { background: !!state.data },
+      );
+  }
+  syncURL();
+  if (focus) $(screen === "train" ? "trainInput" : "stationInput").focus();
+}
+$("stationViewButton").addEventListener("click", () => setScreen("station"));
+$("trainViewButton").addEventListener("click", () => setScreen("train"));
+
+function updateTrainModeControls() {
+  $("trainLiveMode").setAttribute("aria-pressed", String(state.trainLive));
+  $("trainPlanMode").setAttribute("aria-pressed", String(!state.trainLive));
+  $("trainPlannedFields").hidden = state.trainLive;
+  $("trainDateInput").disabled = state.trainLive;
+}
+$("trainPlanMode").addEventListener("click", () => {
+  state.trainLive = false;
+  const now = belgianParts();
+  if (!$("trainDateInput").value) $("trainDateInput").value = now.date;
+  updateTrainModeControls();
+  $("trainDateInput").focus();
+});
+$("trainLiveMode").addEventListener("click", () => {
+  state.trainLive = true;
+  updateTrainModeControls();
+  if (normalizeTrainId($("trainInput").value)) submitTrain();
+});
+$("trainForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitTrain();
+});
+$("trainInput").addEventListener("input", () => {
+  $("trainInput").removeAttribute("aria-invalid");
+  $("trainSearchStatus").textContent = "";
+});
+function submitTrain() {
+  const id = normalizeTrainId($("trainInput").value);
+  if (!id) {
+    $("trainSearchStatus").textContent = t("invalidTrain");
+    $("trainInput").setAttribute("aria-invalid", "true");
+    $("trainInput").focus();
+    return;
+  }
+  const date = $("trainDateInput").value;
+  if (!state.trainLive && !validDate(date)) return toast(t("invalidTrainDate"));
+  $("trainSearchStatus").textContent = "";
+  $("trainInput").removeAttribute("aria-invalid");
+  loadTrain({
+    id,
+    live: state.trainLive,
+    date: state.trainLive ? "" : date,
+    lang: state.lang,
+  });
+}
+function renderTrainEmpty() {
+  $("trainTitle").textContent = t("trainEmptyTitle");
+  $("trainSubtitle").textContent = "";
+  $("trainContent").innerHTML =
+    `<div class="train-empty"><img src="/mark.svg?v=0.9.3" alt="" width="36" height="36"><p>${h(t("trainEmptyBody"))}</p></div>`;
+}
+function renderTrainHeading() {
+  const view = state.trainView;
+  if (!view) return;
+  const data = state.trainData;
+  $("trainTitle").textContent = view.id;
+  const stops = trainStops(data);
+  $("trainSubtitle").textContent = stops.length
+    ? `${stops[0].station || stops[0].stationinfo?.name || "—"} → ${stops.at(-1).station || stops.at(-1).stationinfo?.name || "—"}`
+    : "";
+  $("shareTrain").hidden = false;
+  $("refreshTrain").hidden = false;
+  $("refreshTrain").disabled = !!state.trainController;
+  const notice = !navigator.onLine
+    ? "offline"
+    : state.trainFailed || state.trainStale
+      ? "stale"
+      : "";
+  $("trainNotice").hidden = !notice || !data;
+  $("trainNotice").textContent = notice && data ? t(notice) : "";
+}
+async function loadTrain(view, { background = false } = {}) {
+  const same = JSON.stringify(view) === JSON.stringify(state.trainView);
+  state.trainController?.abort();
+  const controller = new AbortController(),
+    sequence = ++state.trainSequence;
+  state.trainController = controller;
+  state.trainView = { ...view };
+  if (!same) state.trainData = null;
+  state.trainFailed = false;
+  state.trainStale = false;
+  renderTrainHeading();
+  syncURL();
+  // Keep an already displayed route during both refreshes and resubmissions.
+  // If the request fails, its stops/composition remain visible with the stale notice.
+  if (!state.trainData)
+    $("trainContent").innerHTML =
+      `<p class="muted" role="status">${h(t("loading"))}</p>`;
+  $("trainResult").setAttribute("aria-busy", "true");
+  if (!background) $("trainResult").focus({ preventScroll: true });
+  const current = () =>
+    sequence === state.trainSequence && state.screen === "train";
+  const moment = view.live ? belgianParts() : view;
+  try {
+    const result = await request(
+      `/api/vehicle?${new URLSearchParams({ id: view.id, date: apiDate(moment.date), lang: view.lang, alerts: "true" })}`,
+      controller.signal,
+    );
+    if (!current()) return;
+    if (!matchesServiceDate(result.data, moment.date))
+      throw Object.assign(new Error("Service date mismatch"), { status: 404 });
+    state.trainData = result.data;
+    state.trainStale = result.stale;
+    const stops = trainStops(result.data);
+    const nextIndex = view.live ? nextStopIndex(stops) : -1;
+    const reference = view.live
+      ? `<p class="train-reference">${h(t("live"))}${stops.length && nextIndex === -1 ? `<span>${h(t("journeyEnded"))}</span>` : ""}</p>`
+      : "";
+    const focusedStop = document.activeElement?.dataset.stopIndex;
+    $("trainContent").innerHTML =
+      reference +
+      renderVehicle(
+        result,
+        {},
+        {
+          date: moment.date,
+          nextIndex,
+          stationLinks: true,
+          compositionId: "trainComposition",
+        },
+      );
+    if (focusedStop != null)
+      $("trainContent")
+        .querySelector(`[data-stop-index="${focusedStop}"]`)
+        ?.focus({ preventScroll: true });
+    renderTrainHeading();
+    if (moment.date === belgianParts().date)
+      await loadComposition(
+        result.data.vehicleinfo?.name || result.data.vehicle || view.id,
+        { section: $("trainComposition"), current, signal: controller.signal },
+      );
+  } catch (error) {
+    if (!current() || controller.signal.aborted) return;
+    state.trainFailed = true;
+    if (!state.trainData) {
+      $("trainContent").innerHTML =
+        `<p class="notice error">${h(t(error.status === 404 ? "trainNotFound" : "detailError"))}</p><button type="button" class="text-button" id="retryTrain">${h(t("retry"))}</button>`;
+      $("retryTrain").addEventListener("click", () => loadTrain(view));
+    }
+  } finally {
+    if (current()) {
+      state.trainController = null;
+      $("trainResult").setAttribute("aria-busy", "false");
+      renderTrainHeading();
+    }
+  }
+}
+$("refreshTrain").addEventListener("click", () => {
+  if (state.trainView) loadTrain(state.trainView, { background: true });
+});
+$("trainContent").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-stop-index]");
+  if (!button) return;
+  const stop = trainStops(state.trainData)[Number(button.dataset.stopIndex)];
+  if (!stop?.stationinfo?.id) return;
+  const view = state.trainView;
+  setScreen("station", { focus: false, refresh: false });
+  state.live = view.live;
+  if (!view.live) {
+    const stops = trainStops(state.trainData);
+    const events = stopEvents(
+      stop,
+      Number(button.dataset.stopIndex),
+      stops.length,
+    );
+    const planned = (
+      events.find((event) => event.kind === "departure") || events[0]
+    )?.planned;
+    const stopMoment = planned
+      ? belgianParts(new Date(planned * 1000))
+      : { date: view.date, time: "00:00" };
+    $("dateInput").value = stopMoment.date;
+    $("timeInput").value = stopMoment.time;
+  }
+  updateModeControls();
+  selectStation({
+    id: stop.stationinfo.id,
+    name: stop.station || stop.stationinfo.name,
+  });
+});
 
 function renderNetworkButton() {
   const button = $("networkButton");
@@ -974,12 +1280,22 @@ $("networkButton").addEventListener("click", async () => {
 });
 $("shareBoard").addEventListener("click", async () => {
   syncURL();
+  const view = state.view;
+  await shareURL(
+    `${state.data?.station || view.station.name} · ${t(view.mode === "arrival" ? "arrivals" : "departures")} | Stationsbord`,
+  );
+});
+$("shareTrain").addEventListener("click", async () => {
+  syncURL();
+  await shareURL(`${$("trainTitle").textContent} | Stationsbord`);
+});
+async function shareURL(title) {
+  const url = location.href;
   if (navigator.share) {
     try {
-      const view = state.view;
       await navigator.share({
-        title: `${state.data?.station || view.station.name} · ${t(view.mode === "arrival" ? "arrivals" : "departures")} | Stationsbord`,
-        url: location.href,
+        title,
+        url,
       });
       return;
     } catch (error) {
@@ -988,31 +1304,46 @@ $("shareBoard").addEventListener("click", async () => {
     }
   }
   try {
-    await navigator.clipboard.writeText(location.href);
+    await navigator.clipboard.writeText(url);
     toast(t("copied"));
   } catch {
     openDetails(t("share"), t("schedule"));
     $("dialogContent").innerHTML =
-      `<p class="muted">${h(t("shareFallback"))}</p><input class="share-input" id="shareURL" aria-label="URL" readonly value="${h(location.href)}">`;
+      `<p class="muted">${h(t("shareFallback"))}</p><input class="share-input" id="shareURL" aria-label="URL" readonly value="${h(url)}">`;
     $("shareURL").focus();
     $("shareURL").select();
   }
-});
+}
 function refreshVisible() {
   if (document.hidden) return;
   updateClock();
-  if (state.view?.live && !state.boardController && navigator.onLine)
+  if (
+    state.screen === "station" &&
+    state.view?.live &&
+    !state.boardController &&
+    navigator.onLine
+  )
     loadBoard(state.view, { background: true });
+  if (
+    state.screen === "train" &&
+    state.trainView?.live &&
+    !state.trainController &&
+    navigator.onLine
+  )
+    loadTrain(state.trainView, { background: true });
   if (!state.networkController && navigator.onLine) refreshNetwork();
 }
 window.addEventListener("offline", () => {
   renderNotice();
   state.networkStale = true;
   renderNetworkButton();
+  renderTrainHeading();
 });
 window.addEventListener("online", () => {
-  if (state.view && !document.hidden)
+  if (state.screen === "station" && state.view && !document.hidden)
     loadBoard(state.view, { background: true });
+  if (state.screen === "train" && state.trainView && !document.hidden)
+    loadTrain(state.trainView, { background: true });
   refreshNetwork();
 });
 document.addEventListener("visibilitychange", () => {
@@ -1024,13 +1355,29 @@ setInterval(refreshVisible, 60_000);
 const initialStation = params.get("station");
 const date = params.get("date"),
   time = params.get("time");
-if (validDate(date || "") && validTime(time || "")) {
+if (
+  validDate(date || "") &&
+  validTime(time || "") &&
+  state.screen === "station"
+) {
   state.live = false;
   $("dateInput").value = date;
   $("timeInput").value = time;
 }
 applyLanguage();
-if (initialStation && initialStation.length <= 150) {
+setScreen(state.screen, { focus: false });
+const initialTrain = normalizeTrainId(params.get("train"));
+if (state.screen === "train") {
+  if (validDate(date || "")) {
+    state.trainLive = false;
+    $("trainDateInput").value = date;
+    updateTrainModeControls();
+  }
+  if (initialTrain) {
+    $("trainInput").value = initialTrain;
+    submitTrain();
+  }
+} else if (initialStation && initialStation.length <= 150) {
   state.station = /^BE\.NMBS\.[A-Za-z0-9]+$/.test(initialStation)
     ? { id: initialStation, name: params.get("name") || initialStation }
     : { name: initialStation };

@@ -1,4 +1,4 @@
-import { escapeHtml as h, isPlanned, safeLink } from "./rail-utils.js?v=0.9.2";
+import { escapeHtml as h, isPlanned, safeLink } from "./rail-utils.js?v=0.9.3";
 
 function renderNotice(item, t) {
   const link = safeLink(item.link),

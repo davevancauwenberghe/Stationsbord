@@ -15,6 +15,8 @@ A clear, lightweight timetable for the Belgian rail network, powered by [iRail](
 
 Live boards refresh every minute while the page is visible. Planned searches stay at the selected time. All schedule times use **Europe/Brussels**, including daylight saving changes, regardless of the device’s time zone.
 
+Use **Find a train** for a separate lookup by train number (for example `510`, `8013`, or `69`). Choose **Today** or **Other date**; a time and service-type prefix are not required. The complete route stays visible, with the next stop marked for today's live lookup. Availability depends on iRail's timetable coverage. A response for a different service day is rejected. Carriage information is requested only for today; the API's resolved service type selects the appropriate artwork internally. Select a stop name to open its station board at that stop's scheduled time for a custom date, or share the train URL to reopen the same lookup. Live train lookups refresh every minute while visible; custom-date searches remain fixed and hidden views do not poll. The lookup navigation and empty state reuse the existing favicon artwork.
+
 - Save up to eight stations using the star button. Favourites appear as compact, selectable chips with an edit mode for removal. Recent and saved stations remain in your browser; no account is required.
 - Share a link containing the station, arrivals/departures, language and optional date/time, using the native share sheet where supported or copying the link.
 - Shared URLs include a branded image and localized station/timetable previews, available to social crawlers without JavaScript.
@@ -28,6 +30,7 @@ Live boards refresh every minute while the page is visible. Planned searches sta
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.
+- Restrained glass accents on view navigation and train actions, with opaque timetable rows. Glass effects can be disabled in the footer; reduced transparency, increased contrast and forced-colour preferences use solid surfaces automatically where supported. Unsupported browsers also use solid surfaces.
 - Filter the loaded trains by destination (or origin for arrivals) and train number. Filtering keeps cancelled services visible when they match.
 - Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
 - Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
@@ -84,7 +87,7 @@ No bundler or frontend framework is required. Assets use a version query, and br
 
 ## Link previews
 
-The server renders Open Graph and large-image card metadata for the homepage and shared station URLs in Dutch, French, German and English. Station, direction and valid planned date/time parameters are retained in the canonical URL; unrelated tracking parameters are omitted. Preview creation never calls iRail, and the artwork contains no live departure times that could become stale.
+The server renders Open Graph and large-image card metadata for the homepage, shared station URLs and train lookup URLs in Dutch, French, German and English. Station links retain direction and valid planned date/time parameters; train links retain the number and valid date only. Obsolete train-time and unrelated tracking parameters are omitted. Preview creation never calls iRail, and the artwork contains no live departure times that could become stale.
 
 `server/src/public/social-card.svg` is the editable source for the 1200 × 630 PNG used by social platforms. Export an updated PNG at the same dimensions when changing the artwork. Platforms cache previews independently, so existing posts may retain an older image or description until their cache refreshes. Actual card presentation depends on the receiving platform.
 

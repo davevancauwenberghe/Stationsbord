@@ -8,7 +8,7 @@ import {
   delayMinutes,
   occupancy,
   safeLink,
-} from "./rail-utils.js?v=0.9.2";
+} from "./rail-utils.js?v=0.9.3";
 
 const number = (value) =>
   ["number", "string"].includes(typeof value) &&
@@ -90,7 +90,7 @@ export function trainNotices(data, row = {}) {
 export function renderTrainNotices(data, row, t) {
   const notices = trainNotices(data, row);
   if (!notices.length) return "";
-  return `<section class="train-notices" aria-labelledby="trainNoticesTitle"><h3 id="trainNoticesTitle" class="section-title">${h(t("trainNotices"))}</h3><ul>${notices.map((notice) => `<li>${notice.header ? `<strong>${h(notice.header)}</strong>` : ""}${notice.body && notice.body !== notice.header ? `<p>${h(notice.body)}</p>` : ""}${notice.link ? `<a href="${h(notice.link)}" target="_blank" rel="noopener noreferrer">${h(t("moreInfo"))} ↗</a>` : ""}</li>`).join("")}</ul></section>`;
+  return `<section class="train-notices" aria-label="${h(t("trainNotices"))}"><h3 class="section-title">${h(t("trainNotices"))}</h3><ul>${notices.map((notice) => `<li>${notice.header ? `<strong>${h(notice.header)}</strong>` : ""}${notice.body && notice.body !== notice.header ? `<p>${h(notice.body)}</p>` : ""}${notice.link ? `<a href="${h(notice.link)}" target="_blank" rel="noopener noreferrer">${h(t("moreInfo"))} ↗</a>` : ""}</li>`).join("")}</ul></section>`;
 }
 
 export function stopEvents(stop, index, total, mode = "departure") {
@@ -190,11 +190,21 @@ function renderEvent(event, t, language, serviceDay, secondary = false) {
 
 export function renderStopList(
   stops,
-  { stationId, mode, serviceDay, language, t, platformHTML },
+  {
+    stationId,
+    mode,
+    serviceDay,
+    language,
+    t,
+    platformHTML,
+    nextIndex = -1,
+    stationLinks = false,
+  },
 ) {
   return stops
     .map((stop, index) => {
-      const current = stop.stationinfo?.id === stationId;
+      const current = !!stationId && stop.stationinfo?.id === stationId;
+      const next = index === nextIndex;
       const events = stopEvents(stop, index, stops.length, mode);
       // Departure is the main time; arrivals remain available on a quieter line.
       const primary =
@@ -203,9 +213,15 @@ export function renderStopList(
       const departed = flag(stop.left) && !primary.canceled;
       const metadata = [
         current ? t("selectedStop") : "",
+        next ? t("nextStop") : "",
         flag(stop.isExtraStop) ? t("extraStop") : "",
       ].filter(Boolean);
-      return `<li class="stop${current ? " current" : ""}${departed ? " completed-stop" : ""}"><div class="stop-name"><strong>${h(stop.station || stop.stationinfo?.name || "—")}</strong>${departed ? `<span class="sr-only"> · ${h(t("departed"))}</span>` : ""}${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
+      const name = h(stop.station || stop.stationinfo?.name || "—");
+      const station =
+        stationLinks && stop.stationinfo?.id
+          ? `<button class="stop-station-link" type="button" data-stop-index="${index}" aria-label="${h(`${t("stationBoard")}: ${stop.station || stop.stationinfo.name || "—"}`)}"><strong>${name}</strong><span aria-hidden="true">↗</span></button>`
+          : `<strong>${name}</strong>`;
+      return `<li class="stop${current ? " current" : ""}${next ? " next-stop" : ""}${departed ? " completed-stop" : ""}"><div class="stop-name">${station}${departed ? `<span class="sr-only"> · ${h(t("departed"))}</span>` : ""}${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
     })
     .join("");
 }

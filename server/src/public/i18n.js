@@ -1,6 +1,25 @@
 export const languages = ["nl", "fr", "de", "en"];
 export const messages = {
   nl: {
+    searchViews: "Zoeken",
+    stationBoard: "Stationsbord",
+    trainLookup: "Trein opzoeken",
+    trainNumber: "Treinnummer",
+    trainPlaceholder: "510",
+    findTrain: "Zoek de trein",
+    invalidTrain: "Vul een geldig treinnummer in.",
+    otherDate: "Andere datum",
+    invalidTrainDate: "Kies een geldige datum.",
+    trainEmptyTitle: "Welke trein zoek je?",
+    trainEmptyBody: "De volledige rit, haltes en samenstelling op één plek.",
+    shareTrain: "Deel trein",
+    nextStop: "Volgende halte",
+    journeyEnded: "Geen volgende halte meer gemeld.",
+    trainNotFound:
+      "Geen rit gevonden voor deze trein op deze datum. Probeer een andere datum of een ander treinnummer.",
+    glassEffects: "Glaseffecten",
+    skipTrain: "Naar de treindetails",
+
     manageSaved: "Bewerken",
     doneEditing: "Klaar",
     currentDisruptions: "Actuele storingen",
@@ -143,6 +162,26 @@ export const messages = {
     trainSingular: "trein",
   },
   en: {
+    searchViews: "Search",
+    stationBoard: "Station board",
+    trainLookup: "Find a train",
+    trainNumber: "Train number",
+    trainPlaceholder: "510",
+    findTrain: "Find the train",
+    invalidTrain: "Enter a valid train number.",
+    otherDate: "Other date",
+    invalidTrainDate: "Choose a valid date.",
+    trainEmptyTitle: "Which train are you looking for?",
+    trainEmptyBody:
+      "The full journey, stops and carriage information in one place.",
+    shareTrain: "Share train",
+    nextStop: "Next stop",
+    journeyEnded: "No further stop reported.",
+    trainNotFound:
+      "No journey found for this train on this date. Try another date or train number.",
+    glassEffects: "Glass effects",
+    skipTrain: "Skip to train details",
+
     manageSaved: "Edit",
     doneEditing: "Done",
     currentDisruptions: "Current disruptions",
@@ -284,6 +323,26 @@ export const messages = {
     trainSingular: "train",
   },
   fr: {
+    searchViews: "Rechercher",
+    stationBoard: "Tableau en gare",
+    trainLookup: "Chercher un train",
+    trainNumber: "Numéro de train",
+    trainPlaceholder: "510",
+    findTrain: "Chercher le train",
+    invalidTrain: "Saisissez un numéro de train valide.",
+    otherDate: "Autre date",
+    invalidTrainDate: "Choisissez une date valide.",
+    trainEmptyTitle: "Quel train cherchez-vous ?",
+    trainEmptyBody:
+      "Le trajet complet, les arrêts et la composition au même endroit.",
+    shareTrain: "Partager le train",
+    nextStop: "Prochain arrêt",
+    journeyEnded: "Aucun prochain arrêt annoncé.",
+    trainNotFound:
+      "Aucun trajet trouvé pour ce train à cette date. Essayez une autre date ou un autre numéro.",
+    glassEffects: "Effets de verre",
+    skipTrain: "Aller aux détails du train",
+
     manageSaved: "Modifier",
     doneEditing: "Terminé",
     currentDisruptions: "Perturbations actuelles",
@@ -427,6 +486,26 @@ export const messages = {
     trainSingular: "train",
   },
   de: {
+    searchViews: "Suchen",
+    stationBoard: "Bahnhofstafel",
+    trainLookup: "Zug suchen",
+    trainNumber: "Zugnummer",
+    trainPlaceholder: "510",
+    findTrain: "Zug suchen",
+    invalidTrain: "Gib eine gültige Zugnummer ein.",
+    otherDate: "Anderes Datum",
+    invalidTrainDate: "Wähle ein gültiges Datum.",
+    trainEmptyTitle: "Welchen Zug suchst du?",
+    trainEmptyBody:
+      "Die ganze Fahrt, Halte und Wageninformationen an einem Ort.",
+    shareTrain: "Zug teilen",
+    nextStop: "Nächster Halt",
+    journeyEnded: "Kein weiterer Halt gemeldet.",
+    trainNotFound:
+      "Keine Fahrt für diesen Zug an diesem Datum gefunden. Versuche ein anderes Datum oder eine andere Zugnummer.",
+    glassEffects: "Glaseffekte",
+    skipTrain: "Zu den Zugdetails",
+
     manageSaved: "Bearbeiten",
     doneEditing: "Fertig",
     currentDisruptions: "Aktuelle Störungen",
