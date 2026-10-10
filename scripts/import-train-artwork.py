@@ -63,7 +63,8 @@ CAB_FACING_L = {
 }
 
 def cab_facing(key, side):
-    if (key.startswith(('am', 'ar')) or key == 'm7-motor') and key not in CAB_FACING_L:
+    multiple_unit = key.startswith(('am', 'ar')) or SOURCES.get(key, ('', ''))[1] in ('SNCB_AE.htm', 'SNCB_AD.htm')
+    if multiple_unit and key not in CAB_FACING_L:
         raise ValueError('Declare reviewed cab direction (or None for an intermediate unit): ' + key)
     facing = CAB_FACING_L.get(key)
     return facing if side == 'L' or facing is None else {'L': 'R', 'R': 'L'}[facing]
