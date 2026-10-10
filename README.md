@@ -3,37 +3,36 @@
 
 # Stationsbord
 
+**It’s on the board.**
+
 A clear, lightweight timetable for the Belgian rail network, powered by [iRail](https://irail.be). Built with Node.js, Express and plain HTML/CSS/JavaScript.
 
 ## Using the board
 
-1. Search for a station, or choose a popular, recent or saved station.
+1. Search for a station, or choose a popular or saved station. Recent stations appear when you tap the search field.
 2. Use **Now** for a live board, or **Choose a time** for a specific date and time.
 3. Switch between **Departures** and **Arrivals**. Select a train to view its stops and available carriage information.
 
 Live boards refresh every minute while the page is visible. Planned searches stay at the selected time. All schedule times use **Europe/Brussels**, including daylight saving changes, regardless of the device’s time zone.
 
-- Save up to eight stations using the star button. Recent and saved stations remain in your browser; no account is required.
+- Save up to eight stations using the star button. Favourites appear as compact, selectable chips with an edit mode for removal. Recent and saved stations remain in your browser; no account is required.
 - Share a link containing the station, arrivals/departures, language and optional date/time, using the native share sheet where supported or copying the link.
 - Shared URLs include a branded image and localized station/timetable previews, available to social crawlers without JavaScript.
-- View disruptions and engineering works across the rail network.
+- Current network disruptions appear first; scheduled works are in a separate expandable section using iRail’s `type` field.
 - Train details include service notices returned by iRail, with repeated notices
   combined and links to further information. Missing notices do not imply that a
   service is unaffected.
 - Crowding indicators appear on the board when iRail supplies a quiet, moderate
   or busy level. Unknown levels and cancelled services have no indicator.
-- Each stop shows one main time with its delay or status: departure on a departure
-  board, arrival on an arrival board, or the available event at a terminus.
-  Expected times are used when delay data is available. A second line appears
-  only for different arrival/departure cancellation states. The original
-  scheduled time remains in the time's tooltip and screen-reader text when it
-  differs. Dates appear across midnight; missing delay data stays labelled unknown.
+- Departure times are prominent in train details; arrival times appear on a smaller line. Delayed events show the original time crossed out, the new time in red and a separate delay label. Arrival and departure cancellations remain distinct. Departed stops fade without disappearing; screen readers retain their status. Dates appear across midnight and unknown delays remain explicit.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.
 - Filter the loaded trains by destination (or origin for arrivals) and train number. Filtering keeps cancelled services visible when they match.
 - Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
-- Press `/` outside a text field to jump to station search. Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
+- Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
+
+Train times and tracks may change or differ from the displayed information. Check station boards and announcements or the SNCB app before departure.
 
 Stationsbord is an independent service. Schedule availability depends on iRail/NMBS; searches far into the past or future may not be available. Train composition is queried only for today, because that endpoint does not accept a service date. Cached or failed refreshes are explicitly labelled rather than presented as fresh data.
 
@@ -97,9 +96,8 @@ The server renders Open Graph and large-image card metadata for the homepage and
 
 The composition view shows original **MLGTraffic / Marc Le Gad** train drawings
 with per-unit seat counts and amenities, including priority seats and tables or
-luggage areas when supplied. Standing capacity is separate from seats; neither
-is an estimate of free places. Approximate unit lengths are shown when supplied,
-and formation length/standing totals only appear when every unit has valid data.
+luggage areas when supplied. Seat counts describe the rolling stock, not the
+number of free places. Standing capacity and lengths are omitted from the view.
 It supports AM08, AM75, AM80, AM86,
 AM96, AR41, M4, M6, M7 (including motor cars), I6/I10/I11 and selected HLE
 locomotives. Unknown types and failed images retain their text and show a

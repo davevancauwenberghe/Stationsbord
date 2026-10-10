@@ -267,34 +267,64 @@ test("passed events, extra stops and selected station labels are preserved in ev
     assert.ok(html.includes(messages[language].selectedStop));
     assert.ok(html.includes(messages[language].extraStop));
     assert.ok(!html.includes("undefined"));
-    const arrival = render([stop], { mode: "arrival", language, t: (k) => messages[language][k] });
-    assert.ok(arrival.includes(messages[language].arrived));
+    const arrival = render([stop], {
+      mode: "arrival",
+      language,
+      t: (k) => messages[language][k],
+    });
+    assert.match(arrival, /completed-stop/);
+    assert.ok(arrival.includes(messages[language].departed));
+    assert.doesNotMatch(html, /status-text unknown[^>]*>Departed/);
   }
 });
 
-test("ordinary stops show one time for the selected board mode, including the terminal fallback", () => {
-  const stop = { scheduledArrivalTime: base, scheduledDepartureTime: base + 60, arrivalDelay: 120, departureDelay: 300 };
-  let html = render([stop]);
-  assert.equal((html.match(/data-event=/g) || []).length, 1);
-  assert.match(html, /data-event="departure"/);
-  assert.match(html, /22:06/);
-  assert.match(html, /title="Scheduled: 22:01"/);
-  assert.match(html, /\+5 min/);
-  assert.ok(!html.includes("<small>Scheduled</small>"));
-  html = render([stop], { mode: "arrival" });
-  assert.equal((html.match(/data-event=/g) || []).length, 1);
-  assert.match(html, /data-event="arrival"/);
-  assert.match(html, /22:02/);
-  html = render([{ scheduledArrivalTime: base, arrivalDelay: 0 }]);
-  assert.match(html, /data-event="arrival"/);
+test("departure is prominent with a smaller arrival in either board mode and separate revised times", () => {
+  const stop = {
+    scheduledArrivalTime: base,
+    scheduledDepartureTime: base + 60,
+    arrivalDelay: 120,
+    departureDelay: 300,
+  };
+  for (const mode of ["departure", "arrival"]) {
+    const html = render([stop], { mode });
+    assert.equal((html.match(/data-event=/g) || []).length, 2);
+    assert.ok(
+      html.indexOf('data-event="departure"') <
+        html.indexOf('data-event="arrival"'),
+    );
+    assert.match(html, /secondary-event[^>]*data-event="arrival"/);
+    assert.match(html, /22:06/);
+    assert.match(html, /22:02/);
+    assert.match(html, /<del class="stop-scheduled">.*22:01<\/del>/);
+    assert.match(html, /<strong class="stop-expected delay">/);
+    assert.match(html, /\+5 min/);
+  }
+  const terminal = render([{ scheduledArrivalTime: base, arrivalDelay: 0 }]);
+  assert.match(terminal, /data-event="arrival"/);
+  assert.equal((terminal.match(/data-event=/g) || []).length, 1);
+  assert.doesNotMatch(terminal, /On time/);
 });
 
-test("a full cancellation stays a single row while both partial cancellation directions remain explicit", () => {
-  const stop = { scheduledArrivalTime: base, scheduledDepartureTime: base + 60, arrivalDelay: 0, departureDelay: 0 };
-  const full = render([{ ...stop, arrivalCanceled: "1", departureCanceled: "1" }]);
-  assert.equal((full.match(/data-event=/g) || []).length, 1);
+test("both arrival and departure cancellations remain explicit without expected times", () => {
+  const stop = {
+    scheduledArrivalTime: base,
+    scheduledDepartureTime: base + 60,
+    arrivalDelay: 0,
+    departureDelay: 0,
+  };
+  const full = render([
+    { ...stop, arrivalCanceled: "1", departureCanceled: "1" },
+  ]);
+  assert.equal((full.match(/cancelled-event/g) || []).length, 2);
+  assert.doesNotMatch(full, /stop-expected/);
   for (const arrivalCanceled of ["0", "1"]) {
-    const html = render([{ ...stop, arrivalCanceled, departureCanceled: arrivalCanceled === "1" ? "0" : "1" }]);
+    const html = render([
+      {
+        ...stop,
+        arrivalCanceled,
+        departureCanceled: arrivalCanceled === "1" ? "0" : "1",
+      },
+    ]);
     assert.equal((html.match(/data-event=/g) || []).length, 2);
     assert.equal((html.match(/cancelled-event/g) || []).length, 1);
     assert.equal((html.match(/secondary-event/g) || []).length, 1);

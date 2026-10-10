@@ -145,7 +145,7 @@ test("separate formations preserve order, seats and real amenities, and escape u
   assert.match(html, /2nd class: 172 seats/);
   assert.equal((html.match(/<span>Bike space<\/span>/g) || []).length, 1);
   assert.equal((html.match(/<span>Wheelchair area<\/span>/g) || []).length, 1);
-  assert.match(html, /Toilet access/);
+  assert.match(html, /Toilet/);
   assert.match(html, /Drawing unavailable/);
   assert.match(html, /Seat count unknown/);
   assert.match(html, /Locomotive/);
@@ -172,55 +172,41 @@ test("empty formations show the existing unavailable state without misleading cr
   }
 });
 
-test("standing capacity and length are separate from seats, complete per formation and tolerate missing fields", () => {
-  const unit = {
-    materialSubTypeName: "AM08_b",
-    seatsSecondClass: 100,
-    standingPlacesFirstClass: "2",
-    standingPlacesSecondClass: "30",
-    lengthInMeter: "26.5",
-    hasPriorityPlaces: "1",
-    hasTables: true,
-    hasLuggageSection: "0",
-  };
-  const wrap = (units) => ({ composition: { units: { unit: units } } });
-  let html = renderComposition(
-    {
-      composition: {
-        segments: { segment: [wrap([unit, unit]), wrap([unit])] },
-      },
-    },
-    t,
-  );
-  assert.match(html, /2nd class: 200 seats/);
-  assert.match(html, /64 standing places/);
-  assert.match(html, /Train length: ≈ 53 m/);
-  assert.match(html, /32 standing places/);
-  assert.match(html, /Train length: ≈ 27 m/);
-  assert.match(html, /Priority seats/);
-  assert.match(html, /Tables/);
-  assert.ok(!html.includes("<span>Luggage area</span>"));
-  assert.match(html, /not the number of free places/);
-  html = renderComposition(
+test("composition keeps seats and amenities while hiding standing capacity, lengths and source-document UI", () => {
+  const html = renderComposition(
     {
       composition: {
         segments: {
-          segment: wrap([
-            unit,
-            { lengthInMeter: "invalid", standingPlacesSecondClass: "30" },
-          ]),
+          segment: {
+            composition: {
+              units: {
+                unit: {
+                  materialSubTypeName: "AM08_b",
+                  seatsSecondClass: 100,
+                  standingPlacesFirstClass: "2",
+                  standingPlacesSecondClass: "30",
+                  lengthInMeter: "26.5",
+                  hasPriorityPlaces: "1",
+                  hasTables: true,
+                  hasLuggageSection: "0",
+                },
+              },
+            },
+          },
         },
       },
     },
     t,
   );
-  assert.ok(
-    !html.includes("Train length:"),
-    "A partial length must not be presented as the full train",
+  assert.match(html, /2nd class: 100 seats/);
+  assert.match(html, /Priority seats/);
+  assert.match(html, /Tables/);
+  assert.doesNotMatch(
+    html,
+    /standing places|Train length|Length:|capacity-note|not the number of free places|ATTRIBUTION\.md|composition-scroll-hint/,
   );
-  assert.ok(!html.includes("64 standing places"));
-  assert.match(html, /Length: ≈ 26.5 m/);
-  assert.ok(!html.includes("NaN"));
+  assert.match(html, /Marc Le Gad \/ MLGTraffic/);
+  assert.match(html, /by-nc-sa\/3\.0/);
 });
 
 test("all committed PNGs retain their imported dimensions and provenance hashes", () => {

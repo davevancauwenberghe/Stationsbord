@@ -1,5 +1,5 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.1";
-import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.1";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.2";
+import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.2";
 
 const seats = (value) =>
   Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -8,24 +8,6 @@ const firstSeats = (unit) =>
 const secondSeats = (unit) =>
   seats(unit.seatsSecondClass) + seats(unit.seatsCoupeSecondClass);
 const text = (value) => (typeof value === "string" ? value.trim() : "");
-const capacity = (value) =>
-  ["number", "string"].includes(typeof value) &&
-  String(value).trim() !== "" &&
-  Number.isInteger(Number(value)) &&
-  Number(value) >= 0
-    ? Number(value)
-    : null;
-const length = (unit) =>
-  ["number", "string"].includes(typeof unit.lengthInMeter) &&
-  Number.isFinite(Number(unit.lengthInMeter)) &&
-  Number(unit.lengthInMeter) > 0
-    ? Number(unit.lengthInMeter)
-    : null;
-function standing(unit) {
-  const first = capacity(unit.standingPlacesFirstClass),
-    second = capacity(unit.standingPlacesSecondClass);
-  return first !== null && second !== null ? first + second : null;
-}
 
 function material(unit) {
   const raw = text(unit.materialSubTypeName).toUpperCase();
@@ -202,15 +184,7 @@ function renderUnit(unit, index, t) {
     .map(([, key]) => key);
   if (flag(unit.hasFirstClassOutlets) || flag(unit.hasSecondClassOutlets))
     features.push("outlets");
-  const places = standing(unit),
-    meters = length(unit);
-  const details = [
-    places !== null && places > 0 ? `${places} ${t("standingPlaces")}` : "",
-    meters !== null
-      ? `${t("unitLength")}: ≈ ${Math.round(meters * 10) / 10} m`
-      : "",
-  ].filter(Boolean);
-  return `<li class="carriage-card"><div class="carriage-image">${drawing ? `<img src="${h(drawing.src)}" width="${drawing.width}" height="${drawing.height}" alt="" decoding="async">` : ""}<span class="carriage-placeholder" ${drawing ? "hidden" : ""}>${h(t("artworkUnavailable"))}</span></div><div class="carriage-caption"><span class="carriage-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${h(name)}</strong>${unit.materialNumber ? `<small>${h(unit.materialNumber)}</small>` : ""}</div></div><div class="carriage-classes">${classes || `<span class="muted">${h(t(/^HLE/.test(material(unit).family) ? "locomotive" : "seatsUnknown"))}</span>`}</div>${details.length ? `<p class="carriage-capacity">${details.map(h).join("<br>")}</p>` : ""}${features.length ? `<ul class="carriage-features">${features.map((key) => `<li>${icon(key)}<span>${h(t(key))}</span></li>`).join("")}</ul>` : ""}</li>`;
+  return `<li class="carriage-card"><div class="carriage-image">${drawing ? `<img src="${h(drawing.src)}" width="${drawing.width}" height="${drawing.height}" alt="" decoding="async">` : ""}<span class="carriage-placeholder" ${drawing ? "hidden" : ""}>${h(t("artworkUnavailable"))}</span></div><div class="carriage-caption"><span class="carriage-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${h(name)}</strong>${unit.materialNumber ? `<small>${h(unit.materialNumber)}</small>` : ""}</div></div><div class="carriage-classes">${classes || `<span class="muted">${h(t(/^HLE/.test(material(unit).family) ? "locomotive" : "seatsUnknown"))}</span>`}</div>${features.length ? `<ul class="carriage-features">${features.map((key) => `<li>${icon(key)}<span>${h(t(key))}</span></li>`).join("")}</ul>` : ""}</li>`;
 }
 
 export function renderComposition(data, t) {
@@ -231,19 +205,11 @@ export function renderComposition(data, t) {
       // Segments are separate formations: never sum or join them into one train.
       const first = units.reduce((sum, unit) => sum + firstSeats(unit), 0);
       const second = units.reduce((sum, unit) => sum + secondSeats(unit), 0);
-      const lengths = units.map(length),
-        places = units.map(standing);
-      const totalLength = lengths.every((v) => v !== null)
-        ? Math.round(lengths.reduce((a, b) => a + b, 0))
-        : null;
-      const totalStanding = places.every((v) => v !== null)
-        ? places.reduce((a, b) => a + b, 0)
-        : null;
-      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span>${totalStanding !== null && totalStanding > 0 ? `<span>${totalStanding} ${h(t("standingPlaces"))}</span>` : ""}${totalLength !== null ? `<span>${h(t("formationLength"))}: ≈ ${totalLength} m</span>` : ""}</div><p class="composition-scroll-hint">${h(t("compositionScroll"))} <span aria-hidden="true">↔</span></p><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t)).join("")}</ol></div></div>`;
+      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t)).join("")}</ol></div></div>`;
     })
     .join("");
   return result
-    ? `${result}<p class="composition-note">${h(t("capacityNote"))}</p><p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: <a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a> · <a href="/assets/trains/ATTRIBUTION.md">${h(t("artworkSources"))}</a></p>`
+    ? `${result}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: <a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
     : `<p class="muted">${h(t("compositionError"))}</p>`;
 }
 

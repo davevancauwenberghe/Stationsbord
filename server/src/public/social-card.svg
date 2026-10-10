@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <title>Stationsbord · België per spoor</title>
+  <title>Stationsbord · It’s on the board</title>
   <desc>Belgische treinen, helder in beeld. Een rustig stationsbord met blauwe en koperkleurige spoorlijnen.</desc>
   <rect width="1200" height="630" fill="#f6f3eb"/>
   <g transform="translate(72 64)">
@@ -11,12 +11,12 @@
   </g>
   <g font-family="Georgia, Times New Roman, serif">
     <text x="146" y="108" fill="#263943" font-size="45" font-weight="700" letter-spacing="-2">stationsbord<tspan fill="#bd653f">.</tspan></text>
-    <text x="72" y="204" fill="#284c60" font-size="14" font-weight="700" letter-spacing="3">BELGIË PER SPOOR</text>
+    <text x="72" y="204" fill="#284c60" font-size="14" font-weight="700" letter-spacing="3">It’s on the board</text>
     <text x="68" y="294" fill="#263943" font-size="68" font-weight="700" letter-spacing="-3">Even de treinen</text>
     <text x="68" y="382" fill="#263943" font-size="68" font-weight="700" letter-spacing="-3">checken.</text>
     <text x="72" y="438" fill="#63716f" font-size="25">Belgische treinen, helder in beeld.</text>
     <path d="M72 504H748" stroke="#dedfd8"/>
-    <text x="72" y="542" fill="#284c60" font-size="13" font-weight="700" letter-spacing="1.8">VERTREKKEN · AANKOMSTEN · PERRONS</text>
+    <text x="72" y="542" fill="#284c60" font-size="13" font-weight="700" letter-spacing="1.8">VERTREKKEN · AANKOMSTEN · SPOREN</text>
     <text x="72" y="574" fill="#63716f" font-size="15">Onafhankelijke dienst · data via iRail</text>
   </g>
   <rect x="820" y="64" width="308" height="510" rx="12" fill="#284c60"/>

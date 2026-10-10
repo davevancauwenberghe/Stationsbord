@@ -1,13 +1,13 @@
 import {
   renderComposition,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.1";
+} from "./composition.js?v=0.9.2";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
-} from "./train-details.js?v=0.9.1";
-import { languages, messages } from "./i18n.js?v=0.9.1";
+} from "./train-details.js?v=0.9.2";
+import { languages, messages } from "./i18n.js?v=0.9.2";
 import {
   asArray,
   escapeHtml as h,
@@ -18,14 +18,15 @@ import {
   apiDate,
   fmtTime,
   fmtDate,
-  safeLink,
   departures,
   disturbances,
   isPlanned,
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.1";
+} from "./rail-utils.js?v=0.9.2";
+
+import { renderNetwork } from "./network.js?v=0.9.2";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -76,6 +77,7 @@ const state = {
   active: -1,
   dialogController: null,
   dialogSequence: 0,
+  editingSaved: false,
   network: null,
   networkStale: false,
   networkController: null,
@@ -122,29 +124,35 @@ function renderShortcuts() {
   const saved = readStations("savedStations");
   $("savedSection").hidden = !saved.length;
   renderStationList($("savedStations"), saved, true);
-  const recent = readStations("recentStations").filter(
-    (s) => !saved.some((f) => f.id === s.id),
-  );
-  $("shortcutsTitle").textContent = t(
-    recent.length ? "recentStations" : "popularStations",
-  );
+  $("popularSection").hidden = saved.length > 0;
+  $("shortcutsTitle").textContent = t("popularStations");
   renderStationList(
     $("stationShortcuts"),
-    recent.length ? recent : popular.map((name) => ({ name })),
+    popular.map((name) => ({ name })),
     false,
+  );
+  $("manageSaved").setAttribute("aria-pressed", String(state.editingSaved));
+  $("manageSaved").textContent = t(
+    state.editingSaved ? "doneEditing" : "manageSaved",
   );
 }
 function renderStationList(container, stations, removable) {
   container.replaceChildren();
   stations.forEach((station) => {
     const row = document.createElement("div");
-    row.className = "shortcut";
+    row.className = removable ? "station-chip" : "shortcut";
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = station.name;
     button.addEventListener("click", () => selectStation(station));
-    row.append(button);
     if (removable) {
+      button.setAttribute(
+        "aria-pressed",
+        String(station.id === state.data?.stationinfo?.id),
+      );
+    }
+    row.append(button);
+    if (removable && state.editingSaved) {
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "remove-saved";
@@ -160,9 +168,16 @@ function renderStationList(container, stations, removable) {
           return toast(t("storageError"));
         renderShortcuts();
         updateSaveButton();
+        const next = $("savedStations").querySelector(".remove-saved");
+        (
+          next ||
+          (readStations("savedStations").length
+            ? $("manageSaved")
+            : $("stationInput"))
+        ).focus();
       });
       row.append(remove);
-    } else {
+    } else if (!removable) {
       const arrow = document.createElement("span");
       arrow.className = "shortcut-arrow";
       arrow.textContent = "↗";
@@ -172,6 +187,10 @@ function renderStationList(container, stations, removable) {
     container.append(row);
   });
 }
+$("manageSaved").addEventListener("click", () => {
+  state.editingSaved = !state.editingSaved;
+  renderShortcuts();
+});
 function updateSaveButton() {
   const station = state.data?.stationinfo;
   const saved = readStations("savedStations").some((s) => s.id === station?.id);
@@ -218,7 +237,7 @@ function applyLanguage() {
   document
     .querySelector(".board-tabs")
     .setAttribute("aria-label", `${t("departures")} / ${t("arrivals")}`);
-  $("searchStatus").textContent = t("searchHint");
+  $("searchStatus").textContent = "";
   updateModeControls();
   renderShortcuts();
   renderHeading();
@@ -290,7 +309,7 @@ async function findStations() {
   const term = $("stationInput").value.trim();
   if (term.length < 2) {
     showOptions(readStations("recentStations"));
-    $("searchStatus").textContent = t("searchHint");
+    $("searchStatus").textContent = "";
     return;
   }
   const sequence = ++state.searchSequence;
@@ -331,7 +350,7 @@ $("clearStation").addEventListener("click", () => {
   $("clearStation").hidden = true;
   $("stationInput").focus();
   showOptions(readStations("recentStations"));
-  $("searchStatus").textContent = t("searchHint");
+  $("searchStatus").textContent = "";
 });
 document.addEventListener("pointerdown", (e) => {
   if (!e.target.closest(".autocomplete")) {
@@ -382,7 +401,6 @@ function updateModeControls() {
   $("plannedFields").hidden = state.live;
   $("dateInput").disabled = state.live;
   $("timeInput").disabled = state.live;
-  $("modeHint").textContent = t(state.live ? "liveHint" : "planHint");
 }
 $("liveMode").addEventListener("click", () => {
   state.live = true;
@@ -465,7 +483,7 @@ function renderHeading() {
     ? view.live
       ? `${t("live")} · ${fmtDate(belgianParts().date, state.lang)}`
       : `${fmtDate(view.date, state.lang)} · ${view.time}`
-    : t("searchHint");
+    : "";
   $("departuresTab").setAttribute(
     "aria-pressed",
     String(state.mode === "departure"),
@@ -528,12 +546,7 @@ document.addEventListener("keydown", (event) => {
   const typing = event.target.closest(
     "input, textarea, select, [contenteditable]",
   );
-  if (event.key === "/" && !typing) {
-    event.preventDefault();
-    if (state.focus) setFocusMode(false);
-    $("stationInput").focus();
-    $("stationInput").select();
-  } else if (event.key === "Escape" && state.focus && !typing) {
+  if (event.key === "Escape" && state.focus && !typing) {
     event.preventDefault();
     setFocusMode(false);
   }
@@ -691,7 +704,7 @@ function statusFor(row, mode = state.mode) {
     return { text: t("cancelled"), className: "cancelled" };
   if (flag(mode === "arrival" ? row.arrived : row.left))
     return {
-      text: t(mode === "arrival" ? "arrived" : "departed"),
+      text: "",
       className: "unknown",
     };
   const delay = delayMinutes(row.delay);
@@ -746,8 +759,11 @@ function renderBoard() {
           /^BE\.NMBS\./,
           "",
         );
-      const statusMarkup = `<span class="status-text ${status.className}">${h(status.text)}</span>`;
-      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span>${h(expected)}` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="board-row-meta">${renderCrowding(row, t)}<div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
+      const completed =
+        flag(view.mode === "arrival" ? row.arrived : row.left) &&
+        !flag(row.canceled);
+      const statusMarkup = `${completed ? `<span class="sr-only">${h(t(view.mode === "arrival" ? "arrived" : "departed"))}</span>` : ""}<span class="status-text ${status.className}">${h(status.text)}</span>`;
+      return `<tr${flag(row.canceled) ? ' class="cancelled-row"' : completed ? ' class="completed-row"' : ""}><td class="time-cell">${expected ? `<span class="scheduled">${h(when)}</span><span class="expected-time ${delay > 0 ? "delay" : "early"}">${h(expected)}</span>` : h(when)}</td><td><button class="train-link" type="button" data-train="${i}" aria-label="${h(`${train} · ${destination} · ${t("stops")}`)}"><span class="destination-line"><span>${h(destination)}</span><span class="row-arrow" aria-hidden="true">↗</span></span></button><div class="board-row-meta">${renderCrowding(row, t)}<div class="mobile-meta"><span class="train-code">${h(train)}</span>${statusMarkup}</div></div></td><td class="train-column"><span class="train-code">${h(train)}</span></td><td class="status-column">${statusMarkup}</td><td>${platformHTML(row)}</td></tr>`;
     })
     .join("");
   $("boardContent").innerHTML =
@@ -832,7 +848,7 @@ async function openTrain(row, view) {
       platformHTML,
     });
     $("dialogContent").innerHTML =
-      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span><span>${h(t("stopTimesHint"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
+      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
     try {
@@ -902,18 +918,7 @@ $("networkButton").addEventListener("click", async () => {
   await refreshNetwork();
   if (!dialogCurrent(sequence)) return;
   const list = Array.isArray(state.network) ? state.network : [];
-  $("dialogContent").innerHTML =
-    `${state.networkStale ? `<div class="notice">${h(t(list.length ? "stale" : "networkUnknown"))}</div>` : ""}<p class="dialog-summary">${h(t("networkIntro"))}</p>${
-      list.length
-        ? list
-            .map((d) => {
-              const link = safeLink(d.link),
-                attachment = safeLink(d.attachment);
-              return `<article class="disturbance"><span class="category">${h(t(isPlanned(d) ? "works" : "disturbance"))}</span><h3>${h(d.title || t("disturbance"))}</h3><p>${h(d.description || "")}</p>${link ? `<a href="${h(link)}" target="_blank" rel="noopener noreferrer">${h(t("moreInfo"))} ↗</a>` : ""}${attachment ? `<a href="${h(attachment)}" target="_blank" rel="noopener noreferrer">${h(t("attachment"))} ↗</a>` : ""}</article>`;
-            })
-            .join("")
-        : `<p class="muted">${h(t(state.networkStale ? "networkUnknown" : "noDisturbances"))}</p>`
-    }`;
+  $("dialogContent").innerHTML = renderNetwork(list, t, state.networkStale);
 });
 $("shareBoard").addEventListener("click", async () => {
   syncURL();
