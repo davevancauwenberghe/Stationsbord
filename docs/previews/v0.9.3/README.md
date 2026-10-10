@@ -1,9 +1,12 @@
 # v0.9.3 — train lookup and quiet glass accents
 
 The station board and train-number lookup are separate views. The lookup accepts
-plain numbers or service codes, supports live or date/time selection, and keeps
-the complete route visible with a next-stop marker. Stop names open the matching
-station board. Sharing preserves the requested train, language and custom moment.
+plain train numbers such as 510, 8013 and 69, supports today or another date,
+and keeps the complete route visible. Today's live lookup marks the next stop;
+custom-date routes have no time-based marker. Stop names open the matching
+station board, using the stop's scheduled time for custom dates. Sharing
+preserves the requested number, language and date without a time parameter.
+The navigation button and empty state reuse the original favicon asset.
 
 Glass accents are limited to navigation and small train actions. Timetable rows
 remain opaque. The footer toggle persists locally; reduced-transparency,
@@ -33,10 +36,11 @@ demonstrate behavior and do not assert actual formations or live status.
 - 48 Chromium/axe checks pass at 320/390/1280px, in NL/FR/DE/EN and light/dark,
   for both main views. No automated WCAG A/AA violations or document overflow
   were detected; this is not a full manual accessibility certification.
-- Browser workflows cover number-only and prefixed searches, shared-link
+- Browser workflows cover plain train numbers, date-only shared-link
   restoration, stop-to-board navigation, 404/retry, composition retry,
   discarded older requests, wrong-day rejection, invalid input, static planned
-  searches and persistent/OS glass preferences. No application page/CSP errors.
+  searches and persistent/OS glass preferences. Numeric searches still resolve
+  the correct OTC/Ouigo composition internally. No application page/CSP errors.
 - A focused regression checks failed resubmissions of an already loaded lookup
   in both live and planned modes. The route and composition remain visible,
   the stale notice appears, busy state clears, and a successful retry restores
@@ -44,8 +48,8 @@ demonstrate behavior and do not assert actual formations or live status.
   retry on failure. This regression fails against the original PR implementation.
 - A direct iRail request for number `515`, dated 11 October 2026, returned IC515
   with ten stops and matching service-day provenance. The vehicle endpoint uses
-  a date, not a time: custom time highlights the route locally. Availability
-  still depends on iRail; composition is requested only for today.
+  a date, not a time. Availability still depends on iRail; composition is
+  requested only for today.
 
 No new runtime dependencies, framework, image transformations or upstream
 endpoint probing were added.

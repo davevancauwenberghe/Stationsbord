@@ -7,8 +7,9 @@ import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
+  stopEvents,
 } from "./train-details.js?v=0.9.3";
-import { languages, messages } from "./i18n.js?v=0.9.3";
+import { languages, messages } from "./i18n.js?v=0.9.3-r2";
 import {
   asArray,
   escapeHtml as h,
@@ -33,7 +34,7 @@ import {
   trainStops,
   matchesServiceDate,
   nextStopIndex,
-} from "./train-lookup.js?v=0.9.3";
+} from "./train-lookup.js?v=0.9.3-r2";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -597,7 +598,6 @@ function syncURL() {
       query.set("train", view.id);
       if (!view.live) {
         query.set("date", view.date);
-        query.set("time", view.time);
       }
     }
     history.replaceState(null, "", `${location.pathname}?${query}`);
@@ -1055,13 +1055,11 @@ function updateTrainModeControls() {
   $("trainPlanMode").setAttribute("aria-pressed", String(!state.trainLive));
   $("trainPlannedFields").hidden = state.trainLive;
   $("trainDateInput").disabled = state.trainLive;
-  $("trainTimeInput").disabled = state.trainLive;
 }
 $("trainPlanMode").addEventListener("click", () => {
   state.trainLive = false;
   const now = belgianParts();
   if (!$("trainDateInput").value) $("trainDateInput").value = now.date;
-  if (!$("trainTimeInput").value) $("trainTimeInput").value = now.time;
   updateTrainModeControls();
   $("trainDateInput").focus();
 });
@@ -1086,17 +1084,14 @@ function submitTrain() {
     $("trainInput").focus();
     return;
   }
-  const date = $("trainDateInput").value,
-    time = $("trainTimeInput").value;
-  if (!state.trainLive && (!validDate(date) || !validTime(time)))
-    return toast(t("invalidDate"));
+  const date = $("trainDateInput").value;
+  if (!state.trainLive && !validDate(date)) return toast(t("invalidTrainDate"));
   $("trainSearchStatus").textContent = "";
   $("trainInput").removeAttribute("aria-invalid");
   loadTrain({
     id,
     live: state.trainLive,
     date: state.trainLive ? "" : date,
-    time: state.trainLive ? "" : time,
     lang: state.lang,
   });
 }
@@ -1104,15 +1099,13 @@ function renderTrainEmpty() {
   $("trainTitle").textContent = t("trainEmptyTitle");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="train-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 11h16M10 5v6m4-6v6M8 22l2-3m6 3-2-3M8 15h1m6 0h1" /></svg><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="train-empty"><img src="/mark.svg?v=0.9.3" alt="" width="36" height="36"><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
   if (!view) return;
   const data = state.trainData;
-  $("trainTitle").textContent =
-    data?.vehicleinfo?.shortname ||
-    String(data?.vehicle || view.id).replace(/^BE\.NMBS\./, "");
+  $("trainTitle").textContent = view.id;
   const stops = trainStops(data);
   $("trainSubtitle").textContent = stops.length
     ? `${stops[0].station || stops[0].stationinfo?.name || "—"} → ${stops.at(-1).station || stops.at(-1).stationinfo?.name || "—"}`
@@ -1161,8 +1154,10 @@ async function loadTrain(view, { background = false } = {}) {
     state.trainData = result.data;
     state.trainStale = result.stale;
     const stops = trainStops(result.data);
-    const nextIndex = nextStopIndex(stops, { ...moment, live: view.live });
-    const reference = `<p class="train-reference">${h(view.live ? t("live") : t("atTime"))} · ${h(moment.time)}${!view.live ? `<span>${h(t("timeHighlightsStop"))}</span>` : ""}${stops.length && nextIndex === -1 ? `<span>${h(t(view.live ? "journeyEnded" : "noLaterStops"))}</span>` : ""}</p>`;
+    const nextIndex = view.live ? nextStopIndex(stops) : -1;
+    const reference = view.live
+      ? `<p class="train-reference">${h(t("live"))}${stops.length && nextIndex === -1 ? `<span>${h(t("journeyEnded"))}</span>` : ""}</p>`
+      : "";
     const focusedStop = document.activeElement?.dataset.stopIndex;
     $("trainContent").innerHTML =
       reference +
@@ -1214,8 +1209,20 @@ $("trainContent").addEventListener("click", (event) => {
   setScreen("station", { focus: false, refresh: false });
   state.live = view.live;
   if (!view.live) {
-    $("dateInput").value = view.date;
-    $("timeInput").value = view.time;
+    const stops = trainStops(state.trainData);
+    const events = stopEvents(
+      stop,
+      Number(button.dataset.stopIndex),
+      stops.length,
+    );
+    const planned = (
+      events.find((event) => event.kind === "departure") || events[0]
+    )?.planned;
+    const stopMoment = planned
+      ? belgianParts(new Date(planned * 1000))
+      : { date: view.date, time: "00:00" };
+    $("dateInput").value = stopMoment.date;
+    $("timeInput").value = stopMoment.time;
   }
   updateModeControls();
   selectStation({
@@ -1361,10 +1368,9 @@ applyLanguage();
 setScreen(state.screen, { focus: false });
 const initialTrain = normalizeTrainId(params.get("train"));
 if (state.screen === "train") {
-  if (validDate(date || "") && validTime(time || "")) {
+  if (validDate(date || "")) {
     state.trainLive = false;
     $("trainDateInput").value = date;
-    $("trainTimeInput").value = time;
     updateTrainModeControls();
   }
   if (initialTrain) {

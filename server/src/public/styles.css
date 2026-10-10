@@ -1885,6 +1885,11 @@ body:has(dialog[open]) {
   font-size: 13px;
   font-weight: 600;
 }
+.view-navigation img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
 .view-navigation button[aria-pressed="true"] {
   background: var(--button-bg);
   color: var(--button-text);
@@ -1917,6 +1922,9 @@ body:has(dialog[open]) {
 }
 .train-workspace .search-panel {
   margin-bottom: 30px;
+}
+#trainPlannedFields {
+  grid-template-columns: 1fr;
 }
 .train-panel {
   background: var(--white);
@@ -1983,10 +1991,10 @@ body:has(dialog[open]) {
   gap: 20px;
   padding: 40px 0;
 }
-.train-empty svg {
+.train-empty img {
   width: 36px;
   height: 36px;
-  color: var(--yellow);
+  flex-shrink: 0;
 }
 .train-empty p {
   max-width: 400px;

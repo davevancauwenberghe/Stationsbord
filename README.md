@@ -15,7 +15,7 @@ A clear, lightweight timetable for the Belgian rail network, powered by [iRail](
 
 Live boards refresh every minute while the page is visible. Planned searches stay at the selected time. All schedule times use **Europe/Brussels**, including daylight saving changes, regardless of the device’s time zone.
 
-Use **Find a train** for a separate lookup by number or full service code (for example `515`, `IC515`, `S104522`, or `OTC1000`). Choose **Now** or a custom date/time. iRail's vehicle endpoint accepts a service date, not a time: the selected time highlights the next stop in the full route. Availability depends on iRail's timetable coverage. A response for a different service day is rejected. Carriage information is requested only for today. Select a stop name to open its station board, or share the train URL to reopen the same lookup. Live train lookups refresh every minute while visible; hidden views do not poll.
+Use **Find a train** for a separate lookup by train number (for example `510`, `8013`, or `69`). Choose **Today** or **Other date**; a time and service-type prefix are not required. The complete route stays visible, with the next stop marked for today's live lookup. Availability depends on iRail's timetable coverage. A response for a different service day is rejected. Carriage information is requested only for today; the API's resolved service type selects the appropriate artwork internally. Select a stop name to open its station board at that stop's scheduled time for a custom date, or share the train URL to reopen the same lookup. Live train lookups refresh every minute while visible; custom-date searches remain fixed and hidden views do not poll. The lookup navigation and empty state reuse the existing favicon artwork.
 
 - Save up to eight stations using the star button. Favourites appear as compact, selectable chips with an edit mode for removal. Recent and saved stations remain in your browser; no account is required.
 - Share a link containing the station, arrivals/departures, language and optional date/time, using the native share sheet where supported or copying the link.
@@ -87,7 +87,7 @@ No bundler or frontend framework is required. Assets use a version query, and br
 
 ## Link previews
 
-The server renders Open Graph and large-image card metadata for the homepage, shared station URLs and train lookup URLs in Dutch, French, German and English. Station or train, direction and valid planned date/time parameters are retained in the canonical URL; unrelated tracking parameters are omitted. Preview creation never calls iRail, and the artwork contains no live departure times that could become stale.
+The server renders Open Graph and large-image card metadata for the homepage, shared station URLs and train lookup URLs in Dutch, French, German and English. Station links retain direction and valid planned date/time parameters; train links retain the number and valid date only. Obsolete train-time and unrelated tracking parameters are omitted. Preview creation never calls iRail, and the artwork contains no live departure times that could become stale.
 
 `server/src/public/social-card.svg` is the editable source for the 1200 × 630 PNG used by social platforms. Export an updated PNG at the same dimensions when changing the artwork. Platforms cache previews independently, so existing posts may retain an older image or description until their cache refreshes. Actual card presentation depends on the receiving platform.
 

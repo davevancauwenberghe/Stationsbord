@@ -20,8 +20,8 @@
     <link rel="apple-touch-icon" href="/favicon.png?v=0.9.3" />
     <link rel="manifest" href="/site.webmanifest?v=0.9.3" />
     <script src="/theme.js?v=0.9.3"></script>
-    <link rel="stylesheet" href="/styles.css?v=0.9.3" />
-    <script type="module" src="/app.js?v=0.9.3-r1"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.9.3-r2" />
+    <script type="module" src="/app.js?v=0.9.3-r2"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -94,10 +94,8 @@
           aria-pressed="false"
           aria-controls="trainView"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="5" y="3" width="14" height="16" rx="4" />
-            <path d="M5 11h14M9 3v8m6-8V3M8 22l2-3m6 3-2-3M8 15h1m6 0h1" /></svg
-          ><span data-i18n="trainLookup">Trein opzoeken</span>
+          <img src="/mark.svg?v=0.9.3" alt="" width="20" height="20" />
+          <span data-i18n="trainLookup">Trein opzoeken</span>
         </button>
       </div>
       <div class="workspace" id="stationView">
@@ -349,22 +347,16 @@
               ><input
                 id="trainInput"
                 type="text"
-                maxlength="40"
+                maxlength="8"
+                inputmode="numeric"
                 required
                 spellcheck="false"
-                autocapitalize="characters"
+                autocapitalize="off"
                 enterkeyhint="search"
-                aria-describedby="trainInputHint trainSearchStatus"
-                placeholder="515 of IC515"
+                aria-describedby="trainSearchStatus"
+                placeholder="510"
               />
             </div>
-            <p
-              class="field-hint"
-              id="trainInputHint"
-              data-i18n="trainInputHint"
-            >
-              Nummer of volledige treincode, ook voor S- en OTC-treinen.
-            </p>
             <p
               class="field-hint error"
               id="trainSearchStatus"
@@ -382,16 +374,16 @@
                 type="button"
                 id="trainLiveMode"
                 aria-pressed="true"
-                data-i18n="now"
+                data-i18n="today"
               >
-                Nu</button
+                Vandaag</button
               ><button
                 type="button"
                 id="trainPlanMode"
                 aria-pressed="false"
-                data-i18n="plan"
+                data-i18n="otherDate"
               >
-                Andere tijd
+                Andere datum
               </button>
             </div>
             <div id="trainPlannedFields" class="date-fields" hidden>
@@ -404,10 +396,6 @@
                   min="2000-01-01"
                   max="2099-12-31"
                   disabled
-              /></label>
-              <label
-                ><span class="field-label" data-i18n="time">Tijd</span
-                ><input id="trainTimeInput" type="time" required disabled
               /></label>
             </div>
           </div>

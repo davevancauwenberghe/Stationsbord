@@ -115,18 +115,16 @@ export function pageMetadata(search, origin) {
     url.searchParams.set("lang", lang);
     title = `${text.train} ${train} | Stationsbord`;
     description = text.journey;
-    const date = read("date", 10),
-      time = read("time", 5);
-    if (validDate(date) && validTime(time)) {
+    const date = read("date", 10);
+    if (validDate(date)) {
       url.searchParams.set("date", date);
-      url.searchParams.set("time", time);
       const formatted = new Intl.DateTimeFormat(lang, {
         day: "numeric",
         month: "long",
         year: "numeric",
         timeZone: "Europe/Brussels",
       }).format(new Date(`${date}T12:00:00Z`));
-      description = `${formatted}, ${time}. ${text.journey}`;
+      description = `${formatted}. ${text.journey}`;
     } else description += ` ${text.live}`;
   } else if (station) {
     url.searchParams.set("station", station);

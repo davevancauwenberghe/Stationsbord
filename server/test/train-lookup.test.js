@@ -14,13 +14,12 @@ const stop = (iso, extra = {}) => ({
   ...extra,
 });
 
-test("train lookup accepts plain numbers and supplied service prefixes without guessing", () => {
+test("train lookup accepts plain Belgian train numbers without a service prefix", () => {
   for (const [input, expected] of [
-    ["515", "515"],
-    [" ic 515 ", "IC515"],
-    ["BE.NMBS.OTC1000", "OTC1000"],
-    ["S10 4522", "S104522"],
-    ["s41 5369", "S415369"],
+    ["510", "510"],
+    ["8013", "8013"],
+    [" 69 ", "69"],
+    ["1000", "1000"],
   ])
     assert.equal(normalizeTrainId(input), expected);
   for (const input of [
@@ -31,6 +30,11 @@ test("train lookup accepts plain numbers and supplied service prefixes without g
     "IC515&date=101026",
     "../515",
     "123456789",
+    "IC515",
+    "BE.NMBS.OTC1000",
+    "S104522",
+    "51 0",
+    "５１０",
     "A".repeat(41),
   ])
     assert.equal(normalizeTrainId(input), "");
@@ -63,24 +67,31 @@ test("service day validation rejects a wrong day and allows a journey crossing m
   );
 });
 
-test("chosen time marks the next stop using expected times, dates and cancellations", () => {
+test("live next stops use expected times and skip cancelled events", () => {
   const stops = [
     stop("2026-10-10T10:00:00Z", { departureDelay: 600 }),
     stop("2026-10-10T10:20:00Z", { departureCanceled: "1" }),
     stop("2026-10-10T10:30:00Z"),
   ];
-  assert.equal(nextStopIndex(stops, { date: "2026-10-10", time: "12:05" }), 0);
-  assert.equal(nextStopIndex(stops, { date: "2026-10-10", time: "12:15" }), 2);
-  assert.equal(nextStopIndex(stops, { date: "2026-10-10", time: "12:31" }), -1);
-  assert.equal(nextStopIndex(stops, { date: "2026-10-09", time: "12:31" }), 0);
-  assert.equal(nextStopIndex(stops, { date: "invalid", time: "12:31" }), -1);
-  const overnight = [stop("2026-10-10T22:10:00Z")];
   assert.equal(
-    nextStopIndex(overnight, { date: "2026-10-10", time: "23:55" }),
+    nextStopIndex(stops, { now: seconds("2026-10-10T10:05:00Z") }),
     0,
   );
   assert.equal(
-    nextStopIndex(overnight, { date: "2026-10-11", time: "00:11" }),
+    nextStopIndex(stops, { now: seconds("2026-10-10T10:15:00Z") }),
+    2,
+  );
+  assert.equal(
+    nextStopIndex(stops, { now: seconds("2026-10-10T10:31:00Z") }),
+    -1,
+  );
+  const overnight = [stop("2026-10-10T22:10:00Z")];
+  assert.equal(
+    nextStopIndex(overnight, { now: seconds("2026-10-10T21:55:00Z") }),
+    0,
+  );
+  assert.equal(
+    nextStopIndex(overnight, { now: seconds("2026-10-10T22:11:00Z") }),
     -1,
   );
 });
@@ -92,18 +103,12 @@ test("live next-stop selection respects actual instants and departure flags", ()
   ];
   assert.equal(
     nextStopIndex(stops, {
-      date: "2026-10-10",
-      time: "12:00",
-      live: true,
       now: seconds("2026-10-10T10:00:00Z"),
     }),
     1,
   );
   assert.equal(
     nextStopIndex(stops, {
-      date: "2026-10-10",
-      time: "12:11",
-      live: true,
       now: seconds("2026-10-10T10:11:00Z"),
     }),
     -1,
