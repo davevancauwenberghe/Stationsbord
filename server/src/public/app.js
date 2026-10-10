@@ -1,7 +1,8 @@
 import {
   renderComposition,
+  renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.2";
+} from "./composition.js?v=0.9.2-r1";
 import {
   renderCrowding,
   renderTrainNotices,
@@ -148,7 +149,7 @@ function renderStationList(container, stations, removable) {
     if (removable) {
       button.setAttribute(
         "aria-pressed",
-        String(station.id === state.data?.stationinfo?.id),
+        String(station.id === state.view?.station.id),
       );
     }
     row.append(button);
@@ -634,6 +635,7 @@ async function loadBoard(view, { background = false } = {}) {
   }
   renderHeading();
   updateSaveButton();
+  renderShortcuts();
   syncURL();
   renderNotice();
   if (!background || !state.data) renderLoading();
@@ -822,6 +824,7 @@ async function openTrain(row, view) {
   const short =
     row.vehicleinfo?.shortname || String(id || "").replace(/^BE\.NMBS\./, "");
   const date = serviceDate(row, view.live ? belgianParts().date : view.date);
+  const compositionDisclaimer = renderCompositionDisclaimer(t);
   const { sequence, signal } = openDetails(short || t("train"), t("details"));
   if (!id) {
     $("dialogContent").textContent = t("detailError");
@@ -848,7 +851,7 @@ async function openTrain(row, view) {
       platformHTML,
     });
     $("dialogContent").innerHTML =
-      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p></section>`;
+      `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="composition"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p>${compositionDisclaimer}</section>`;
     // Show stops immediately; composition must never delay or overwrite a newer dialog.
     if (date !== belgianParts().date) return;
     try {
@@ -863,7 +866,7 @@ async function openTrain(row, view) {
     } catch (error) {
       if (!dialogCurrent(sequence) || signal.aborted) return;
       $("composition").innerHTML =
-        `<h3 class="section-title">${h(t("composition"))}</h3><p class="muted">${h(t("compositionError"))}</p>`;
+        `<h3 class="section-title">${h(t("composition"))}</h3><p class="muted">${h(t("compositionError"))}</p>${compositionDisclaimer}`;
     }
   } catch (error) {
     if (!dialogCurrent(sequence) || signal.aborted) return;

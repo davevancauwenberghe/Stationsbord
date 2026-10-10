@@ -1009,13 +1009,6 @@ p {
 .site-footer .creator-logo:hover {
   text-decoration: underline;
 }
-.schedule-disclaimer {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: 720px;
-  margin: 12px 0 0;
-}
 .footer-version {
   margin-left: 12px;
 }
@@ -1023,9 +1016,6 @@ body.board-focus .site-header,
 body.board-focus .page-intro,
 body.board-focus .sidebar,
 body.board-focus .site-footer {
-  display: none;
-}
-body.board-focus .schedule-disclaimer {
   display: none;
 }
 body.board-focus .page {
