@@ -16,7 +16,8 @@ released under CC BY-NC-SA 3.0. The creator does not endorse Stationsbord.
 
 ## Sources and changes
 
-Downloaded directly from MLGTraffic on 2026-10-09. No HyperRail files, assets,
+Initial collection downloaded directly from MLGTraffic on 2026-10-09;
+M5 and Ouigo I11 A/B drawings added directly on 2026-10-10. No HyperRail files, assets,
 code, mappings, or image transformations were copied into this project.
 
 Each static GIF was converted losslessly to PNG, preserving its original
@@ -44,3 +45,12 @@ Artwork depicts representative rolling-stock types, not a guarantee of the
 actual vehicle's livery, orientation or platform position. Seat counts and
 amenities come from iRail/NMBS data, not from the drawings. Unknown types keep
 their textual information and display an explicit illustration fallback.
+
+Display sizing uses a common source-pixel scale for locomotives, EMUs and
+coaches. The stored artwork is unchanged. Cab orientation selects the matching
+original drawing by reviewed `cabFacing` metadata for each supported EMU/DMU
+cab and cab coach. AM96 BX, M4 ADx and M5 BDx have `L`/`R` filenames opposite
+to their visible cab direction. Intermediate vehicles are explicitly marked
+with a null cab direction. Metadata changes do not alter the original artwork. M5 is matched as M5; historical M4
+records keep M4 illustrations. Only OTC services select Ouigo I11 A/B drawings;
+I11 cab cars use the standard I11 BDx artwork.

@@ -1,3 +1,5 @@
+@import url("/assets/trains/scales.css?v=0.9.2-r3");
+
 :root {
   color-scheme: light;
   --paper: #f6f3eb;
@@ -1335,7 +1337,7 @@ body:has(dialog[open]) {
 }
 .carriage-image img {
   display: block;
-  width: 100%;
+  /* Width comes from the generated source-pixel scale, shared by all vehicles. */
   height: auto;
   max-height: 76px;
   object-fit: contain;
