@@ -37,6 +37,11 @@ demonstrate behavior and do not assert actual formations or live status.
   restoration, stop-to-board navigation, 404/retry, composition retry,
   discarded older requests, wrong-day rejection, invalid input, static planned
   searches and persistent/OS glass preferences. No application page/CSP errors.
+- A focused regression checks failed resubmissions of an already loaded lookup
+  in both live and planned modes. The route and composition remain visible,
+  the stale notice appears, busy state clears, and a successful retry restores
+  freshness. A different lookup still clears the previous route and offers
+  retry on failure. This regression fails against the original PR implementation.
 - A direct iRail request for number `515`, dated 11 October 2026, returned IC515
   with ten stops and matching service-day provenance. The vehicle endpoint uses
   a date, not a time: custom time highlights the route locally. Availability

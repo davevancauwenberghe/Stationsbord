@@ -1140,7 +1140,9 @@ async function loadTrain(view, { background = false } = {}) {
   state.trainStale = false;
   renderTrainHeading();
   syncURL();
-  if (!background || !state.trainData)
+  // Keep an already displayed route during both refreshes and resubmissions.
+  // If the request fails, its stops/composition remain visible with the stale notice.
+  if (!state.trainData)
     $("trainContent").innerHTML =
       `<p class="muted" role="status">${h(t("loading"))}</p>`;
   $("trainResult").setAttribute("aria-busy", "true");
