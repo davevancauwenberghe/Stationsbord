@@ -218,7 +218,7 @@ test("all committed PNGs retain their imported dimensions and provenance hashes"
   const manifest = JSON.parse(
     readFileSync(new URL("sources.json", root), "utf8"),
   );
-  assert.equal(Object.keys(artwork).length, 47);
+  assert.equal(Object.keys(artwork).length, 52);
   for (const [key, sides] of Object.entries(artwork)) {
     for (const side of ["L", "R"]) {
       const entry = sides[side],
@@ -238,4 +238,112 @@ test("all committed PNGs retain their imported dimensions and provenance hashes"
       assert.equal(source.sourceSha256.length, 64);
     }
   }
+});
+
+test("AM96 cab direction is independent of original drawing side names", () => {
+  for (const [orientation, side] of [
+    ["LEFT", "R"],
+    ["RIGHT", "L"],
+  ]) {
+    const drawing = matchArtwork({
+      materialType: type("AM96M", "a", orientation),
+      seatsSecondClass: "79",
+    });
+    assert.equal(drawing.key, "am96-second");
+    assert.equal(drawing.file, `am96-second-${side.toLowerCase()}.png`);
+  }
+  assert.equal(
+    matchArtwork({
+      materialType: type("AM96P", "c", "RIGHT"),
+      seatsFirstClass: "45",
+    }).file,
+    "am96-first-r.png",
+  );
+});
+
+test("combined API types recover unknown subtypes, including I11 and M7 cab cars", () => {
+  for (const unit of [
+    { materialType: type("I11BDXH", "unknown") },
+    { materialSubTypeName: "I11BDXH unknown" },
+    { materialType: type("I11", "unknown"), materialSubTypeName: "I11BDXH" },
+  ]) {
+    assert.equal(matchArtwork(unit).key, "i11-cab");
+    const data = {
+      composition: {
+        segments: { segment: { composition: { units: { unit } } } },
+      },
+    };
+    assert.doesNotMatch(renderComposition(data, t), /I11BDXH unknown/i);
+  }
+  assert.equal(matchArtwork({ materialType: type("M7", "BXH") }).key, "m7-cab");
+  assert.equal(
+    matchArtwork({ materialType: type("M7BXH", "unknown") }).key,
+    "m7-cab",
+  );
+  assert.equal(
+    matchArtwork({
+      materialType: type("M7", "UNKNOWN"),
+      materialSubTypeName: "M7_future",
+    }),
+    null,
+  );
+});
+
+test("M5 uses its own first, second and cab drawings without relabelling M4", () => {
+  for (const [name, key] of [
+    ["M5A", "m5-first"],
+    ["M5BUH", "m5-second"],
+    ["M5BDX", "m5-cab"],
+  ]) {
+    assert.equal(matchArtwork({ materialSubTypeName: name }).key, key);
+  }
+  assert.equal(
+    matchArtwork({ materialType: type("M5", "BDX", "RIGHT") }).file,
+    "m5-cab-l.png",
+  );
+  assert.equal(
+    matchArtwork({ materialType: type("M4", "B") }).key,
+    "m4-second",
+  );
+});
+
+test("Ouigo I11 livery is limited to OTC services, with a standard cab carriage", () => {
+  const first = { materialType: type("I11", "A") },
+    second = { materialType: type("I11", "B") };
+  for (const trainId of ["OTC123", "BE.NMBS.OTC123"]) {
+    assert.equal(matchArtwork(first, { trainId }).key, "i11-ouigo-first");
+    assert.equal(matchArtwork(second, { trainId }).key, "i11-ouigo-second");
+    assert.equal(
+      matchArtwork({ materialType: type("I11BDXH", "unknown") }, { trainId })
+        .key,
+      "i11-cab",
+    );
+  }
+  for (const trainId of ["IC123", "EC123", "NOTC123", "", "OTC123<script>"]) {
+    assert.equal(matchArtwork(first, { trainId }).key, "i11-first");
+    assert.equal(matchArtwork(second, { trainId }).key, "i11-second");
+  }
+  const data = {
+    composition: {
+      segments: {
+        segment: {
+          composition: {
+            units: {
+              unit: [
+                first,
+                second,
+                { materialType: type("I11BDXH", "unknown") },
+              ],
+            },
+          },
+        },
+      },
+    },
+  };
+  const html = renderComposition(data, t, { trainId: "BE.NMBS.OTC123" });
+  assert.match(html, /i11-ouigo-first-l\.png/);
+  assert.match(html, /i11-ouigo-second-l\.png/);
+  assert.match(html, /i11-cab-l\.png/);
+  assert.doesNotMatch(html, /I11BDXH unknown/i);
+  assert.ok(html.indexOf("i11-ouigo-first") < html.indexOf("i11-ouigo-second"));
 });

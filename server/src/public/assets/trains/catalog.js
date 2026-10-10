@@ -348,6 +348,30 @@ export const artwork = {
       height: 40,
     },
   },
+  "i11-ouigo-first": {
+    L: {
+      file: "i11-ouigo-first-l.png",
+      width: 263,
+      height: 40,
+    },
+    R: {
+      file: "i11-ouigo-first-r.png",
+      width: 263,
+      height: 40,
+    },
+  },
+  "i11-ouigo-second": {
+    L: {
+      file: "i11-ouigo-second-l.png",
+      width: 263,
+      height: 40,
+    },
+    R: {
+      file: "i11-ouigo-second-r.png",
+      width: 263,
+      height: 40,
+    },
+  },
   "i11-second": {
     L: {
       file: "i11-second-l.png",
@@ -442,6 +466,42 @@ export const artwork = {
       file: "m4-second-r.png",
       width: 243,
       height: 40,
+    },
+  },
+  "m5-cab": {
+    L: {
+      file: "m5-cab-l.png",
+      width: 267,
+      height: 45,
+    },
+    R: {
+      file: "m5-cab-r.png",
+      width: 267,
+      height: 45,
+    },
+  },
+  "m5-first": {
+    L: {
+      file: "m5-first-l.png",
+      width: 262,
+      height: 45,
+    },
+    R: {
+      file: "m5-first-r.png",
+      width: 262,
+      height: 45,
+    },
+  },
+  "m5-second": {
+    L: {
+      file: "m5-second-l.png",
+      width: 262,
+      height: 45,
+    },
+    R: {
+      file: "m5-second-r.png",
+      width: 262,
+      height: 45,
     },
   },
   "m6-cab": {

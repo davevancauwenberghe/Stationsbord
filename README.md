@@ -99,17 +99,24 @@ with per-unit seat counts and amenities, including priority seats and tables or
 luggage areas when supplied. Seat counts describe the rolling stock, not the
 number of free places. Standing capacity and lengths are omitted from the view.
 It supports AM08, AM75, AM80, AM86,
-AM96, AR41, M4, M6, M7 (including motor cars), I6/I10/I11 and selected HLE
+AM96, AR41, M4/M5, M6, M7 (including motor cars), I6/I10/I11 and selected HLE
 locomotives. Unknown types and failed images retain their text and show a
 labelled fallback. Each composition segment has its own horizontally scrollable,
 keyboard-focusable train strip. Drawings are indicative: actual livery, order
 and orientation may differ from the upstream data.
 
-The 94 PNGs are committed under `server/src/public/assets/trains/`, served from
+The 104 PNGs are committed under `server/src/public/assets/trains/`, served from
 Stationsbord itself, and imported directly from the [MLGTraffic Benelux
 collection](http://www.mlgtraffic.net/Coll_BNL_E.htm). No HyperRail code or assets
 are used. `composition.js` contains Stationsbord's own field-based matching and
-rendering; labels, seats and amenities always use the API response.
+rendering; labels, seats and amenities always use the API response. M5 units
+use their own drawings; M4 is retained for historical/legacy API types. OTC
+services use Ouigo I11 A/B artwork and the standard I11 cab car; other services
+use the standard I11 livery. Combined type names such as `I11BDXH` and M7 `BXH`
+are recognized. Cab direction follows iRail's orientation while accounting for
+original source filenames whose side names face the opposite way. Artwork
+shares a common display pixel scale, so shorter HLE locomotives are no longer
+stretched to the width of a full coach. Stored PNGs retain the original pixels.
 
 **Artwork is CC BY-NC-SA 3.0, excluded from the project's MIT licence.** Keep the
 visible credits and licence links when redistributing, use the artwork only for

@@ -584,6 +584,46 @@
         "pngSha256": "db809d358ebf941d3071f8ef6b6d523ba923222f1f67a2c241de8b14f8c8becc"
       }
     },
+    "i11-ouigo-first": {
+      "L": {
+        "file": "i11-ouigo-first-l.png",
+        "width": 263,
+        "height": 40,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_I11_A_Ouigo_L.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VI.htm?lang=E",
+        "sourceSha256": "652dc9c239c540cc6f6397285f20c4d5a89aee141a2bdea3be0572393eddcf33",
+        "pngSha256": "2dca398e4909fcbd57538fe7531b788040d472e74262c6f5c0dc5d41c8c1d321"
+      },
+      "R": {
+        "file": "i11-ouigo-first-r.png",
+        "width": 263,
+        "height": 40,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_I11_A_Ouigo_R.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VI.htm?lang=E",
+        "sourceSha256": "b10010d895122b02163b4f7457b1842a2358ee45eb25978e3a7dfdf6c50d42cc",
+        "pngSha256": "93b3a627c840012370ee366baf4000e64c10788e0acc8f5697f6ad77e6aceed1"
+      }
+    },
+    "i11-ouigo-second": {
+      "L": {
+        "file": "i11-ouigo-second-l.png",
+        "width": 263,
+        "height": 40,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_I11_B_Ouigo_L.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VI.htm?lang=E",
+        "sourceSha256": "48a2753903156652cf76b7926b46153661628b218b33987c9791e28ca018496a",
+        "pngSha256": "d7423d7066b2f9d202fd7b7a41c0ffb9b9c2e32f1e75b82d78f51a1f60a5d840"
+      },
+      "R": {
+        "file": "i11-ouigo-second-r.png",
+        "width": 263,
+        "height": 40,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_I11_B_Ouigo_R.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VI.htm?lang=E",
+        "sourceSha256": "5b1d62e3bed54296a06020106faf01ccaa0d6d7b82181977b4ca9ddf7840447a",
+        "pngSha256": "482e730fe9545201336f315642699d2278a030b352cefd6be6d3761bb37e3246"
+      }
+    },
     "i11-second": {
       "L": {
         "file": "i11-second-l.png",
@@ -742,6 +782,66 @@
         "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
         "sourceSha256": "3fbb7ff3ac4ddc5f661ef8acd21ec1b6520201448a31a6f7e7db53e4169b156c",
         "pngSha256": "6466bc5021aef51d77fca26a9052f733a9adbb38a3a68c1be544a014e6de5c32"
+      }
+    },
+    "m5-cab": {
+      "L": {
+        "file": "m5-cab-l.png",
+        "width": 267,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_BDx_L.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "a7a9563620ce1c9aa960e3395aae26d4936852e6524056e76c7236f804faa49e",
+        "pngSha256": "51121293f216d4ea46353bc79d01b59c885f24f0305bf445d281bdc8c117b6e1"
+      },
+      "R": {
+        "file": "m5-cab-r.png",
+        "width": 267,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_BDx_R.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "a8612aeda91c4a14d6a33227376f0f8b6f7f4ce2d9fd26a86b23e8265625e46d",
+        "pngSha256": "17da83e5926bdf4e7cbab0825f8165ea8058bf161878e1dc9661b1ddaf4d04a7"
+      }
+    },
+    "m5-first": {
+      "L": {
+        "file": "m5-first-l.png",
+        "width": 262,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_A_L.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "1f66cc49086199d5cbf294b0c000d3ccb33709aa661e13210eec1909ac02fb4d",
+        "pngSha256": "d3d50252d3c91522689159eec342da9a17c344df5c83b66cecf097a849d3bd50"
+      },
+      "R": {
+        "file": "m5-first-r.png",
+        "width": 262,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_A_R.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "e86cb5ac32afe27befb15e0cbb5896a4009466126f7a32848ff67480d82c2c3e",
+        "pngSha256": "5d7966a197dca106e61d8b0e1c337e520e07595827ecab9d865a4f0b375bf1ca"
+      }
+    },
+    "m5-second": {
+      "L": {
+        "file": "m5-second-l.png",
+        "width": 262,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_B_L.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "c4a1eeb73521c704d4edd7eac754218b5a67652c15388327712a1a4c03e4b159",
+        "pngSha256": "4d2a929ed52ffa0171159ccb282ac6e48848f1e0438bfd1f4d8407f71a0bc602"
+      },
+      "R": {
+        "file": "m5-second-r.png",
+        "width": 262,
+        "height": 45,
+        "source": "http://www.mlgtraffic.net/images/SNCB/V/SNCB_M5_B_B_R.gif",
+        "collection": "http://www.mlgtraffic.net/SNCB_VM.htm?lang=E",
+        "sourceSha256": "6ec67bb138067a8967ca08c39b4674957b8f59f5902c30a03c4d0af36fa66575",
+        "pngSha256": "62f2a86ee76eb02d008759d693d4c48a6aac260233ae9ea75c48feffd018a51b"
       }
     },
     "m6-cab": {

@@ -1,4 +1,4 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.2";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.2-r3";
 import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.2";
 
 const seats = (value) =>
@@ -9,16 +9,29 @@ const secondSeats = (unit) =>
   seats(unit.seatsSecondClass) + seats(unit.seatsCoupeSecondClass);
 const text = (value) => (typeof value === "string" ? value.trim() : "");
 
+function parseMaterial(value) {
+  return text(value)
+    .toUpperCase()
+    .replace(/(?:[_\s]+UNKNOWN)$/, "")
+    .match(
+      /^(HLE\d+(?:II)?|AM\d{2}[MP]?|AR41|MW41|M[4567]|I(?:6|10|11))(?:[_\s]?)(.*)$/,
+    );
+}
 function material(unit) {
-  const raw = text(unit.materialSubTypeName).toUpperCase();
-  const parsed = raw.match(
-    /^(HLE\d+(?:II)?|AM\d{2}[MP]?|AR41|MW41|M[467]|I(?:6|10|11))(?:[_\s]?)(.*)$/,
-  );
+  const parent = text(unit.materialType?.parent_type);
+  const fromParent = parseMaterial(parent);
+  const fromName = parseMaterial(unit.materialSubTypeName);
+  const subtype = text(unit.materialType?.sub_type).toUpperCase();
   return {
-    family: (text(unit.materialType?.parent_type) || parsed?.[1] || "")
+    family: (fromParent?.[1] || fromName?.[1] || parent)
       .toUpperCase()
       .replace(/\s/g, ""),
-    subtype: (text(unit.materialType?.sub_type) || parsed?.[2] || "")
+    // Some API records put the whole type (e.g. I11BDXH) in parent_type and
+    // report sub_type as "unknown". Recover its suffix before using the label.
+    subtype: (subtype && subtype !== "UNKNOWN"
+      ? subtype
+      : fromParent?.[2] || fromName?.[2] || ""
+    )
       .toUpperCase()
       .replace(/\s/g, ""),
     side: ["RIGHT", "R"].includes(
@@ -29,10 +42,15 @@ function material(unit) {
   };
 }
 
+// MLGTraffic's AM96 BX and M5 BDx side names run opposite to their cab direction.
+// Select the other original drawing instead of flipping or editing its pixels.
+const invertedCabArtwork = new Set(["am96-second", "m5-cab"]);
+const isOtc = (trainId) => /^(?:BE\.NMBS\.)?OTC\d+$/i.test(text(trainId));
+
 // Written for Stationsbord from iRail's public fields and the original MLGTraffic
 // collection descriptions. No HyperRail code or asset transformations are used.
-export function matchArtwork(unit) {
-  const { family, subtype, side } = material(unit);
+export function matchArtwork(unit, { trainId = "" } = {}) {
+  const { family, subtype, side: orientation } = material(unit);
   const first = firstSeats(unit) > 0 || flag(unit.isFirstClass);
   const second = secondSeats(unit) > 0 || flag(unit.isSecondClass);
   const number = Number(unit.materialNumber);
@@ -96,6 +114,10 @@ export function matchArtwork(unit) {
       ADX: "m4-cab",
       ADU: "m4-cab",
     }[subtype];
+  } else if (family === "M5") {
+    if (["BDX", "BDXH", "BX", "BXH"].includes(subtype)) key = "m5-cab";
+    else if (["A", "AU"].includes(subtype)) key = "m5-first";
+    else if (["B", "BU", "BUH", "BYU"].includes(subtype)) key = "m5-second";
   } else if (family === "M6") {
     if (["BX", "BDX", "BXCT", "BXAA"].includes(subtype)) key = "m6-cab";
     else if (["ABD", "BDAU", "ABUH"].includes(subtype))
@@ -107,7 +129,7 @@ export function matchArtwork(unit) {
       key = first ? "m6-first" : "m6-second";
   } else if (family === "M7") {
     if (["BMX", "BM", "BMXH"].includes(subtype)) key = "m7-motor";
-    else if (["BDX", "BDXH", "BX"].includes(subtype)) key = "m7-cab";
+    else if (["BDX", "BDXH", "BX", "BXH"].includes(subtype)) key = "m7-cab";
     else if (["BD", "BDH", "BDU", "BDUH", "BDYU"].includes(subtype))
       key = "m7-luggage";
     else if (["AB", "ABUH", "AU"].includes(subtype)) key = "m7-mixed";
@@ -127,6 +149,18 @@ export function matchArtwork(unit) {
         family.toLowerCase() +
         (first || ["A", "AU"].includes(subtype) ? "-first" : "-second");
   }
+  // OTC services use Ouigo A/B drawings; their I11 cab car uses the standard drawing.
+  if (
+    family === "I11" &&
+    isOtc(trainId) &&
+    ["i11-first", "i11-second"].includes(key)
+  )
+    key = key.replace("i11-", "i11-ouigo-");
+  const side = invertedCabArtwork.has(key)
+    ? orientation === "L"
+      ? "R"
+      : "L"
+    : orientation;
   const entry = artwork[key]?.[side];
   return entry ? { ...entry, key, src: `/assets/trains/${entry.file}` } : null;
 }
@@ -147,12 +181,15 @@ const icons = {
 const icon = (name) =>
   `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icons[name]}</svg>`;
 
-function renderUnit(unit, index, t) {
-  const drawing = matchArtwork(unit);
+function renderUnit(unit, index, t, context) {
+  const drawing = matchArtwork(unit, context);
+  const suppliedName = text(unit.materialSubTypeName);
   const name =
-    text(unit.materialSubTypeName) ||
+    (drawing
+      ? suppliedName.replace(/(?:[_\s]+unknown)$/i, "")
+      : suppliedName) ||
     [text(unit.materialType?.parent_type), text(unit.materialType?.sub_type)]
-      .filter(Boolean)
+      .filter((value) => value && value.toUpperCase() !== "UNKNOWN")
       .join(" ") ||
     t("unknown");
   const first = firstSeats(unit),
@@ -191,7 +228,7 @@ export function renderCompositionDisclaimer(t) {
   return `<p class="composition-note schedule-disclaimer">${h(t("scheduleDisclaimer"))}</p>`;
 }
 
-export function renderComposition(data, t) {
+export function renderComposition(data, t, context = {}) {
   const segments = asArray(data?.composition?.segments?.segment);
   const result = segments
     .map((segment, index) => {
@@ -209,7 +246,7 @@ export function renderComposition(data, t) {
       // Segments are separate formations: never sum or join them into one train.
       const first = units.reduce((sum, unit) => sum + firstSeats(unit), 0);
       const second = units.reduce((sum, unit) => sum + secondSeats(unit), 0);
-      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t)).join("")}</ol></div></div>`;
+      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t, context)).join("")}</ol></div></div>`;
     })
     .join("");
   return result

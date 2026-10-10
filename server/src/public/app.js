@@ -2,7 +2,7 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.2-r1";
+} from "./composition.js?v=0.9.2-r3";
 import {
   renderCrowding,
   renderTrainNotices,
@@ -911,7 +911,7 @@ async function loadComposition(id, sequence, signal) {
       signal,
     );
     if (!dialogCurrent(sequence)) return;
-    section.innerHTML = `${heading}${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t)}`;
+    section.innerHTML = `${heading}${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t, { trainId: id })}`;
     installArtworkFallbacks(section);
   } catch {
     if (!dialogCurrent(sequence) || signal.aborted) return;
