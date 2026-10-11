@@ -8,7 +8,7 @@ import {
   delayMinutes,
   occupancy,
   safeLink,
-} from "./rail-utils.js?v=0.9.3";
+} from "./rail-utils.js?v=0.9.4";
 
 const number = (value) =>
   ["number", "string"].includes(typeof value) &&
@@ -198,6 +198,8 @@ export function renderStopList(
     t,
     platformHTML,
     nextIndex = -1,
+    reportedIndex = -1,
+    estimated = false,
     stationLinks = false,
   },
 ) {
@@ -205,6 +207,7 @@ export function renderStopList(
     .map((stop, index) => {
       const current = !!stationId && stop.stationinfo?.id === stationId;
       const next = index === nextIndex;
+      const reported = index === reportedIndex;
       const events = stopEvents(stop, index, stops.length, mode);
       // Departure is the main time; arrivals remain available on a quieter line.
       const primary =
@@ -213,7 +216,8 @@ export function renderStopList(
       const departed = flag(stop.left) && !primary.canceled;
       const metadata = [
         current ? t("selectedStop") : "",
-        next ? t("nextStop") : "",
+        reported ? t("lastReportedStop") : "",
+        next ? t(estimated ? "expectedStop" : "nextStop") : "",
         flag(stop.isExtraStop) ? t("extraStop") : "",
       ].filter(Boolean);
       const name = h(stop.station || stop.stationinfo?.name || "—");
@@ -221,7 +225,7 @@ export function renderStopList(
         stationLinks && stop.stationinfo?.id
           ? `<button class="stop-station-link" type="button" data-stop-index="${index}" aria-label="${h(`${t("stationBoard")}: ${stop.station || stop.stationinfo.name || "—"}`)}"><strong>${name}</strong><span aria-hidden="true">↗</span></button>`
           : `<strong>${name}</strong>`;
-      return `<li class="stop${current ? " current" : ""}${next ? " next-stop" : ""}${departed ? " completed-stop" : ""}"><div class="stop-name">${station}${departed ? `<span class="sr-only"> · ${h(t("departed"))}</span>` : ""}${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
+      return `<li class="stop${current ? " current" : ""}${next ? " next-stop" : ""}${reported ? " reported-stop" : ""}${departed ? " completed-stop" : ""}"><div class="stop-name">${station}${departed ? `<span class="sr-only"> · ${h(t("departed"))}</span>` : ""}${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
     })
     .join("");
 }

@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { readFileSync } from "node:fs";
 import { publicOrigin, renderPage } from "./social.js";
+import { belgianParts, apiDate } from "./public/rail-utils.js";
 
 import { MemoryCache } from "./cache.js";
 import { fetchIRailJSON, buildUserAgent } from "./irail.js";
@@ -16,7 +17,7 @@ app.set("query parser", "extended");
 const PORT = Number(process.env.PORT || 8080);
 
 const APP_NAME = process.env.APP_NAME || "Stationsbord";
-const APP_VERSION = process.env.APP_VERSION || "0.9.3";
+const APP_VERSION = process.env.APP_VERSION || "0.9.4";
 const APP_WEBSITE = process.env.APP_WEBSITE || "https://example.invalid";
 const APP_EMAIL = process.env.APP_EMAIL || "hello@example.invalid";
 
@@ -438,6 +439,13 @@ app.get("/api/composition", async (req, res) => {
     if (!id)
       return res.status(400).json({ error: "Missing required parameter: id" });
 
+    const date = normalizeDateDDMMYY(
+      req.query.date ?? apiDate(belgianParts().date),
+    );
+    if (!date)
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Expected DDMMYY." });
     const lang = normalizeLang(req.query.lang);
     const data = String(req.query.data || "")
       .toLowerCase()
@@ -452,6 +460,7 @@ app.get("/api/composition", async (req, res) => {
     params.set("format", "json");
     params.set("lang", lang);
     params.set("id", String(id));
+    params.set("date", date);
     if (data === "all") params.set("data", "all");
 
     const pathQ = `/composition/?${params.toString()}`;

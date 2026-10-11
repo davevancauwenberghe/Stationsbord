@@ -1,4 +1,4 @@
-@import url("/assets/trains/scales.css?v=0.9.3");
+@import url("/assets/trains/scales.css?v=0.9.4");
 
 :root {
   color-scheme: light;
@@ -1885,11 +1885,6 @@ body:has(dialog[open]) {
   font-size: 13px;
   font-weight: 600;
 }
-.view-navigation img {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
 .view-navigation button[aria-pressed="true"] {
   background: var(--button-bg);
   color: var(--button-text);
@@ -1971,22 +1966,6 @@ body:has(dialog[open]) {
 }
 .train-reference span {
   font-size: 11px;
-}
-.train-empty {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 40px 0;
-}
-.train-empty img {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-}
-.train-empty p {
-  max-width: 400px;
-  font-size: 14px;
-  color: var(--muted);
 }
 .stop-station-link {
   display: inline-flex;
@@ -2115,5 +2094,97 @@ body.board-focus .view-navigation {
   }
   .mobile-meta {
     display: none;
+  }
+}
+
+/* Room for routes and formations on wide displays, with the same compact UI. */
+.header-inner,
+.page,
+body.board-focus .page {
+  max-width: 1920px;
+}
+.empty-sign {
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 14px;
+}
+.train-progress {
+  border-left: 3px solid var(--yellow);
+  padding: 2px 0 2px 14px;
+  margin: 0 0 22px;
+}
+.train-progress .eyebrow {
+  font-size: 10px;
+  margin: 0 0 7px;
+}
+.train-progress > p:last-child {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.train-progress span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.reported-stop .stop-name:before {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--soft);
+}
+.reported-stop .stop-name > small {
+  font-weight: 650;
+}
+.vehicle-route,
+.vehicle-details {
+  min-width: 0;
+}
+.route-network {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 24px;
+  padding: 12px 0;
+}
+.route-network > summary {
+  cursor: pointer;
+  min-height: 24px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.route-network > p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.route-network .disturbance h3 {
+  font-size: 14px;
+}
+.route-network .disturbance p {
+  font-size: 13px;
+}
+.train-content .stop-list {
+  max-width: none;
+}
+@media (min-width: 1440px) {
+  .header-inner,
+  .page {
+    padding-left: clamp(32px, 3vw, 64px);
+    padding-right: clamp(32px, 3vw, 64px);
+  }
+  dialog {
+    width: min(1240px, calc(100vw - 80px));
+  }
+  .vehicle-details {
+    display: grid;
+    grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1.2fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .vehicle-details > .composition-section {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    margin-top: 0;
+    padding: 0 0 0 28px;
   }
 }

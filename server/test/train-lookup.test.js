@@ -114,3 +114,18 @@ test("live next-stop selection respects actual instants and departure flags", ()
     -1,
   );
 });
+
+test("lookup headings show the resolved train type without adding a prefix to search input", async () => {
+  const { trainLabel } = await import("../src/public/train-lookup.js");
+  assert.equal(
+    trainLabel({ vehicleinfo: { shortname: "IC 510" } }, "510"),
+    "IC 510",
+  );
+  assert.equal(
+    trainLabel({ vehicleinfo: { type: "OTC", number: "1000" } }, "1000"),
+    "OTC 1000",
+  );
+  assert.equal(trainLabel({ vehicle: "BE.NMBS.S104522" }, "4522"), "S104522");
+  assert.equal(trainLabel(null, "69"), "69");
+  assert.equal(normalizeTrainId("510"), "510");
+});
