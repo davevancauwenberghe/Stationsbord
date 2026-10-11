@@ -17,7 +17,6 @@ export const messages = {
     journeyEnded: "Geen volgende halte meer gemeld.",
     trainNotFound:
       "Geen rit gevonden voor deze trein op deze datum. Probeer een andere datum of een ander treinnummer.",
-    glassEffects: "Glaseffecten",
     skipTrain: "Naar de treindetails",
 
     manageSaved: "Bewerken",
@@ -179,7 +178,6 @@ export const messages = {
     journeyEnded: "No further stop reported.",
     trainNotFound:
       "No journey found for this train on this date. Try another date or train number.",
-    glassEffects: "Glass effects",
     skipTrain: "Skip to train details",
 
     manageSaved: "Edit",
@@ -340,7 +338,6 @@ export const messages = {
     journeyEnded: "Aucun prochain arrêt annoncé.",
     trainNotFound:
       "Aucun trajet trouvé pour ce train à cette date. Essayez une autre date ou un autre numéro.",
-    glassEffects: "Effets de verre",
     skipTrain: "Aller aux détails du train",
 
     manageSaved: "Modifier",
@@ -503,7 +500,6 @@ export const messages = {
     journeyEnded: "Kein weiterer Halt gemeldet.",
     trainNotFound:
       "Keine Fahrt für diesen Zug an diesem Datum gefunden. Versuche ein anderes Datum oder eine andere Zugnummer.",
-    glassEffects: "Glaseffekte",
     skipTrain: "Zu den Zugdetails",
 
     manageSaved: "Bearbeiten",

@@ -30,7 +30,7 @@ Use **Find a train** for a separate lookup by train number (for example `510`, `
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A full-width station board with warm paper colours, ink-blue signage and a matching dark appearance.
-- Restrained glass accents on view navigation and train actions, with opaque timetable rows. Glass effects can be disabled in the footer; reduced transparency, increased contrast and forced-colour preferences use solid surfaces automatically where supported. Unsupported browsers also use solid surfaces.
+- Opaque navigation and train actions, with Bahnschrift for station headings and destination/origin names on the liveboard where the font is installed. Other devices use the system sans-serif fallback; see the typography notes below.
 - Filter the loaded trains by destination (or origin for arrivals) and train number. Filtering keeps cancelled services visible when they match.
 - Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
 - Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
@@ -38,6 +38,24 @@ Use **Find a train** for a separate lookup by train number (for example `510`, `
 Train times and tracks may change or differ from the displayed information. Check station boards and announcements or the SNCB app before departure. This reminder appears in the train composition section, including when composition data is unavailable.
 
 Stationsbord is an independent service. Schedule availability depends on iRail/NMBS; searches far into the past or future may not be available. Train composition is queried only for today, because that endpoint does not accept a service date. Cached or failed refreshes are explicitly labelled rather than presented as fresh data.
+
+## Station typography
+
+Liveboard station headings and destination/origin names request **Bahnschrift**,
+Microsoft's DIN 1451 digitization. It is supplied with Windows 10/11; devices
+without an installed copy use their system sans-serif font. Other headings,
+times and controls retain their existing fonts.
+
+Microsoft allows referencing the installed font in CSS, but the Windows font
+licence does not allow copying its files into the repository, hosting them or
+converting them into webfonts. For the exact face on iOS, iPadOS and other
+platforms, supply either a licensed self-hosted webfont or a Bahnschrift
+[Adobe Fonts web project](https://fonts.adobe.com/fonts/bahnschrift). The font
+files are not bundled. An Adobe project would also need its specific stylesheet
+and font origins added to the existing Content Security Policy.
+
+Sources: [Bahnschrift](https://learn.microsoft.com/en-us/typography/font-list/bahnschrift)
+and [Microsoft font redistribution FAQ](https://learn.microsoft.com/en-us/typography/fonts/font-faq).
 
 ## Run locally
 

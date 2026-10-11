@@ -1,4 +1,4 @@
-# v0.9.3 — train lookup and quiet glass accents
+# v0.9.3 — train lookup and station typography
 
 The station board and train-number lookup are separate views. The lookup accepts
 plain train numbers such as 510, 8013 and 69, supports today or another date,
@@ -8,10 +8,16 @@ station board, using the stop's scheduled time for custom dates. Sharing
 preserves the requested number, language and date without a time parameter.
 The navigation button and empty state reuse the original favicon asset.
 
-Glass accents are limited to navigation and small train actions. Timetable rows
-remain opaque. The footer toggle persists locally; reduced-transparency,
-increased-contrast and forced-colour preferences use solid surfaces where
-supported. Browsers without backdrop-filter use the same solid fallback.
+Navigation and train actions use solid, opaque surfaces. The former effect
+control, preference handling, translations and backdrop-filter styles have
+been removed. Light/dark/system appearance and the forced-colour selected-state
+outline remain available.
+
+Liveboard station headings and destination/origin names use Bahnschrift when
+installed, with a system sans-serif fallback otherwise. The screenshots were
+captured on Linux without Bahnschrift and therefore show that fallback. Exact
+cross-platform typography needs a licensed webfont or Adobe Fonts web project;
+see the [typography notes](../../../README.md#station-typography).
 
 I11 AUH and BVUH match the stored original A/B drawings. OTC services select
 Ouigo A/B artwork; other services retain standard I11 artwork. The BDx cab coach
@@ -39,7 +45,9 @@ demonstrate behavior and do not assert actual formations or live status.
 - Browser workflows cover plain train numbers, date-only shared-link
   restoration, stop-to-board navigation, 404/retry, composition retry,
   discarded older requests, wrong-day rejection, invalid input, static planned
-  searches and persistent/OS glass preferences. Numeric searches still resolve
+  searches and persistent/system light/dark preferences. Solid navigation and
+  train actions, obsolete saved preferences, blocked browser storage, and
+  forced-colour selected states were checked. Numeric searches still resolve
   the correct OTC/Ouigo composition internally. No application page/CSP errors.
 - A focused regression checks failed resubmissions of an already loaded lookup
   in both live and planned modes. The route and composition remain visible,

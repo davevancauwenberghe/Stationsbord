@@ -9,7 +9,7 @@ import {
   renderStopList,
   stopEvents,
 } from "./train-details.js?v=0.9.3";
-import { languages, messages } from "./i18n.js?v=0.9.3-r2";
+import { languages, messages } from "./i18n.js?v=0.9.3-r3";
 import {
   asArray,
   escapeHtml as h,
