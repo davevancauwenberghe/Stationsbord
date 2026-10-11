@@ -122,7 +122,8 @@ export function isPlanned(item) {
       .toLowerCase() === "planned"
   );
 }
-// The connection URI carries the service date, which can differ from the calendar date after midnight.
+// The connection URI carries this stop's calendar date. A journey may have
+// started the previous day; board details also match the station and instant.
 export function serviceDate(row, fallback) {
   const match = String(
     row.departureConnection || row.arrivalConnection || "",

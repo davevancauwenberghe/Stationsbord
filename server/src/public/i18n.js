@@ -1,6 +1,7 @@
 export const languages = ["nl", "fr", "de", "en"];
 export const messages = {
   nl: {
+    appStarting: "Stationsbord laden…",
     trainProgress: "Trein onderweg",
     reportedProgress: "Laatst gemeld",
     estimatedProgress: "Geschatte voortgang",
@@ -170,6 +171,7 @@ export const messages = {
     trainSingular: "trein",
   },
   en: {
+    appStarting: "Loading Stationsbord…",
     trainProgress: "Train progress",
     reportedProgress: "Last reported",
     estimatedProgress: "Estimated progress",
@@ -339,6 +341,7 @@ export const messages = {
     trainSingular: "train",
   },
   fr: {
+    appStarting: "Chargement de Stationsbord…",
     trainProgress: "Progression du train",
     reportedProgress: "Dernier signalement",
     estimatedProgress: "Progression estimée",
@@ -509,6 +512,7 @@ export const messages = {
     trainSingular: "train",
   },
   de: {
+    appStarting: "Stationsbord wird geladen…",
     trainProgress: "Zugverlauf",
     reportedProgress: "Zuletzt gemeldet",
     estimatedProgress: "Geschätzter Verlauf",

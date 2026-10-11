@@ -2,14 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.4-r1";
+} from "./composition.js?v=0.9.4-r2";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
   stopEvents,
-} from "./train-details.js?v=0.9.4-r1";
-import { languages, messages } from "./i18n.js?v=0.9.4-r1";
+} from "./train-details.js?v=0.9.4-r2";
+import { languages, messages } from "./i18n.js?v=0.9.4-r2";
 import {
   asArray,
   escapeHtml as h,
@@ -26,22 +26,25 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.4-r1";
+} from "./rail-utils.js?v=0.9.4-r2";
 
-import { renderNetwork } from "./network.js?v=0.9.4-r1";
+import { renderNetwork } from "./network.js?v=0.9.4-r2";
 import {
   normalizeTrainId,
   trainStops,
   matchesServiceDate,
+  matchesBoardStop,
+  previousServiceDate,
+  journeyEndDate,
   trainLabel,
-} from "./train-lookup.js?v=0.9.4-r1";
+} from "./train-lookup.js?v=0.9.4-r2";
 
 import {
   trainProgress,
   renderProgress,
   activeService,
   currentServiceDay,
-} from "./train-progress.js?v=0.9.4-r1";
+} from "./train-progress.js?v=0.9.4-r2";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -479,7 +482,7 @@ function submitBoard() {
     time = $("timeInput").value;
   if (!state.live && (!validDate(date) || !validTime(time)))
     return toast(t("invalidDate"));
-  loadBoard({
+  return loadBoard({
     station: { ...state.station },
     mode: state.mode,
     lang: state.lang,
@@ -561,13 +564,42 @@ function updateBoardControls() {
   $("focusBoard").title = focusLabel;
   $("focusBoard").setAttribute("aria-pressed", String(state.focus));
 }
-function setFocusMode(enabled) {
+let boardFullscreenActive = false;
+async function setFocusMode(
+  enabled,
+  { restoreFocus = true, fullscreen = true } = {},
+) {
   state.focus = enabled;
   document.body.classList.toggle("board-focus", enabled);
   updateBoardControls();
   $("board").scrollIntoView({ block: "start", behavior: "auto" });
-  $("focusBoard").focus({ preventScroll: true });
+  if (restoreFocus) $("focusBoard").focus({ preventScroll: true });
+  if (!fullscreen) return;
+  const root = document.documentElement;
+  const active = () =>
+    (document.fullscreenElement || document.webkitFullscreenElement) === root;
+  const exit = () =>
+    (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+  try {
+    if (enabled) {
+      const enter = root.requestFullscreen || root.webkitRequestFullscreen;
+      if (enter) await enter.call(root, { navigationUI: "hide" });
+      if (!state.focus && active()) await exit();
+    } else if (active()) await exit();
+  } catch {
+    // Board mode still fills the viewport if browser fullscreen is unavailable.
+  }
 }
+function fullscreenChanged() {
+  const active =
+    (document.fullscreenElement || document.webkitFullscreenElement) ===
+    document.documentElement;
+  if (boardFullscreenActive && !active)
+    setFocusMode(false, { fullscreen: false });
+  boardFullscreenActive = active;
+}
+document.addEventListener("fullscreenchange", fullscreenChanged);
+document.addEventListener("webkitfullscreenchange", fullscreenChanged);
 $("focusBoard").addEventListener("click", () => setFocusMode(!state.focus));
 $("boardFilter").addEventListener("input", () => {
   state.filter = $("boardFilter").value;
@@ -669,7 +701,7 @@ function renderNotice() {
 }
 function renderEmpty(title = "emptyTitle", body = "emptyBody") {
   $("boardContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r1#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r2#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
 }
 function renderLoading() {
   $("boardContent").innerHTML =
@@ -952,13 +984,35 @@ async function loadDialogTrain(detail, { background = false } = {}) {
   if (!current() || detail.loading) return;
   detail.loading = true;
   try {
-    const result = await request(
-      `/api/vehicle?${new URLSearchParams({ id: detail.id, lang: state.lang, date: apiDate(detail.date), alerts: "true" })}`,
-      detail.signal,
-    );
+    const fetchRoute = async (date) => {
+      const result = await request(
+        `/api/vehicle?${new URLSearchParams({ id: detail.id, lang: state.lang, date: apiDate(date), alerts: "true" })}`,
+        detail.signal,
+      );
+      if (
+        !matchesServiceDate(result.data, date) ||
+        !matchesBoardStop(result.data, detail.row, {
+          stationId: detail.view.station.id,
+          mode: detail.view.mode,
+        })
+      )
+        throw Object.assign(new Error("Service does not match board stop"), {
+          status: 404,
+        });
+      return result;
+    };
+    let result;
+    try {
+      result = await fetchRoute(detail.date);
+    } catch (error) {
+      if (error.status !== 404 || detail.result || !current()) throw error;
+      const previous = previousServiceDate(detail.date);
+      if (!previous) throw error;
+      result = await fetchRoute(previous);
+      if (!current()) return;
+      detail.date = previous;
+    }
     if (!current()) return;
-    if (!matchesServiceDate(result.data, detail.date))
-      throw new Error("Service date mismatch");
     detail.result = result;
     $("dialogTitle").textContent = trainLabel(
       result.data,
@@ -1074,6 +1128,10 @@ function renderVehicle(
   },
 ) {
   const stops = trainStops(result.data);
+  const endDate = journeyEndDate(stops, date);
+  const dateLabel =
+    fmtDate(date, state.lang) +
+    (endDate !== date ? ` → ${fmtDate(endDate, state.lang)}` : "");
   const progress = trainProgress(stops, {
     live: live && currentServiceDay(stops, date),
     stale: result.stale || !navigator.onLine,
@@ -1102,7 +1160,7 @@ function renderVehicle(
     estimated: progress?.kind === "estimated",
     stationLinks,
   });
-  return `${result.stale && compositionId === "composition" ? `<div class="notice">${h(t("stale"))}</div>` : ""}<div class="vehicle-details"><div class="vehicle-route"><p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderProgress(stops, progress, { t, language: state.lang, timestamp: result.data.timestamp })}${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}</div><section class="composition-section" id="${compositionId}" data-key="${h(compositionKey)}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}</section></div>`;
+  return `${result.stale && compositionId === "composition" ? `<div class="notice">${h(t("stale"))}</div>` : ""}<div class="vehicle-details"><div class="vehicle-route"><p class="dialog-summary"><span>${h(dateLabel)}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderProgress(stops, progress, { t, language: state.lang, timestamp: result.data.timestamp })}${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}</div><section class="composition-section" id="${compositionId}" data-key="${h(compositionKey)}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}</section></div>`;
 }
 
 async function loadComposition(id, { date, section, current, signal }) {
@@ -1160,8 +1218,7 @@ function setScreen(screen, { focus = true, refresh = true } = {}) {
   if (screen === "train") {
     cancelSearch();
     closeOptions();
-    state.focus = false;
-    document.body.classList.remove("board-focus");
+    if (state.focus) setFocusMode(false, { restoreFocus: false });
     if (
       refresh &&
       state.trainView &&
@@ -1229,7 +1286,7 @@ function submitTrain() {
   if (!state.trainLive && !validDate(date)) return toast(t("invalidTrainDate"));
   $("trainSearchStatus").textContent = "";
   $("trainInput").removeAttribute("aria-invalid");
-  loadTrain({
+  return loadTrain({
     id,
     live: state.trainLive,
     date: state.trainLive ? "" : date,
@@ -1240,7 +1297,7 @@ function renderTrainEmpty() {
   $("trainTitle").textContent = t("trainLookup");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r1#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r2#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
@@ -1314,9 +1371,7 @@ async function loadTrain(
       belgianParts().time < "04:00" &&
       (!result || Number(first?.scheduledDepartureTime || first?.time) > now)
     ) {
-      const previous = belgianParts(
-        new Date(Date.parse(`${date}T12:00:00Z`) - 86400000),
-      ).date;
+      const previous = previousServiceDate(date);
       try {
         const overnight = await fetchVehicle(previous);
         if (activeService(trainStops(overnight.data), now)) {
@@ -1606,6 +1661,7 @@ if (
 }
 applyLanguage();
 setScreen(state.screen, { focus: false });
+let initialLoad;
 const initialTrain = normalizeTrainId(params.get("train"));
 if (state.screen === "train") {
   if (validDate(date || "")) {
@@ -1615,7 +1671,7 @@ if (state.screen === "train") {
   }
   if (initialTrain) {
     $("trainInput").value = initialTrain;
-    submitTrain();
+    initialLoad = submitTrain();
   }
 } else if (initialStation && initialStation.length <= 150) {
   state.station = /^BE\.NMBS\.[A-Za-z0-9]+$/.test(initialStation)
@@ -1623,6 +1679,9 @@ if (state.screen === "train") {
     : { name: initialStation };
   $("stationInput").value = state.station.name;
   $("clearStation").hidden = false;
-  submitBoard();
+  initialLoad = submitBoard();
 }
 refreshNetwork();
+Promise.resolve(initialLoad).finally(() =>
+  window.dispatchEvent(new Event("stationsbord:ready")),
+);

@@ -1,4 +1,4 @@
-@import url("/assets/trains/scales.css?v=0.9.4-r1");
+@import url("/assets/trains/scales.css?v=0.9.4-r2");
 
 :root {
   color-scheme: light;
@@ -1910,52 +1910,6 @@ body:has(dialog[open]) {
 #trainPlannedFields {
   grid-template-columns: 1fr;
 }
-.train-panel {
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--yellow);
-}
-.train-panel:focus {
-  outline: 2px solid var(--focus);
-  outline-offset: 4px;
-}
-.train-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 25px 28px;
-  border-bottom: 1px solid var(--line);
-}
-.train-heading > div:first-child {
-  min-width: 0;
-}
-.train-heading h2 {
-  font:
-    normal 30px/1.2 Georgia,
-    "Times New Roman",
-    serif;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.train-heading .board-subtitle {
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-.train-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 8px;
-}
-.train-actions .icon-button {
-  color: var(--ink);
-  border-radius: 11px;
-  background: var(--white);
-  border: 1px solid var(--input-border);
-}
-.train-actions .icon-button:hover {
-  background: var(--soft);
-}
 .train-content {
   padding: 12px 28px 28px;
 }
@@ -2012,13 +1966,6 @@ body.board-focus .view-navigation {
     padding: 8px 10px;
     gap: 7px;
     font-size: 12px;
-  }
-  .train-heading {
-    padding: 20px 16px;
-    flex-wrap: wrap;
-  }
-  .train-heading h2 {
-    font-size: 27px;
   }
   .train-content {
     padding: 8px 16px 20px;
@@ -2106,8 +2053,7 @@ body.board-focus .view-navigation {
 
 /* Room for routes and formations on wide displays, with the same compact UI. */
 .header-inner,
-.page,
-body.board-focus .page {
+.page {
   max-width: 1920px;
 }
 .empty-sign {
@@ -2171,5 +2117,47 @@ body.board-focus .page {
     border-left: 1px solid var(--line);
     margin-top: 0;
     padding: 0 0 0 28px;
+  }
+}
+
+/* Board mode fills the viewport, including browsers without Fullscreen API. */
+@media screen {
+  body.board-focus {
+    background: var(--white);
+  }
+  body.board-focus .page {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  body.board-focus .workspace {
+    display: block;
+  }
+  body.board-focus .board-panel {
+    min-height: calc(
+      100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
+    border: 0;
+    border-radius: 0;
+  }
+  body.board-focus .board-heading {
+    border-radius: 0;
+  }
+  body.board-focus .timetable {
+    font-size: clamp(14px, 1.1vw, 22px);
+  }
+  body.board-focus .destination-line {
+    font-size: inherit;
+  }
+}
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  body:not(.board-focus) {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }

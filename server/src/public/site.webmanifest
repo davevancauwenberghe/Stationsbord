@@ -2,19 +2,21 @@
   "name": "Stationsbord",
   "short_name": "Stationsbord",
   "description": "It’s on the board. Belgian train schedules.",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f3eb",
   "theme_color": "#284c60",
   "icons": [
     {
-      "src": "/mark.svg?v=0.7.0",
+      "src": "/mark.svg?v=0.9.4-r2",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png?v=0.7.0",
+      "src": "/favicon.png?v=0.9.4-r2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

@@ -4,8 +4,142 @@ import {
   normalizeTrainId,
   trainStops,
   matchesServiceDate,
+  matchesBoardStop,
+  previousServiceDate,
+  journeyEndDate,
   nextStopIndex,
 } from "../src/public/train-lookup.js";
+
+const antwerp = { id: "BE.NMBS.008821006", name: "Antwerpen-Centraal" };
+const dampoort = { id: "BE.NMBS.008893120", name: "Gent-Dampoort" };
+// IC 723 on 11 October: Gent-Dampoort's connection URI is dated 12 October,
+// while the journey starts in Antwerpen-Centraal the preceding evening.
+const overnight = {
+  stops: {
+    stop: [
+      {
+        stationinfo: antwerp,
+        scheduledDepartureTime: 1791754560,
+        departureConnection:
+          "http://irail.be/connections/8821006/20261011/IC723",
+      },
+      {
+        stationinfo: dampoort,
+        scheduledArrivalTime: 1791757320,
+        scheduledDepartureTime: 1791757440,
+        departureDelay: 600,
+        departureConnection:
+          "http://irail.be/connections/8893120/20261012/IC723",
+      },
+    ],
+  },
+};
+
+test("midnight liveboard stops match their journey, not the following night's train", () => {
+  const options = { stationId: dampoort.id, mode: "departure" };
+  assert.equal(
+    matchesBoardStop(overnight, { time: 1791757440 }, options),
+    true,
+  );
+  assert.equal(
+    matchesBoardStop(overnight, { time: 1791843840 }, options),
+    false,
+  );
+  assert.equal(
+    matchesBoardStop(overnight, { time: 1791758040 }, options),
+    false,
+    "delays do not change the scheduled matching instant",
+  );
+  assert.equal(
+    matchesBoardStop(
+      overnight,
+      { time: 1791757440 },
+      { stationId: antwerp.id },
+    ),
+    false,
+  );
+  assert.equal(matchesServiceDate(overnight, "2026-10-11"), true);
+  assert.equal(matchesServiceDate(overnight, "2026-10-12"), false);
+  assert.equal(
+    journeyEndDate(trainStops(overnight), "2026-10-11"),
+    "2026-10-12",
+  );
+});
+
+test("overnight arrival boards and cancelled departures keep their scheduled anchor", () => {
+  assert.equal(
+    matchesBoardStop(
+      overnight,
+      { time: 1791757320 },
+      { stationId: dampoort.id, mode: "arrival" },
+    ),
+    true,
+  );
+  assert.equal(
+    matchesBoardStop(
+      overnight,
+      { time: 1791757320 },
+      { stationId: dampoort.id, mode: "departure" },
+    ),
+    false,
+  );
+  const cancelled = structuredClone(overnight);
+  cancelled.stops.stop[1].departureCanceled = "1";
+  assert.equal(
+    matchesBoardStop(
+      cancelled,
+      { time: 1791757440 },
+      { stationId: dampoort.id },
+    ),
+    true,
+  );
+  assert.equal(
+    matchesBoardStop(
+      overnight,
+      { time: 1791757440 },
+      { stationId: "BE.NMBS.unknown" },
+    ),
+    false,
+  );
+  assert.equal(
+    matchesBoardStop(overnight, {}, { stationId: dampoort.id }),
+    true,
+  );
+});
+
+test("previous service dates follow the calendar across DST, leap days and New Year", () => {
+  for (const [date, expected] of [
+    ["2026-10-12", "2026-10-11"],
+    ["2026-10-26", "2026-10-25"],
+    ["2026-03-30", "2026-03-29"],
+    ["2024-03-01", "2024-02-29"],
+    ["2026-01-01", "2025-12-31"],
+    ["invalid", ""],
+  ])
+    assert.equal(previousServiceDate(date), expected);
+});
+
+test("service date validation uses origin timestamps when connection metadata is missing", () => {
+  const data = structuredClone(overnight);
+  delete data.stops.stop[0].departureConnection;
+  assert.equal(matchesServiceDate(data, "2026-10-11"), true);
+  assert.equal(matchesServiceDate(data, "2026-10-12"), false);
+  assert.equal(journeyEndDate([], "2026-10-11"), "2026-10-11");
+});
+
+test("a service starting after midnight belongs to its actual origin date", () => {
+  const data = structuredClone(overnight);
+  const first = data.stops.stop[0];
+  first.scheduledDepartureTime = 1791756300; // 12 October, 00:05 Brussels
+  first.departureConnection =
+    "http://irail.be/connections/8821006/20261012/IC723";
+  assert.equal(matchesServiceDate(data, "2026-10-12"), true);
+  assert.equal(matchesServiceDate(data, "2026-10-11"), false);
+  assert.equal(
+    matchesBoardStop(data, { time: 1791757440 }, { stationId: dampoort.id }),
+    true,
+  );
+});
 
 const seconds = (iso) => Date.parse(iso) / 1000;
 const stop = (iso, extra = {}) => ({
