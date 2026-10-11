@@ -1,6 +1,19 @@
 export const languages = ["nl", "fr", "de", "en"];
 export const messages = {
   nl: {
+    trainProgress: "Trein onderweg",
+    reportedProgress: "Laatst gemeld",
+    estimatedProgress: "Geschatte voortgang",
+    progressAt: "In",
+    progressAfter: "Vertrokken uit",
+    progressEnded: "Aangekomen in",
+    expectedStop: "Verwachte halte",
+    lastReportedStop: "Laatst gemeld hier",
+    progressUnknown: "Geen recente doorkomst gemeld.",
+    networkNotices: "Netwerkberichten",
+    networkContext:
+      "Algemene storingen en werken. Deze meldingen zijn niet altijd aan deze trein gekoppeld.",
+
     searchViews: "Zoeken",
     stationBoard: "Stationsbord",
     trainLookup: "Trein opzoeken",
@@ -116,7 +129,6 @@ export const messages = {
     locomotive: "Locomotief",
     compositionLoad: "Samenstelling ophalen…",
     compositionError: "Samenstelling is op dit moment niet beschikbaar.",
-    compositionToday: "Samenstelling is alleen beschikbaar voor vandaag.",
     carriages: "eenheden",
     seats: "zitplaatsen",
     first: "1e klas",
@@ -161,6 +173,19 @@ export const messages = {
     trainSingular: "trein",
   },
   en: {
+    trainProgress: "Train progress",
+    reportedProgress: "Last reported",
+    estimatedProgress: "Estimated progress",
+    progressAt: "At",
+    progressAfter: "Departed from",
+    progressEnded: "Arrived at",
+    expectedStop: "Expected stop",
+    lastReportedStop: "Last reported here",
+    progressUnknown: "No recent stop report available.",
+    networkNotices: "Network notices",
+    networkContext:
+      "General disruptions and works. These notices are not always linked to this train.",
+
     searchViews: "Search",
     stationBoard: "Station board",
     trainLookup: "Find a train",
@@ -276,7 +301,6 @@ export const messages = {
     locomotive: "Locomotive",
     compositionLoad: "Fetching carriage information…",
     compositionError: "Carriage information is temporarily unavailable.",
-    compositionToday: "Carriage information is only available for today.",
     carriages: "units",
     seats: "seats",
     first: "1st class",
@@ -321,6 +345,19 @@ export const messages = {
     trainSingular: "train",
   },
   fr: {
+    trainProgress: "Progression du train",
+    reportedProgress: "Dernier signalement",
+    estimatedProgress: "Progression estimée",
+    progressAt: "À",
+    progressAfter: "Parti de",
+    progressEnded: "Arrivé à",
+    expectedStop: "Arrêt prévu",
+    lastReportedStop: "Dernier signalement ici",
+    progressUnknown: "Aucun passage récent signalé.",
+    networkNotices: "Informations du réseau",
+    networkContext:
+      "Perturbations et travaux généraux. Ces informations ne sont pas toujours liées à ce train.",
+
     searchViews: "Rechercher",
     stationBoard: "Tableau en gare",
     trainLookup: "Chercher un train",
@@ -437,8 +474,6 @@ export const messages = {
     locomotive: "Locomotive",
     compositionLoad: "Chargement de la composition…",
     compositionError: "La composition est temporairement indisponible.",
-    compositionToday:
-      "La composition est disponible uniquement pour aujourd’hui.",
     carriages: "unités",
     seats: "places assises",
     first: "1re classe",
@@ -483,6 +518,19 @@ export const messages = {
     trainSingular: "train",
   },
   de: {
+    trainProgress: "Zugverlauf",
+    reportedProgress: "Zuletzt gemeldet",
+    estimatedProgress: "Geschätzter Verlauf",
+    progressAt: "In",
+    progressAfter: "Abgefahren aus",
+    progressEnded: "Angekommen in",
+    expectedStop: "Erwarteter Halt",
+    lastReportedStop: "Zuletzt hier gemeldet",
+    progressUnknown: "Keine aktuelle Durchfahrt gemeldet.",
+    networkNotices: "Netzmeldungen",
+    networkContext:
+      "Allgemeine Störungen und Bauarbeiten. Diese Meldungen sind nicht immer diesem Zug zugeordnet.",
+
     searchViews: "Suchen",
     stationBoard: "Bahnhofstafel",
     trainLookup: "Zug suchen",
@@ -599,7 +647,6 @@ export const messages = {
     locomotive: "Lokomotive",
     compositionLoad: "Wageninformationen werden geladen…",
     compositionError: "Wageninformationen sind vorübergehend nicht verfügbar.",
-    compositionToday: "Wageninformationen sind nur für heute verfügbar.",
     carriages: "Einheiten",
     seats: "Sitzplätze",
     first: "1. Klasse",

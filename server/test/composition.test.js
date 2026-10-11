@@ -473,3 +473,103 @@ test("cab metadata selects future drawings without family or filename exceptions
   assert.equal(selectArtworkVariant(intermediate, "R"), intermediate.R);
   assert.equal(selectArtworkVariant(undefined, "L"), undefined);
 });
+
+test("I10 VUH and BVUH aliases share the original second-class drawing", () => {
+  for (const subtype of ["VUH", "BVUH"])
+    for (const unit of [
+      { materialType: type("I10", subtype) },
+      { materialType: type("I10" + subtype, "unknown") },
+      { materialSubTypeName: "I10" + subtype },
+    ]) {
+      assert.equal(matchArtwork(unit).key, "i10-second");
+    }
+});
+
+test("complete numbered EMU/DMU sets correct contradictory cabs without reordering or changing middle cars", async () => {
+  const { formationDirections } = await import("../src/public/composition.js");
+  for (const [family, subtypes] of [
+    ["AM08", ["A", "B", "C"]],
+    ["AM96", ["A", "B", "C"]],
+    ["AM80", ["A", "B", "C"]],
+    ["AM75", ["A", "B", "C", "D"]],
+    ["AM86", ["A", "B"]],
+    ["AR41", ["A", "B"]],
+    ["MW41", ["A", "B"]],
+  ]) {
+    const units = subtypes.map((subtype, index) => ({
+      materialType: type(family, subtype, index === 0 ? "RIGHT" : "LEFT"),
+      materialNumber: "450",
+      seatsFirstClass: index === 0 ? 16 : 0,
+      seatsSecondClass: 80,
+    }));
+    const directions = formationDirections(units);
+    assert.deepEqual(
+      directions,
+      units.map((_, i) =>
+        i === 0 ? "L" : i === units.length - 1 ? "R" : null,
+      ),
+      family,
+    );
+    const other = units.map((unit) => ({ ...unit, materialNumber: "451" }));
+    assert.deepEqual(formationDirections([...units, ...other]), [
+      ...directions,
+      ...directions,
+    ]);
+    const oriented = units.map((unit, index) =>
+      matchArtwork(unit, { orientation: directions[index] }),
+    );
+    assert.equal(oriented[0].cabFacing, "L");
+    assert.equal(oriented.at(-1).cabFacing, "R");
+    const html = renderComposition(
+      {
+        composition: {
+          segments: { segment: { composition: { units: { unit: units } } } },
+        },
+      },
+      t,
+    );
+    assert.equal(
+      (html.match(/data-orientation-source="formation"/g) || []).length,
+      2,
+    );
+    assert.equal(
+      units[0].materialType.orientation,
+      "RIGHT",
+      "input is not mutated",
+    );
+  }
+});
+
+test("partial, unnumbered or ambiguous formations keep the supplied cab direction", async () => {
+  const { formationDirections } = await import("../src/public/composition.js");
+  const unit = {
+    materialType: type("AM96", "A", "RIGHT"),
+    seatsFirstClass: 16,
+  };
+  for (const units of [
+    [unit],
+    [
+      unit,
+      {
+        ...unit,
+        materialType: type("AM96", "C"),
+        seatsFirstClass: 0,
+        seatsSecondClass: 80,
+      },
+    ],
+    [{ ...unit, materialNumber: "bad" }],
+  ]) {
+    assert.deepEqual(
+      formationDirections(units),
+      units.map(() => null),
+    );
+    assert.equal(matchArtwork(units[0]).cabFacing, "R");
+  }
+  assert.equal(
+    matchArtwork({
+      ...unit,
+      materialType: { parent_type: "AM96", sub_type: "A" },
+    }).orientationSource,
+    "unknown",
+  );
+});

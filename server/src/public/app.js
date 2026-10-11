@@ -2,14 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.3";
+} from "./composition.js?v=0.9.4";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
   stopEvents,
-} from "./train-details.js?v=0.9.3";
-import { languages, messages } from "./i18n.js?v=0.9.3-r3";
+} from "./train-details.js?v=0.9.4";
+import { languages, messages } from "./i18n.js?v=0.9.4";
 import {
   asArray,
   escapeHtml as h,
@@ -26,15 +26,22 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.3";
+} from "./rail-utils.js?v=0.9.4";
 
-import { renderNetwork } from "./network.js?v=0.9.3";
+import { renderNetwork, renderRouteNetwork } from "./network.js?v=0.9.4";
 import {
   normalizeTrainId,
   trainStops,
   matchesServiceDate,
-  nextStopIndex,
-} from "./train-lookup.js?v=0.9.3-r2";
+  trainLabel,
+} from "./train-lookup.js?v=0.9.4";
+
+import {
+  trainProgress,
+  renderProgress,
+  activeService,
+  currentServiceDay,
+} from "./train-progress.js?v=0.9.4";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -69,6 +76,7 @@ const state = {
   trainLive: true,
   trainView: null,
   trainData: null,
+  trainServiceDate: "",
   trainStale: false,
   trainFailed: false,
   trainController: null,
@@ -95,6 +103,7 @@ const state = {
   dialogController: null,
   dialogSequence: 0,
   dialogReturnKey: null,
+  dialogTrain: null,
   editingSaved: false,
   network: null,
   networkStale: false,
@@ -660,7 +669,7 @@ function renderNotice() {
 }
 function renderEmpty(title = "emptyTitle", body = "emptyBody") {
   $("boardContent").innerHTML =
-    `<div class="empty-state"><div class="empty-sign" aria-hidden="true">↗</div><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
 }
 function renderLoading() {
   $("boardContent").innerHTML =
@@ -866,6 +875,7 @@ $("boardContent").addEventListener("click", (event) => {
 function openDetails(title, eyebrow) {
   if (!$("detailsDialog").open)
     state.dialogReturnKey = document.activeElement?.dataset.trainKey || null;
+  state.dialogTrain = null;
   state.dialogController?.abort();
   state.dialogController = new AbortController();
   const sequence = ++state.dialogSequence;
@@ -889,6 +899,7 @@ $("closeDialog").addEventListener("click", closeDetails);
 $("detailsDialog").addEventListener("close", () => {
   state.dialogController?.abort();
   state.dialogSequence++;
+  state.dialogTrain = null;
   if (state.dialogReturnKey) {
     const opener = [
       ...$("boardContent").querySelectorAll("[data-train-key]"),
@@ -910,44 +921,176 @@ $("detailsDialog").addEventListener("click", (event) => {
 });
 async function openTrain(row, view) {
   const id = row.vehicleinfo?.name || row.vehicle;
-  const short =
-    row.vehicleinfo?.shortname || String(id || "").replace(/^BE\.NMBS\./, "");
   const date = serviceDate(row, view.live ? belgianParts().date : view.date);
-  const { sequence, signal } = openDetails(short || t("train"), t("details"));
+  const { sequence, signal } = openDetails(
+    trainLabel(row, t("train")),
+    t("details"),
+  );
   if (!id) {
     $("dialogContent").textContent = t("detailError");
     return;
   }
+  const detail = {
+    id,
+    row,
+    view,
+    date,
+    sequence,
+    signal,
+    result: null,
+    loading: false,
+  };
+  state.dialogTrain = detail;
+  await loadDialogTrain(detail);
+}
+
+// Refresh the open live route without resetting the dialog or refetching its
+// composition every minute. A closed/replaced dialog cannot accept old results.
+async function loadDialogTrain(detail, { background = false } = {}) {
+  const current = () =>
+    state.dialogTrain === detail && dialogCurrent(detail.sequence);
+  if (!current() || detail.loading) return;
+  detail.loading = true;
   try {
-    const query = new URLSearchParams({
-      id,
-      lang: state.lang,
-      date: apiDate(date),
-      alerts: "true",
-    });
-    const result = await request(`/api/vehicle?${query}`, signal);
-    if (!dialogCurrent(sequence)) return;
-    if (!matchesServiceDate(result.data, date))
+    const result = await request(
+      `/api/vehicle?${new URLSearchParams({ id: detail.id, lang: state.lang, date: apiDate(detail.date), alerts: "true" })}`,
+      detail.signal,
+    );
+    if (!current()) return;
+    if (!matchesServiceDate(result.data, detail.date))
       throw new Error("Service date mismatch");
-    $("dialogContent").innerHTML = renderVehicle(result, row, {
-      date,
-      stationId: view.station.id,
-      mode: view.mode,
-      compositionId: "composition",
-    });
-    // Show stops immediately; composition must never delay or overwrite a newer dialog.
-    if (date !== belgianParts().date) return;
-    await loadComposition(id, {
-      section: $("composition"),
-      current: () => dialogCurrent(sequence),
-      signal,
-    });
+    detail.result = result;
+    $("dialogTitle").textContent = trainLabel(
+      result.data,
+      trainLabel(detail.row, t("train")),
+    );
+    const reused = replaceVehicleContent(
+      $("dialogContent"),
+      renderVehicle(result, detail.row, {
+        date: detail.date,
+        stationId: detail.view.station.id,
+        mode: detail.view.mode,
+        live: detail.view.live,
+        compositionId: "composition",
+      }),
+      background,
+    );
+    if (!reused)
+      await loadComposition(
+        result.data.vehicleinfo?.name || result.data.vehicle || detail.id,
+        {
+          date: detail.date,
+          section: $("composition"),
+          current,
+          signal: detail.signal,
+        },
+      );
   } catch (error) {
-    if (!dialogCurrent(sequence) || signal.aborted) return;
-    $("dialogContent").innerHTML =
-      `<p class="notice error">${h(t("detailError"))}</p>${renderTrainNotices(null, row, t)}<button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
-    $("retryDetails").addEventListener("click", () => openTrain(row, view));
+    if (!current() || detail.signal.aborted) return;
+    if (detail.result) {
+      replaceVehicleContent(
+        $("dialogContent"),
+        renderVehicle({ ...detail.result, stale: true }, detail.row, {
+          date: detail.date,
+          stationId: detail.view.station.id,
+          mode: detail.view.mode,
+          live: detail.view.live,
+          compositionId: "composition",
+        }),
+        true,
+        true,
+      );
+      const section = $("composition");
+      if (section.dataset.loaded !== "true")
+        showCompositionFailure(
+          detail.result.data.vehicleinfo?.name ||
+            detail.result.data.vehicle ||
+            detail.id,
+          { date: detail.date, section, current, signal: detail.signal },
+        );
+    } else {
+      $("dialogContent").innerHTML =
+        `<p class="notice error">${h(t("detailError"))}</p>${renderTrainNotices(null, detail.row, t)}<button class="text-button" type="button" id="retryDetails">${h(t("retry"))}</button>`;
+      $("retryDetails").addEventListener("click", () =>
+        openTrain(detail.row, detail.view),
+      );
+    }
+  } finally {
+    detail.loading = false;
   }
+}
+
+function networkView(container) {
+  const network = container.querySelector(".route-network");
+  return {
+    open: network?.open,
+    worksOpen: network?.querySelector(".network-works")?.open,
+    focused: network?.contains(document.activeElement),
+    href: document.activeElement?.closest("a")?.href,
+    worksFocused:
+      document.activeElement ===
+      network?.querySelector(".network-works > summary"),
+  };
+}
+function restoreNetworkView(container, view) {
+  const network = container.querySelector(".route-network");
+  if (!network) return;
+  network.open = !!view.open;
+  const works = network.querySelector(".network-works");
+  if (works) works.open = !!view.worksOpen;
+  if (view.focused) {
+    const link = [...network.querySelectorAll("a")].find(
+      (item) => item.href === view.href,
+    );
+    (
+      link ||
+      (view.worksFocused && works?.querySelector("summary")) ||
+      network.querySelector("summary")
+    )?.focus({ preventScroll: true });
+  }
+}
+
+function replaceVehicleContent(
+  container,
+  html,
+  reuseComposition = false,
+  retainUnavailable = false,
+) {
+  const composition = reuseComposition
+    ? container.querySelector(
+        retainUnavailable
+          ? ".composition-section"
+          : '.composition-section[data-loaded="true"]',
+      )
+    : null;
+  const network = networkView(container);
+  const focusedStop = container.contains(document.activeElement)
+    ? document.activeElement?.dataset.stopIndex
+    : null;
+  const compositionFocused = composition?.contains(document.activeElement);
+  const scroll = composition?.querySelector(".composition-scroll")?.scrollLeft;
+  container.innerHTML = html;
+  const replacement = container.querySelector(".composition-section");
+  const age = Date.now() - Number(composition?.dataset.loadedAt);
+  const reused =
+    composition &&
+    composition.dataset.key === replacement.dataset.key &&
+    (retainUnavailable || (age >= 0 && age < 15 * 60_000));
+  if (reused) {
+    replacement.replaceWith(composition);
+    if (scroll != null)
+      composition.querySelector(".composition-scroll").scrollLeft = scroll;
+    if (compositionFocused) {
+      composition.tabIndex = -1;
+      composition.focus({ preventScroll: true });
+    }
+  }
+  restoreNetworkView(container, network);
+  if (focusedStop != null)
+    container
+      .querySelector(`[data-stop-index="${focusedStop}"]`)
+      ?.focus({ preventScroll: true });
+  return !!reused;
 }
 
 function renderVehicle(
@@ -957,12 +1100,28 @@ function renderVehicle(
     date,
     stationId,
     mode = "departure",
-    nextIndex = -1,
+    live = false,
     stationLinks = false,
     compositionId,
   },
 ) {
   const stops = trainStops(result.data);
+  const progress = trainProgress(stops, {
+    live: live && currentServiceDay(stops, date),
+    stale: result.stale || !navigator.onLine,
+    timestamp: result.data.timestamp,
+  });
+  const compositionKey = JSON.stringify([
+    String(
+      result.data.vehicleinfo?.name ||
+        result.data.vehicle ||
+        row.vehicleinfo?.name ||
+        row.vehicle ||
+        "",
+    ).replace(/^BE\.NMBS\./, ""),
+    date,
+    state.lang,
+  ]);
   const html = renderStopList(stops, {
     stationId,
     mode,
@@ -970,36 +1129,50 @@ function renderVehicle(
     language: state.lang,
     t,
     platformHTML,
-    nextIndex,
+    nextIndex: progress?.nextIndex ?? -1,
+    reportedIndex: progress?.index ?? -1,
+    estimated: progress?.kind === "estimated",
     stationLinks,
   });
-  return `${result.stale ? `<div class="notice">${h(t("stale"))}</div>` : ""}<p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}<section class="composition-section" id="${compositionId}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t(date === belgianParts().date ? "compositionLoad" : "compositionToday"))}</p>${renderCompositionDisclaimer(t)}</section>`;
+  return `${result.stale && compositionId === "composition" ? `<div class="notice">${h(t("stale"))}</div>` : ""}<div class="vehicle-details"><div class="vehicle-route"><p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderProgress(stops, progress, { t, language: state.lang, timestamp: result.data.timestamp })}${renderTrainNotices(result.data, row, t)}<div class="route-network-container" id="${compositionId}Network">${renderRouteNetwork(state.network, t, state.networkStale, `${compositionId}NetworkTitle`)}</div>${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}</div><section class="composition-section" id="${compositionId}" data-key="${h(compositionKey)}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}</section></div>`;
 }
 
-async function loadComposition(id, { section, current, signal }) {
+async function loadComposition(id, { date, section, current, signal }) {
   if (!current()) return;
   const heading = `<h3 class="section-title">${h(t("composition"))}</h3>`;
+  section.dataset.key = JSON.stringify([
+    String(id).replace(/^BE\.NMBS\./, ""),
+    date,
+    state.lang,
+  ]);
+  section.dataset.loaded = "false";
   section.innerHTML = `${heading}<p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}`;
   try {
     const composition = await request(
-      `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang })}`,
+      `/api/composition?${new URLSearchParams({ id: String(id).replace(/^BE\.NMBS\./, ""), lang: state.lang, date: apiDate(date) })}`,
       signal,
     );
     if (!current()) return;
     section.innerHTML = `${heading}${composition.stale ? `<p class="muted">${h(t("stale"))}</p>` : ""}${renderComposition(composition.data, t, { trainId: id })}`;
+    section.dataset.loaded = "true";
+    section.dataset.loadedAt = String(Date.now());
     installArtworkFallbacks(section);
   } catch {
     if (!current() || signal.aborted) return;
-    section.innerHTML = `${heading}<p class="muted">${h(t("compositionError"))}</p><button type="button" class="text-button" data-retry-composition>${h(t("retry"))}</button>${renderCompositionDisclaimer(t)}`;
-    section
-      .querySelector("[data-retry-composition]")
-      .addEventListener("click", async () => {
-        // Keep a stable focus target while replacing the retry button.
-        section.tabIndex = -1;
-        section.focus({ preventScroll: true });
-        await loadComposition(id, { section, current, signal });
-      });
+    showCompositionFailure(id, { date, section, current, signal });
   }
+}
+
+function showCompositionFailure(id, { date, section, current, signal }) {
+  section.dataset.loaded = "false";
+  section.innerHTML = `<h3 class="section-title">${h(t("composition"))}</h3><p class="muted">${h(t("compositionError"))}</p><button type="button" class="text-button" data-retry-composition>${h(t("retry"))}</button>${renderCompositionDisclaimer(t)}`;
+  section
+    .querySelector("[data-retry-composition]")
+    .addEventListener("click", async () => {
+      section.tabIndex = -1;
+      section.focus({ preventScroll: true });
+      await loadComposition(id, { date, section, current, signal });
+    });
 }
 
 function setScreen(screen, { focus = true, refresh = true } = {}) {
@@ -1096,16 +1269,16 @@ function submitTrain() {
   });
 }
 function renderTrainEmpty() {
-  $("trainTitle").textContent = t("trainEmptyTitle");
+  $("trainTitle").textContent = t("trainLookup");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="train-empty"><img src="/mark.svg?v=0.9.3" alt="" width="36" height="36"><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
   if (!view) return;
   const data = state.trainData;
-  $("trainTitle").textContent = view.id;
+  $("trainTitle").textContent = trainLabel(data, view.id);
   const stops = trainStops(data);
   $("trainSubtitle").textContent = stops.length
     ? `${stops[0].station || stops[0].stationinfo?.name || "—"} → ${stops.at(-1).station || stops.at(-1).stationinfo?.name || "—"}`
@@ -1121,7 +1294,10 @@ function renderTrainHeading() {
   $("trainNotice").hidden = !notice || !data;
   $("trainNotice").textContent = notice && data ? t(notice) : "";
 }
-async function loadTrain(view, { background = false } = {}) {
+async function loadTrain(
+  view,
+  { background = false, refreshComposition = false } = {},
+) {
   const same = JSON.stringify(view) === JSON.stringify(state.trainView);
   state.trainController?.abort();
   const controller = new AbortController(),
@@ -1142,49 +1318,110 @@ async function loadTrain(view, { background = false } = {}) {
   if (!background) $("trainResult").focus({ preventScroll: true });
   const current = () =>
     sequence === state.trainSequence && state.screen === "train";
-  const moment = view.live ? belgianParts() : view;
+  let date = view.live ? belgianParts().date : view.date;
   try {
-    const result = await request(
-      `/api/vehicle?${new URLSearchParams({ id: view.id, date: apiDate(moment.date), lang: view.lang, alerts: "true" })}`,
-      controller.signal,
-    );
+    const fetchVehicle = async (serviceDay) => {
+      const result = await request(
+        `/api/vehicle?${new URLSearchParams({ id: view.id, date: apiDate(serviceDay), lang: view.lang, alerts: "true" })}`,
+        controller.signal,
+      );
+      if (!matchesServiceDate(result.data, serviceDay))
+        throw Object.assign(new Error("Service date mismatch"), {
+          status: 404,
+        });
+      return result;
+    };
+    let result, missing;
+    try {
+      result = await fetchVehicle(date);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      missing = error;
+    }
+    const now = Date.now() / 1000;
+    const first = trainStops(result?.data)[0];
+    if (
+      current() &&
+      view.live &&
+      belgianParts().time < "04:00" &&
+      (!result || Number(first?.scheduledDepartureTime || first?.time) > now)
+    ) {
+      const previous = belgianParts(
+        new Date(Date.parse(`${date}T12:00:00Z`) - 86400000),
+      ).date;
+      try {
+        const overnight = await fetchVehicle(previous);
+        if (activeService(trainStops(overnight.data), now)) {
+          result = overnight;
+          date = previous;
+        }
+      } catch (error) {
+        if (controller.signal.aborted) throw error;
+      }
+    }
+    if (!result) throw missing;
     if (!current()) return;
-    if (!matchesServiceDate(result.data, moment.date))
-      throw Object.assign(new Error("Service date mismatch"), { status: 404 });
     state.trainData = result.data;
+    state.trainServiceDate = date;
     state.trainStale = result.stale;
-    const stops = trainStops(result.data);
-    const nextIndex = view.live ? nextStopIndex(stops) : -1;
-    const reference = view.live
-      ? `<p class="train-reference">${h(t("live"))}${stops.length && nextIndex === -1 ? `<span>${h(t("journeyEnded"))}</span>` : ""}</p>`
-      : "";
-    const focusedStop = document.activeElement?.dataset.stopIndex;
-    $("trainContent").innerHTML =
-      reference +
+    const reused = replaceVehicleContent(
+      $("trainContent"),
       renderVehicle(
         result,
         {},
         {
-          date: moment.date,
-          nextIndex,
+          date,
+          live: view.live,
           stationLinks: true,
           compositionId: "trainComposition",
         },
-      );
-    if (focusedStop != null)
-      $("trainContent")
-        .querySelector(`[data-stop-index="${focusedStop}"]`)
-        ?.focus({ preventScroll: true });
+      ),
+      background && same && !refreshComposition,
+    );
     renderTrainHeading();
-    if (moment.date === belgianParts().date)
+    if (!reused)
       await loadComposition(
         result.data.vehicleinfo?.name || result.data.vehicle || view.id,
-        { section: $("trainComposition"), current, signal: controller.signal },
+        {
+          date,
+          section: $("trainComposition"),
+          current,
+          signal: controller.signal,
+        },
       );
   } catch (error) {
     if (!current() || controller.signal.aborted) return;
     state.trainFailed = true;
-    if (!state.trainData) {
+    if (state.trainData) {
+      replaceVehicleContent(
+        $("trainContent"),
+        renderVehicle(
+          { data: state.trainData, stale: true },
+          {},
+          {
+            date: state.trainServiceDate,
+            live: view.live,
+            stationLinks: true,
+            compositionId: "trainComposition",
+          },
+        ),
+        true,
+        true,
+      );
+      const section = $("trainComposition");
+      if (section.dataset.loaded !== "true")
+        showCompositionFailure(
+          state.trainData.vehicleinfo?.name ||
+            state.trainData.vehicle ||
+            view.id,
+          {
+            date: state.trainServiceDate,
+            section,
+            current,
+            signal: controller.signal,
+          },
+        );
+    } else {
       $("trainContent").innerHTML =
         `<p class="notice error">${h(t(error.status === 404 ? "trainNotFound" : "detailError"))}</p><button type="button" class="text-button" id="retryTrain">${h(t("retry"))}</button>`;
       $("retryTrain").addEventListener("click", () => loadTrain(view));
@@ -1198,7 +1435,8 @@ async function loadTrain(view, { background = false } = {}) {
   }
 }
 $("refreshTrain").addEventListener("click", () => {
-  if (state.trainView) loadTrain(state.trainView, { background: true });
+  if (state.trainView)
+    loadTrain(state.trainView, { background: true, refreshComposition: true });
 });
 $("trainContent").addEventListener("click", (event) => {
   const button = event.target.closest("[data-stop-index]");
@@ -1268,6 +1506,18 @@ async function refreshNetwork() {
     if (controller === state.networkController) {
       state.networkController = null;
       renderNetworkButton();
+      for (const id of ["compositionNetwork", "trainCompositionNetwork"]) {
+        const container = $(id);
+        if (!container) continue;
+        const network = networkView(container);
+        container.innerHTML = renderRouteNetwork(
+          state.network,
+          t,
+          state.networkStale,
+          `${id}Title`,
+        );
+        restoreNetworkView(container, network);
+      }
     }
   }
 }
@@ -1317,6 +1567,8 @@ async function shareURL(title) {
 function refreshVisible() {
   if (document.hidden) return;
   updateClock();
+  if (state.dialogTrain?.view.live && navigator.onLine)
+    loadDialogTrain(state.dialogTrain, { background: true });
   if (
     state.screen === "station" &&
     state.view?.live &&
@@ -1334,12 +1586,44 @@ function refreshVisible() {
   if (!state.networkController && navigator.onLine) refreshNetwork();
 }
 window.addEventListener("offline", () => {
-  renderNotice();
   state.networkStale = true;
+  if (state.trainData && state.trainView)
+    replaceVehicleContent(
+      $("trainContent"),
+      renderVehicle(
+        { data: state.trainData, stale: true },
+        {},
+        {
+          date: state.trainServiceDate,
+          live: state.trainView.live,
+          stationLinks: true,
+          compositionId: "trainComposition",
+        },
+      ),
+      true,
+      true,
+    );
+  const detail = state.dialogTrain;
+  if (detail?.result && dialogCurrent(detail.sequence))
+    replaceVehicleContent(
+      $("dialogContent"),
+      renderVehicle({ ...detail.result, stale: true }, detail.row, {
+        date: detail.date,
+        stationId: detail.view.station.id,
+        mode: detail.view.mode,
+        live: detail.view.live,
+        compositionId: "composition",
+      }),
+      true,
+      true,
+    );
+  renderNotice();
   renderNetworkButton();
   renderTrainHeading();
 });
 window.addEventListener("online", () => {
+  if (state.dialogTrain?.view.live && !document.hidden)
+    loadDialogTrain(state.dialogTrain, { background: true });
   if (state.screen === "station" && state.view && !document.hidden)
     loadBoard(state.view, { background: true });
   if (state.screen === "train" && state.trainView && !document.hidden)

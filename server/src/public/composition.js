@@ -1,5 +1,5 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.3";
-import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.3";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.4";
+import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.4";
 
 const seats = (value) =>
   Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -34,11 +34,10 @@ function material(unit) {
     )
       .toUpperCase()
       .replace(/\s/g, ""),
-    side: ["RIGHT", "R"].includes(
-      text(unit.materialType?.orientation).toUpperCase(),
-    )
-      ? "R"
-      : "L",
+    side:
+      { LEFT: "L", L: "L", RIGHT: "R", R: "R" }[
+        text(unit.materialType?.orientation).toUpperCase()
+      ] || null,
   };
 }
 
@@ -48,15 +47,19 @@ export function selectArtworkVariant(variants, orientation) {
   return (
     Object.values(variants || {}).find(
       (entry) => entry.cabFacing === orientation,
-    ) || variants?.[orientation]
+    ) || variants?.[orientation || "L"]
   );
 }
 const isOtc = (trainId) => /^(?:BE\.NMBS\.)?OTC\d+$/i.test(text(trainId));
 
 // Written for Stationsbord from iRail's public fields and the original MLGTraffic
 // collection descriptions. No HyperRail code or asset transformations are used.
-export function matchArtwork(unit, { trainId = "" } = {}) {
-  const { family, subtype, side: orientation } = material(unit);
+export function matchArtwork(
+  unit,
+  { trainId = "", orientation: formationSide } = {},
+) {
+  const { family, subtype, side } = material(unit);
+  const orientation = formationSide || side;
   const first = firstSeats(unit) > 0 || flag(unit.isFirstClass);
   const second = secondSeats(unit) > 0 || flag(unit.isSecondClass);
   const number = Number(unit.materialNumber);
@@ -150,6 +153,8 @@ export function matchArtwork(unit, { trainId = "" } = {}) {
   } else if (["I6", "I10", "I11"].includes(family)) {
     if (family === "I11" && ["BDX", "BX", "BDXH"].includes(subtype))
       key = "i11-cab";
+    else if (family === "I10" && ["VUH", "BVUH"].includes(subtype))
+      key = "i10-second";
     else if (family === "I11" && ["AUH", "BVUH"].includes(subtype))
       key = subtype === "AUH" ? "i11-first" : "i11-second";
     else if (["A", "AU", "B", "BU", "BUH", "BYU"].includes(subtype))
@@ -165,7 +170,58 @@ export function matchArtwork(unit, { trainId = "" } = {}) {
   )
     key = key.replace("i11-", "i11-ouigo-");
   const entry = selectArtworkVariant(artwork[key], orientation);
-  return entry ? { ...entry, key, src: `/assets/trains/${entry.file}` } : null;
+  return entry
+    ? {
+        ...entry,
+        key,
+        orientationSource: formationSide
+          ? "formation"
+          : side
+            ? "api"
+            : "unknown",
+        src: `/assets/trains/${entry.file}`,
+      }
+    : null;
+}
+
+// Numbered, complete EMU/DMU sets have two outward-facing cabs. Correct only
+// those contiguous sets; partial/unidentified formations retain upstream data.
+export function formationDirections(units) {
+  const result = units.map(() => null);
+  for (let start = 0; start < units.length;) {
+    const family = material(units[start]).family;
+    const number = text(String(units[start].materialNumber ?? ""));
+    let end = start + 1;
+    while (
+      end < units.length &&
+      number &&
+      String(units[end].materialNumber ?? "").trim() === number &&
+      material(units[end]).family === family
+    )
+      end++;
+    const count = /^AM75/.test(family)
+      ? 4
+      : /^(?:AM08|AM80|AM96)/.test(family)
+        ? 3
+        : /^(?:AM86|AR41|MW41)/.test(family)
+          ? 2
+          : 0;
+    const group = units.slice(start, end).map((unit) => matchArtwork(unit));
+    if (
+      /^\d+$/.test(number) &&
+      Number(number) > 0 &&
+      count &&
+      group.length === count &&
+      group[0]?.cabFacing &&
+      group.at(-1)?.cabFacing &&
+      group.slice(1, -1).every((drawing) => drawing && !drawing.cabFacing)
+    ) {
+      result[start] = "L";
+      result[end - 1] = "R";
+    }
+    start = end;
+  }
+  return result;
 }
 
 const icons = {
@@ -224,7 +280,7 @@ function renderUnit(unit, index, t, context) {
     .map(([, key]) => key);
   if (flag(unit.hasFirstClassOutlets) || flag(unit.hasSecondClassOutlets))
     features.push("outlets");
-  return `<li class="carriage-card"><div class="carriage-image">${drawing ? `<img src="${h(drawing.src)}" width="${drawing.width}" height="${drawing.height}" alt="" decoding="async">` : ""}<span class="carriage-placeholder" ${drawing ? "hidden" : ""}>${h(t("artworkUnavailable"))}</span></div><div class="carriage-caption"><span class="carriage-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${h(name)}</strong>${unit.materialNumber ? `<small>${h(unit.materialNumber)}</small>` : ""}</div></div><div class="carriage-classes">${classes || `<span class="muted">${h(t(/^HLE/.test(material(unit).family) ? "locomotive" : "seatsUnknown"))}</span>`}</div>${features.length ? `<ul class="carriage-features">${features.map((key) => `<li>${icon(key)}<span>${h(t(key))}</span></li>`).join("")}</ul>` : ""}</li>`;
+  return `<li class="carriage-card"><div class="carriage-image">${drawing ? `<img src="${h(drawing.src)}" width="${drawing.width}" height="${drawing.height}" alt="" decoding="async" data-orientation-source="${drawing.orientationSource}">` : ""}<span class="carriage-placeholder" ${drawing ? "hidden" : ""}>${h(t("artworkUnavailable"))}</span></div><div class="carriage-caption"><span class="carriage-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${h(name)}</strong>${unit.materialNumber ? `<small>${h(unit.materialNumber)}</small>` : ""}</div></div><div class="carriage-classes">${classes || `<span class="muted">${h(t(/^HLE/.test(material(unit).family) ? "locomotive" : "seatsUnknown"))}</span>`}</div>${features.length ? `<ul class="carriage-features">${features.map((key) => `<li>${icon(key)}<span>${h(t(key))}</span></li>`).join("")}</ul>` : ""}</li>`;
 }
 
 export function renderCompositionDisclaimer(t) {
@@ -239,6 +295,7 @@ export function renderComposition(data, t, context = {}) {
         (unit) => unit && typeof unit === "object",
       );
       if (!units.length) return "";
+      const directions = formationDirections(units);
       const label = [
         segment.origin?.name || segment.origin,
         segment.destination?.name || segment.destination,
@@ -249,7 +306,7 @@ export function renderComposition(data, t, context = {}) {
       // Segments are separate formations: never sum or join them into one train.
       const first = units.reduce((sum, unit) => sum + firstSeats(unit), 0);
       const second = units.reduce((sum, unit) => sum + secondSeats(unit), 0);
-      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t, context)).join("")}</ol></div></div>`;
+      return `<div class="composition-segment">${label ? `<h4>${h(label)}</h4>` : ""}<div class="composition-stats"><span>${units.length} ${h(t("carriages"))}</span><span>${h(t("first"))}: ${first} ${h(t("seats"))}</span><span>${h(t("second"))}: ${second} ${h(t("seats"))}</span></div><div class="composition-scroll" tabindex="0" role="region" aria-label="${h(title)}"><ol class="composition-train">${units.map((unit, i) => renderUnit(unit, i, t, { ...context, orientation: directions[i] })).join("")}</ol></div></div>`;
     })
     .join("");
   return result

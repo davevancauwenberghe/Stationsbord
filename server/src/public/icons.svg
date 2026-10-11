@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="train" viewBox="8 5 24 31">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <rect x="11" y="7" width="18" height="24" rx="5"/>
+      <path d="M12 20h16M20 8v12M14 33l2-3m10 3-2-3M15 25h1m8 0h1"/>
+    </g>
+  </symbol>
+  <symbol id="station" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6M9 10h6"/>
+  </symbol>
+</svg>

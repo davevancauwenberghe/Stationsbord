@@ -16,12 +16,12 @@
     <!-- page-meta:end -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Stationsbord" />
-    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.3" />
-    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.3" />
-    <link rel="manifest" href="/site.webmanifest?v=0.9.3" />
-    <script src="/theme.js?v=0.9.3-r3"></script>
-    <link rel="stylesheet" href="/styles.css?v=0.9.3-r3" />
-    <script type="module" src="/app.js?v=0.9.3-r3"></script>
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.4" />
+    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.4" />
+    <link rel="manifest" href="/site.webmanifest?v=0.9.4" />
+    <script src="/theme.js?v=0.9.4"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.9.4" />
+    <script type="module" src="/app.js?v=0.9.4"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -30,7 +30,7 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Stationsbord"
-          ><img src="/mark.svg?v=0.9.3" alt="" width="36" height="36" /><span
+          ><img src="/mark.svg?v=0.9.4" alt="" width="36" height="36" /><span
             >stationsbord<span class="brand-dot">.</span></span
           ></a
         >
@@ -94,7 +94,9 @@
           aria-pressed="false"
           aria-controls="trainView"
         >
-          <img src="/mark.svg?v=0.9.3" alt="" width="20" height="20" />
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <use href="/icons.svg?v=0.9.4#train" />
+          </svg>
           <span data-i18n="trainLookup">Trein opzoeken</span>
         </button>
       </div>
@@ -322,7 +324,9 @@
           <div id="boardNotice" class="notice" role="status" hidden></div>
           <div id="boardContent">
             <div class="empty-state">
-              <div class="empty-sign" aria-hidden="true">↗</div>
+              <svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="/icons.svg?v=0.9.4#station" />
+              </svg>
               <h3 data-i18n="emptyTitle">Je volgende trein begint hier.</h3>
               <p data-i18n="emptyBody">
                 Zoek een station of kies er een uit de lijst. Wij zetten de
@@ -415,7 +419,7 @@
           <div class="train-heading">
             <div>
               <p class="eyebrow" data-i18n="details">TREINDETAILS</p>
-              <h2 id="trainTitle">Welke trein zoek je?</h2>
+              <h2 id="trainTitle">Trein opzoeken</h2>
               <p id="trainSubtitle" class="board-subtitle"></p>
             </div>
             <div class="train-actions">
@@ -467,7 +471,7 @@
           ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
           <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
             >iRail</a
-          ><span class="footer-version">v0.9.3</span></span
+          ><span class="footer-version">v0.9.4</span></span
         >
       </footer>
     </main>

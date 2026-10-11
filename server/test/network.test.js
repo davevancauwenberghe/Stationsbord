@@ -48,3 +48,26 @@ test("works-only and stale network results retain distinct status, escaped text 
   assert.match(stale, /Network status unavailable/);
   assert.match(stale, /may be out of date/);
 });
+
+test("train detail network context separates general incidents from train-specific notices and works", async () => {
+  const { renderRouteNetwork } = await import("../src/public/network.js");
+  const items = [
+    { title: "Gent-Dampoort: people on tracks", type: "disturbance" },
+    { title: "Planned works", type: "planned" },
+  ];
+  const html = renderRouteNetwork(
+    items,
+    (key) => messages.en[key],
+    false,
+    "trainNetworkTitle",
+  );
+  assert.match(html, /These notices are not always linked to this train/);
+  assert.match(html, /people on tracks/);
+  assert.match(html, /network-works/);
+  assert.match(html, /id="trainNetworkTitle"/);
+  assert.doesNotMatch(html, /id="networkIssuesTitle"/);
+  assert.match(
+    renderRouteNetwork(null, (key) => messages.en[key]),
+    /notice/,
+  );
+});

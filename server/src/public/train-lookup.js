@@ -1,5 +1,5 @@
-import { asArray, serviceDate } from "./rail-utils.js?v=0.9.3";
-import { stopEvents } from "./train-details.js?v=0.9.3";
+import { asArray, serviceDate } from "./rail-utils.js?v=0.9.4";
+export { nextStopIndex } from "./train-progress.js?v=0.9.4";
 
 // iRail resolves the service type from its number. Keep that distinction in the
 // API response for composition artwork, without requiring it in the search.
@@ -22,15 +22,14 @@ export function matchesServiceDate(data, date) {
   return !firstDatedStop || serviceDate(firstDatedStop, "") === date;
 }
 
-export function nextStopIndex(stops, { now = Date.now() / 1000 } = {}) {
-  return stops.findIndex((stop, index) => {
-    const events = stopEvents(stop, index, stops.length);
-    const event =
-      events.find((event) => event.kind === "departure" && !event.canceled) ||
-      events.find((event) => !event.canceled);
-    if (!event || event.passed) return false;
-    const seconds = event.expected ?? event.planned;
-    if (!seconds) return false;
-    return seconds >= now;
-  });
+export function trainLabel(data, fallback = "") {
+  const info = data?.vehicleinfo;
+  const label =
+    info?.shortname ||
+    (info?.type && info?.number
+      ? `${info.type} ${info.number}`
+      : info?.name || data?.vehicle);
+  return typeof label === "string"
+    ? label.replace(/^BE\.NMBS\./, "")
+    : fallback;
 }
