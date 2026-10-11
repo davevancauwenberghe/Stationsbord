@@ -43,7 +43,9 @@ is not installed on the Linux screenshot host, so its system fallback is shown.
   forced colours and existing I11 livery and request-race behavior.
 - A focused regression covers an unavailable formation followed by a failed
   resubmission: the formation retry remains visible and works with the current
-  request context, rather than reverting to a permanent loading state.
+  request context, rather than reverting to a permanent loading state. Network
+  refresh also preserves expanded works and keyboard focus; offline notices
+  are marked stale immediately.
 - Overnight browser checks verify bounded previous-day lookup, correct service
   date, I10 artwork, next-day cache/formation rollover and not-found handling.
 - Mobile lookup, wide dark lookup and wide board dialog visually inspected.

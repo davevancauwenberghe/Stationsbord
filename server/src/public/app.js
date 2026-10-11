@@ -1020,6 +1020,36 @@ async function loadDialogTrain(detail, { background = false } = {}) {
   }
 }
 
+function networkView(container) {
+  const network = container.querySelector(".route-network");
+  return {
+    open: network?.open,
+    worksOpen: network?.querySelector(".network-works")?.open,
+    focused: network?.contains(document.activeElement),
+    href: document.activeElement?.closest("a")?.href,
+    worksFocused:
+      document.activeElement ===
+      network?.querySelector(".network-works > summary"),
+  };
+}
+function restoreNetworkView(container, view) {
+  const network = container.querySelector(".route-network");
+  if (!network) return;
+  network.open = !!view.open;
+  const works = network.querySelector(".network-works");
+  if (works) works.open = !!view.worksOpen;
+  if (view.focused) {
+    const link = [...network.querySelectorAll("a")].find(
+      (item) => item.href === view.href,
+    );
+    (
+      link ||
+      (view.worksFocused && works?.querySelector("summary")) ||
+      network.querySelector("summary")
+    )?.focus({ preventScroll: true });
+  }
+}
+
 function replaceVehicleContent(
   container,
   html,
@@ -1033,7 +1063,7 @@ function replaceVehicleContent(
           : '.composition-section[data-loaded="true"]',
       )
     : null;
-  const networkOpen = container.querySelector(".route-network")?.open;
+  const network = networkView(container);
   const focusedStop = container.contains(document.activeElement)
     ? document.activeElement?.dataset.stopIndex
     : null;
@@ -1055,7 +1085,7 @@ function replaceVehicleContent(
       composition.focus({ preventScroll: true });
     }
   }
-  if (networkOpen) container.querySelector(".route-network").open = true;
+  restoreNetworkView(container, network);
   if (focusedStop != null)
     container
       .querySelector(`[data-stop-index="${focusedStop}"]`)
@@ -1479,14 +1509,14 @@ async function refreshNetwork() {
       for (const id of ["compositionNetwork", "trainCompositionNetwork"]) {
         const container = $(id);
         if (!container) continue;
-        const opened = container.querySelector("details")?.open;
+        const network = networkView(container);
         container.innerHTML = renderRouteNetwork(
           state.network,
           t,
           state.networkStale,
           `${id}Title`,
         );
-        if (opened) container.querySelector("details").open = true;
+        restoreNetworkView(container, network);
       }
     }
   }
@@ -1556,6 +1586,7 @@ function refreshVisible() {
   if (!state.networkController && navigator.onLine) refreshNetwork();
 }
 window.addEventListener("offline", () => {
+  state.networkStale = true;
   if (state.trainData && state.trainView)
     replaceVehicleContent(
       $("trainContent"),
@@ -1587,7 +1618,6 @@ window.addEventListener("offline", () => {
       true,
     );
   renderNotice();
-  state.networkStale = true;
   renderNetworkButton();
   renderTrainHeading();
 });
