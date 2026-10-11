@@ -49,7 +49,7 @@ test("date conversion rejects impossible dates and out-of-range times", () => {
   for (const value of ["24:00", "11:60", "1:30", ""])
     assert.equal(validTime(value), false, value);
 });
-test("train details use the service date from the connection rather than midnight calendar date", () => {
+test("connection calendar dates are extracted and invalid dates use the fallback", () => {
   assert.equal(
     serviceDate(
       {

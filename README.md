@@ -23,18 +23,18 @@ Use **Find a train** for a separate lookup by train number (for example `510`, `
 - Current network disruptions appear first; scheduled works are in a separate expandable section using iRail’s `type` field.
 - Train details include service notices returned by iRail, with repeated notices
   combined and links to further information. Missing notices do not imply that a
-  service is unaffected. An expandable network section in both detail views also
-  shows general incidents, strikes and works; these notices are not asserted to
-  apply to the displayed train.
+  service is unaffected. General incidents, strikes and works remain in the
+  dedicated network view.
 - Crowding indicators appear on the board when iRail supplies a quiet, moderate
   or busy level. Unknown levels and cancelled services have no indicator.
 - Departure times are prominent in train details; arrival times appear on a smaller line. Delayed events show the original time crossed out, the new time in red and a separate delay label. Arrival and departure cancellations remain distinct. Departed stops fade without disappearing; screen readers retain their status. Dates appear across midnight and unknown delays remain explicit.
 - Dutch, French, German and English interfaces.
 - Choose System, Light or Dark appearance in the header. System follows your device; an explicit choice is remembered in your browser.
 - A station board with warm paper colours, ink-blue signage and a matching dark appearance. Wide screens use up to 1920px; from 1440px, train routes and carriage information sit side by side and the detail dialog expands.
-- Opaque navigation and train actions, with Bahnschrift for station headings and destination/origin names on the liveboard where the font is installed. Other devices use the system sans-serif fallback; see the typography notes below.
+- Opaque navigation and train actions, with matching blue signage and Bahnschrift headings in both search views, plus destination/origin names on the liveboard where the font is installed. Other devices use the system sans-serif fallback; see the typography notes below.
 - Filter the loaded trains by destination (or origin for arrivals) and train number. Filtering keeps cancelled services visible when they match.
-- Use Board view to hide the search area while watching the live timetable. Press Escape outside a field to return, or use the button.
+- Use Board view for an edge-to-edge timetable without the search area. It enters browser fullscreen where supported; other browsers keep a viewport-filling board. Press Escape outside a field to return, or use the button.
+- Installed web apps show the icon, title and a loading spinner during startup. iOS/iPadOS also have static launch images for common screen sizes; the animated spinner starts when the document loads. Browser/OS support determines the native launch screen.
 - Keyboard station selection, native date/time pickers and accessible train-detail dialogs are supported.
 
 Train times and tracks may change or differ from the displayed information. Check station boards and announcements or the SNCB app before departure. This reminder appears in the train composition section, including when composition data is unavailable.
@@ -51,9 +51,16 @@ required for the features in this release. In v0.9.4-r1, general network notices
 remain in the dedicated network view; train details focus on the route, live
 progress, train-specific notices and composition.
 
+In **v0.9.4-r2**, board-opened details match the selected station's scheduled
+arrival or departure instant to the journey. For example, IC 723 departing
+Gent-Dampoort at 00:24 on 12 October retains its 11 October service date rather
+than selecting the following night's train. Route summaries show both dates
+when the journey crosses midnight. See the [release notes](docs/technical/v0.9.4-r2.md)
+for fullscreen, startup screen support and asset regeneration.
+
 ## Station typography
 
-Liveboard station headings and destination/origin names request **Bahnschrift**,
+Station and train result headings, plus liveboard destination/origin names, request **Bahnschrift**,
 Microsoft's DIN 1451 digitization. It is supplied with Windows 10/11; devices
 without an installed copy use their system sans-serif font. Other headings,
 times and controls retain their existing fonts.
