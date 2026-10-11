@@ -10,9 +10,6 @@ export const messages = {
     expectedStop: "Verwachte halte",
     lastReportedStop: "Laatst gemeld hier",
     progressUnknown: "Geen recente doorkomst gemeld.",
-    networkNotices: "Netwerkberichten",
-    networkContext:
-      "Algemene storingen en werken. Deze meldingen zijn niet altijd aan deze trein gekoppeld.",
 
     searchViews: "Zoeken",
     stationBoard: "Stationsbord",
@@ -182,9 +179,6 @@ export const messages = {
     expectedStop: "Expected stop",
     lastReportedStop: "Last reported here",
     progressUnknown: "No recent stop report available.",
-    networkNotices: "Network notices",
-    networkContext:
-      "General disruptions and works. These notices are not always linked to this train.",
 
     searchViews: "Search",
     stationBoard: "Station board",
@@ -354,9 +348,6 @@ export const messages = {
     expectedStop: "Arrêt prévu",
     lastReportedStop: "Dernier signalement ici",
     progressUnknown: "Aucun passage récent signalé.",
-    networkNotices: "Informations du réseau",
-    networkContext:
-      "Perturbations et travaux généraux. Ces informations ne sont pas toujours liées à ce train.",
 
     searchViews: "Rechercher",
     stationBoard: "Tableau en gare",
@@ -527,9 +518,6 @@ export const messages = {
     expectedStop: "Erwarteter Halt",
     lastReportedStop: "Zuletzt hier gemeldet",
     progressUnknown: "Keine aktuelle Durchfahrt gemeldet.",
-    networkNotices: "Netzmeldungen",
-    networkContext:
-      "Allgemeine Störungen und Bauarbeiten. Diese Meldungen sind nicht immer diesem Zug zugeordnet.",
 
     searchViews: "Suchen",
     stationBoard: "Bahnhofstafel",

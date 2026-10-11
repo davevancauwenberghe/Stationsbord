@@ -8,7 +8,7 @@ import {
   delayMinutes,
   occupancy,
   safeLink,
-} from "./rail-utils.js?v=0.9.4";
+} from "./rail-utils.js?v=0.9.4-r1";
 
 const number = (value) =>
   ["number", "string"].includes(typeof value) &&
@@ -223,8 +223,8 @@ export function renderStopList(
       const name = h(stop.station || stop.stationinfo?.name || "—");
       const station =
         stationLinks && stop.stationinfo?.id
-          ? `<button class="stop-station-link" type="button" data-stop-index="${index}" aria-label="${h(`${t("stationBoard")}: ${stop.station || stop.stationinfo.name || "—"}`)}"><strong>${name}</strong><span aria-hidden="true">↗</span></button>`
-          : `<strong>${name}</strong>`;
+          ? `<button class="stop-station-link" type="button" data-stop-index="${index}" aria-label="${h(`${t("stationBoard")}: ${stop.station || stop.stationinfo.name || "—"}`)}"><strong class="stop-label">${name}</strong><span aria-hidden="true">↗</span></button>`
+          : `<strong class="stop-label">${name}</strong>`;
       return `<li class="stop${current ? " current" : ""}${next ? " next-stop" : ""}${reported ? " reported-stop" : ""}${departed ? " completed-stop" : ""}"><div class="stop-name">${station}${departed ? `<span class="sr-only"> · ${h(t("departed"))}</span>` : ""}${metadata.length ? `<small>${h(metadata.join(" · "))}</small>` : ""}<div class="stop-times">${renderEvent(primary, t, language, serviceDay)}${secondary.map((event) => renderEvent(event, t, language, serviceDay, true)).join("")}</div>${renderCrowding(stop, t)}</div>${platformHTML(stop)}</li>`;
     })
     .join("");

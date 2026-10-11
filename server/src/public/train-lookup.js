@@ -1,5 +1,5 @@
-import { asArray, serviceDate } from "./rail-utils.js?v=0.9.4";
-export { nextStopIndex } from "./train-progress.js?v=0.9.4";
+import { asArray, serviceDate } from "./rail-utils.js?v=0.9.4-r1";
+export { nextStopIndex } from "./train-progress.js?v=0.9.4-r1";
 
 // iRail resolves the service type from its number. Keep that distinction in the
 // API response for composition artwork, without requiring it in the search.
