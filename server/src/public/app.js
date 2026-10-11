@@ -2,14 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.4";
+} from "./composition.js?v=0.9.4-r1";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
   stopEvents,
-} from "./train-details.js?v=0.9.4";
-import { languages, messages } from "./i18n.js?v=0.9.4";
+} from "./train-details.js?v=0.9.4-r1";
+import { languages, messages } from "./i18n.js?v=0.9.4-r1";
 import {
   asArray,
   escapeHtml as h,
@@ -26,22 +26,22 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.4";
+} from "./rail-utils.js?v=0.9.4-r1";
 
-import { renderNetwork, renderRouteNetwork } from "./network.js?v=0.9.4";
+import { renderNetwork } from "./network.js?v=0.9.4-r1";
 import {
   normalizeTrainId,
   trainStops,
   matchesServiceDate,
   trainLabel,
-} from "./train-lookup.js?v=0.9.4";
+} from "./train-lookup.js?v=0.9.4-r1";
 
 import {
   trainProgress,
   renderProgress,
   activeService,
   currentServiceDay,
-} from "./train-progress.js?v=0.9.4";
+} from "./train-progress.js?v=0.9.4-r1";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -669,7 +669,7 @@ function renderNotice() {
 }
 function renderEmpty(title = "emptyTitle", body = "emptyBody") {
   $("boardContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r1#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
 }
 function renderLoading() {
   $("boardContent").innerHTML =
@@ -1020,36 +1020,6 @@ async function loadDialogTrain(detail, { background = false } = {}) {
   }
 }
 
-function networkView(container) {
-  const network = container.querySelector(".route-network");
-  return {
-    open: network?.open,
-    worksOpen: network?.querySelector(".network-works")?.open,
-    focused: network?.contains(document.activeElement),
-    href: document.activeElement?.closest("a")?.href,
-    worksFocused:
-      document.activeElement ===
-      network?.querySelector(".network-works > summary"),
-  };
-}
-function restoreNetworkView(container, view) {
-  const network = container.querySelector(".route-network");
-  if (!network) return;
-  network.open = !!view.open;
-  const works = network.querySelector(".network-works");
-  if (works) works.open = !!view.worksOpen;
-  if (view.focused) {
-    const link = [...network.querySelectorAll("a")].find(
-      (item) => item.href === view.href,
-    );
-    (
-      link ||
-      (view.worksFocused && works?.querySelector("summary")) ||
-      network.querySelector("summary")
-    )?.focus({ preventScroll: true });
-  }
-}
-
 function replaceVehicleContent(
   container,
   html,
@@ -1063,7 +1033,6 @@ function replaceVehicleContent(
           : '.composition-section[data-loaded="true"]',
       )
     : null;
-  const network = networkView(container);
   const focusedStop = container.contains(document.activeElement)
     ? document.activeElement?.dataset.stopIndex
     : null;
@@ -1085,7 +1054,6 @@ function replaceVehicleContent(
       composition.focus({ preventScroll: true });
     }
   }
-  restoreNetworkView(container, network);
   if (focusedStop != null)
     container
       .querySelector(`[data-stop-index="${focusedStop}"]`)
@@ -1134,7 +1102,7 @@ function renderVehicle(
     estimated: progress?.kind === "estimated",
     stationLinks,
   });
-  return `${result.stale && compositionId === "composition" ? `<div class="notice">${h(t("stale"))}</div>` : ""}<div class="vehicle-details"><div class="vehicle-route"><p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderProgress(stops, progress, { t, language: state.lang, timestamp: result.data.timestamp })}${renderTrainNotices(result.data, row, t)}<div class="route-network-container" id="${compositionId}Network">${renderRouteNetwork(state.network, t, state.networkStale, `${compositionId}NetworkTitle`)}</div>${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}</div><section class="composition-section" id="${compositionId}" data-key="${h(compositionKey)}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}</section></div>`;
+  return `${result.stale && compositionId === "composition" ? `<div class="notice">${h(t("stale"))}</div>` : ""}<div class="vehicle-details"><div class="vehicle-route"><p class="dialog-summary"><span>${h(fmtDate(date, state.lang))}</span><span>${stops.length} ${h(t("stops"))}</span></p>${renderProgress(stops, progress, { t, language: state.lang, timestamp: result.data.timestamp })}${renderTrainNotices(result.data, row, t)}${stops.length ? `<ol class="stop-list">${html}</ol>` : `<p class="muted">${h(t("noStops"))}</p>`}</div><section class="composition-section" id="${compositionId}" data-key="${h(compositionKey)}"><h3 class="section-title">${h(t("composition"))}</h3><p class="muted" role="status">${h(t("compositionLoad"))}</p>${renderCompositionDisclaimer(t)}</section></div>`;
 }
 
 async function loadComposition(id, { date, section, current, signal }) {
@@ -1272,7 +1240,7 @@ function renderTrainEmpty() {
   $("trainTitle").textContent = t("trainLookup");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r1#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
@@ -1506,18 +1474,6 @@ async function refreshNetwork() {
     if (controller === state.networkController) {
       state.networkController = null;
       renderNetworkButton();
-      for (const id of ["compositionNetwork", "trainCompositionNetwork"]) {
-        const container = $(id);
-        if (!container) continue;
-        const network = networkView(container);
-        container.innerHTML = renderRouteNetwork(
-          state.network,
-          t,
-          state.networkStale,
-          `${id}Title`,
-        );
-        restoreNetworkView(container, network);
-      }
     }
   }
 }

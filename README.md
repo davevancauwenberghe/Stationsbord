@@ -43,11 +43,13 @@ Stationsbord is an independent service. Schedule availability depends on iRail/N
 
 ## Live data and GTFS
 
-Train progress, date-specific compositions and network context in v0.9.4 are
+Train progress and date-specific compositions introduced in v0.9.4 are
 explained in the [data review](docs/technical/v0.9.4-data.md). It also covers why
 static GTFS is useful for a future timetable fallback, while the authenticated
 GTFS-RT feed is a separate integration. No GTFS import or realtime token is
-required for the features in this release.
+required for the features in this release. In v0.9.4-r1, general network notices
+remain in the dedicated network view; train details focus on the route, live
+progress, train-specific notices and composition.
 
 ## Station typography
 

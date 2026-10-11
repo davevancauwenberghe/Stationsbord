@@ -1,4 +1,4 @@
-@import url("/assets/trains/scales.css?v=0.9.4");
+@import url("/assets/trains/scales.css?v=0.9.4-r1");
 
 :root {
   color-scheme: light;
@@ -1239,20 +1239,27 @@ body:has(dialog[open]) {
   text-underline-offset: 3px;
 }
 .stop-name {
+  --stop-inset: 23px;
   position: relative;
-  padding: 0 0 0 23px;
+  padding: 0 0 0 var(--stop-inset);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
   border-left: 1px solid var(--input-border);
 }
-.stop-name:before {
+.stop-label {
+  display: block;
+  position: relative;
+}
+.stop-label:before {
   content: "";
   position: absolute;
-  left: -4px;
-  top: 6px;
-  width: 7px;
-  height: 7px;
+  box-sizing: border-box;
+  left: calc(-1 * var(--stop-inset) - 0.5px);
+  top: 0.75em;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--white);
   border: 1.5px solid var(--muted);
@@ -1260,7 +1267,7 @@ body:has(dialog[open]) {
 .stop:last-child .stop-name {
   border-color: transparent;
 }
-.stop.current .stop-name:before {
+.stop.current .stop-label:before {
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -1824,7 +1831,7 @@ body:has(dialog[open]) {
     gap: 9px;
   }
   .stop-name {
-    padding-left: 15px;
+    --stop-inset: 15px;
     font-size: 12px;
   }
   .stop-times {
@@ -1984,7 +1991,7 @@ body:has(dialog[open]) {
   font-size: 15px;
   color: var(--muted);
 }
-.next-stop .stop-name:before {
+.next-stop .stop-label:before {
   background: var(--yellow);
   border-color: var(--yellow);
   box-shadow: 0 0 0 4px var(--soft);
@@ -2129,7 +2136,7 @@ body.board-focus .page {
   color: var(--muted);
   font-size: 12px;
 }
-.reported-stop .stop-name:before {
+.reported-stop .stop-label:before {
   background: var(--accent);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--soft);
@@ -2140,28 +2147,6 @@ body.board-focus .page {
 .vehicle-route,
 .vehicle-details {
   min-width: 0;
-}
-.route-network {
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  margin: 0 0 24px;
-  padding: 12px 0;
-}
-.route-network > summary {
-  cursor: pointer;
-  min-height: 24px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.route-network > p {
-  font-size: 12px;
-  line-height: 1.6;
-}
-.route-network .disturbance h3 {
-  font-size: 14px;
-}
-.route-network .disturbance p {
-  font-size: 13px;
 }
 .train-content .stop-list {
   max-width: none;
