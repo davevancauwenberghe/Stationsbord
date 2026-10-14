@@ -9,6 +9,130 @@ const releaseVersion = JSON.parse(
 ).version;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test("journey proxy validates searches, forwards station IDs and timing, and isolates cached arrival results", async () => {
+  const queries = [];
+  const upstream = http.createServer(async (req, res) => {
+    const url = new URL(req.url, "http://fixture");
+    queries.push({
+      path: url.pathname,
+      params: Object.fromEntries(url.searchParams),
+    });
+    await wait(30);
+    res.writeHead(200, {
+      "content-type": "application/json",
+      "cache-control": "max-age=600",
+    });
+    res.end(JSON.stringify({ connection: [], timestamp: 123 }));
+  });
+  await new Promise((resolve) => upstream.listen(0, "127.0.0.1", resolve));
+  const reservation = http.createServer();
+  await new Promise((resolve) => reservation.listen(0, "127.0.0.1", resolve));
+  const port = reservation.address().port;
+  await new Promise((resolve) => reservation.close(resolve));
+  const child = spawn(process.execPath, ["src/index.js"], {
+    cwd: fileURLToPath(new URL("../", import.meta.url)),
+    env: {
+      ...process.env,
+      PORT: String(port),
+      IRAIL_BASE_URL: `http://127.0.0.1:${upstream.address().port}`,
+    },
+    stdio: "ignore",
+  });
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    let ready = false;
+    for (let i = 0; i < 80; i++) {
+      try {
+        await fetch(`${base}/health`);
+        ready = true;
+        break;
+      } catch {
+        await wait(25);
+      }
+    }
+    assert.ok(ready);
+    for (const query of [
+      "",
+      "from=A",
+      "from=A&to=a",
+      "from=A&to=B&date=310426&time=1200",
+      "from=A&to=B&date=141026",
+      "from=A&to=B&time=1200",
+      "from=A&to=B&date=141026&time=2460",
+      "from=A&to=B&timesel=invalid",
+      "from=A&from=B&to=C",
+      "from[x]=A&to=B",
+      "from=A&to=B&date=&time=",
+    ])
+      assert.equal(
+        (await fetch(`${base}/api/connections?${query}`)).status,
+        400,
+        query,
+      );
+    assert.equal(
+      queries.length,
+      0,
+      "Invalid planner searches never reach iRail",
+    );
+    const query =
+      "from=BE.NMBS.008892007&to=BE.NMBS.008821006&date=141026&time=2336&lang=nl";
+    const responses = await Promise.all(
+      Array.from({ length: 4 }, () =>
+        fetch(`${base}/api/connections?${query}`),
+      ),
+    );
+    for (const response of responses) {
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.deepEqual(await response.json(), {
+        connection: [],
+        timestamp: 123,
+      });
+    }
+    assert.equal(queries.length, 1);
+    assert.deepEqual(queries[0], {
+      path: "/connections/",
+      params: {
+        from: "BE.NMBS.008892007",
+        to: "BE.NMBS.008821006",
+        format: "json",
+        lang: "nl",
+        timesel: "departure",
+        typeOfTransport: "automatic",
+        alerts: "true",
+        results: "6",
+        date: "141026",
+        time: "2336",
+      },
+    });
+    const cached = await fetch(`${base}/api/connections?${query}`);
+    assert.equal(cached.headers.get("x-cache"), "HIT");
+    assert.equal(
+      (await fetch(`${base}/api/connections?${query}&timesel=arrival`)).status,
+      200,
+    );
+    assert.equal(
+      (
+        await fetch(
+          `${base}/api/connections?${query.replace("141026", "151026")}`,
+        )
+      ).status,
+      200,
+    );
+    assert.equal(
+      queries.length,
+      3,
+      "Arrival searches and overnight dates have distinct cache entries",
+    );
+    assert.equal(queries[1].params.timesel, "arrival");
+    assert.equal(queries[2].params.date, "151026");
+  } finally {
+    child.kill();
+    upstream.closeAllConnections();
+    await new Promise((resolve) => upstream.close(resolve));
+  }
+});
+
 test("proxy coalesces requests, revalidates ETags, labels stale data and validates input", async () => {
   let calls = 0,
     upstreamMode = "fresh",

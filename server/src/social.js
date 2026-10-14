@@ -3,6 +3,11 @@ import { normalizeTrainId } from "./public/train-lookup.js";
 
 const copy = {
   nl: {
+    planner: "Planner",
+    plannerDescription:
+      "Plan je treinreis met tijden, sporen, overstappen en vertragingen.",
+    departAt: "Vertrek om",
+    arriveBy: "Aankomst vóór",
     train: "Trein",
     journey:
       "Bekijk de volledige rit, haltes, tijden en beschikbare samenstelling.",
@@ -19,6 +24,11 @@ const copy = {
       "Stationsbord: Belgische treinen, helder in beeld. Crème en blauw met koperkleurige spoorlijnen en het Stationsbord-logo.",
   },
   fr: {
+    planner: "Planificateur",
+    plannerDescription:
+      "Planifiez votre trajet en train : horaires, voies, correspondances et retards.",
+    departAt: "Départ à",
+    arriveBy: "Arrivée avant",
     train: "Train",
     journey:
       "Consultez le trajet complet, les arrêts, les horaires et la composition disponible.",
@@ -35,6 +45,11 @@ const copy = {
       "Stationsbord : horaires des trains belges. Fond crème et bleu, lignes ferroviaires cuivrées et logo Stationsbord.",
   },
   de: {
+    planner: "Reiseplaner",
+    plannerDescription:
+      "Plane deine Zugreise mit Zeiten, Gleisen, Umstiegen und Verspätungen.",
+    departAt: "Abfahrt um",
+    arriveBy: "Ankunft vor",
     train: "Zug",
     journey:
       "Die gesamte Fahrt, Halte, Zeiten und verfügbare Wageninformationen.",
@@ -51,6 +66,11 @@ const copy = {
       "Stationsbord: belgische Zugfahrpläne. Cremefarbener und blauer Hintergrund mit kupferfarbenen Bahnlinien und Stationsbord-Logo.",
   },
   en: {
+    planner: "Planner",
+    plannerDescription:
+      "Plan your train journey with times, platforms, transfers and delays.",
+    departAt: "Depart at",
+    arriveBy: "Arrive before",
     train: "Train",
     journey:
       "See the full journey, stops, times and available carriage information.",
@@ -109,7 +129,40 @@ export function pageMetadata(search, origin) {
   const url = new URL("/", origin);
   let title = `Stationsbord · ${text.tagline}`;
   let description = text.description;
-  if (train) {
+  if (read("view") === "planner") {
+    url.searchParams.set("view", "planner");
+    url.searchParams.set("lang", lang);
+    const from = read("from"),
+      to = read("to");
+    title = `${text.planner} | Stationsbord`;
+    description = text.plannerDescription;
+    if (from && to) {
+      const displayName = (key, id) =>
+        read(`${key}Name`) || (/^(?:BE\.NMBS\.)?\d{9}$/.test(id) ? "" : id);
+      const fromName = displayName("from", from),
+        toName = displayName("to", to);
+      url.searchParams.set("from", from);
+      url.searchParams.set("to", to);
+      if (fromName) url.searchParams.set("fromName", fromName);
+      if (toName) url.searchParams.set("toName", toName);
+      if (fromName && toName) title = `${fromName} → ${toName} | Stationsbord`;
+      const date = read("date", 10),
+        time = read("time", 5);
+      if (validDate(date) && validTime(time)) {
+        const timesel = read("timesel") === "arrival" ? "arrival" : "departure";
+        url.searchParams.set("date", date);
+        url.searchParams.set("time", time);
+        url.searchParams.set("timesel", timesel);
+        const formatted = new Intl.DateTimeFormat(lang, {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          timeZone: "Europe/Brussels",
+        }).format(new Date(`${date}T12:00:00Z`));
+        description = `${formatted} · ${timesel === "arrival" ? text.arriveBy : text.departAt} ${time}. ${text.plannerDescription}`;
+      } else description += ` ${text.live}`;
+    }
+  } else if (train) {
     url.searchParams.set("view", "train");
     url.searchParams.set("train", train);
     url.searchParams.set("lang", lang);
@@ -153,7 +206,7 @@ export function pageMetadata(search, origin) {
     description,
     url: url.href,
     locale: text.locale,
-    image: new URL("/social-card.png?v=0.9.5", origin).href,
+    image: new URL("/social-card.png?v=0.9.6", origin).href,
     imageAlt: text.imageAlt,
   };
 }

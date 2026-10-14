@@ -1,5 +1,5 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.5";
-import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.5";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.6";
+import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.6";
 
 const seats = (value) =>
   Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -181,7 +181,7 @@ export function matchArtwork(
           : side
             ? "api"
             : "unknown",
-        src: `/assets/trains/${entry.file}?v=0.9.5`,
+        src: `/assets/trains/${entry.file}?v=0.9.6`,
       }
     : null;
 }

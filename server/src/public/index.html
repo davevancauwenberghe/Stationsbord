@@ -20,18 +20,12 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.5" />
-    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.5" />
-    <link rel="manifest" href="/site.webmanifest?v=0.9.5" />
-    <script src="/theme.js?v=0.9.5"></script>
-    <link
-      rel="stylesheet"
-      href="/styles.css?v=0.9.5"
-    />
-    <script
-      type="module"
-      src="/app.js?v=0.9.5"
-    ></script>
+    <link rel="icon" type="image/svg+xml" href="/mark.svg?v=0.9.6" />
+    <link rel="apple-touch-icon" href="/favicon.png?v=0.9.6" />
+    <link rel="manifest" href="/site.webmanifest?v=0.9.6" />
+    <script src="/theme.js?v=0.9.6"></script>
+    <link rel="stylesheet" href="/styles.css?v=0.9.6" />
+    <script type="module" src="/app.js?v=0.9.6"></script>
   </head>
   <body>
     <a class="skip-link" href="#board" data-i18n="skip"
@@ -40,7 +34,7 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Stationsbord"
-          ><img src="/mark.svg?v=0.9.5" alt="" width="36" height="36" /><span
+          ><img src="/mark.svg?v=0.9.6" alt="" width="36" height="36" /><span
             >stationsbord<span class="brand-dot">.</span></span
           ></a
         >
@@ -100,12 +94,25 @@
         </button>
         <button
           type="button"
+          id="plannerViewButton"
+          aria-pressed="false"
+          aria-controls="plannerView"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 7h9a4 4 0 0 1 0 8H9M9 11l-4 4 4 4" />
+            <circle cx="5" cy="7" r="2" />
+            <circle cx="19" cy="17" r="2" />
+          </svg>
+          <span data-i18n="planner">Planner</span>
+        </button>
+        <button
+          type="button"
           id="trainViewButton"
           aria-pressed="false"
           aria-controls="trainView"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <use href="/icons.svg?v=0.9.5#train" />
+            <use href="/icons.svg?v=0.9.6#train" />
           </svg>
           <span data-i18n="trainLookup">Trein opzoeken</span>
         </button>
@@ -335,7 +342,7 @@
           <div id="boardContent">
             <div class="empty-state">
               <svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true">
-                <use href="/icons.svg?v=0.9.5#station" />
+                <use href="/icons.svg?v=0.9.6#station" />
               </svg>
               <h3 data-i18n="emptyTitle">Je volgende trein begint hier.</h3>
               <p data-i18n="emptyBody">
@@ -347,6 +354,255 @@
           <div class="board-footer">
             <span id="updateStatus" role="status"></span>
           </div>
+        </section>
+      </div>
+      <div class="planner-workspace" id="plannerView" hidden>
+        <form
+          id="plannerForm"
+          class="search-panel planner-form"
+          autocomplete="off"
+          novalidate
+        >
+          <div class="planner-stations">
+            <div class="station-field">
+              <label
+                for="plannerFromInput"
+                class="field-label"
+                data-i18n="fromStation"
+                >Van</label
+              >
+              <div class="autocomplete">
+                <div class="search-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="5" />
+                  </svg>
+                  <input
+                    id="plannerFromInput"
+                    type="text"
+                    maxlength="150"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="plannerFromOptions"
+                    aria-describedby="plannerFromStatus plannerSearchStatus"
+                    placeholder="Zoek een station…"
+                    spellcheck="false"
+                    enterkeyhint="next"
+                  />
+                  <button
+                    id="plannerFromClear"
+                    class="clear-input"
+                    type="button"
+                    aria-label="Wis zoekveld"
+                    hidden
+                  >
+                    ×
+                  </button>
+                </div>
+                <div
+                  id="plannerFromOptions"
+                  class="station-options"
+                  role="listbox"
+                  hidden
+                ></div>
+              </div>
+              <p id="plannerFromStatus" class="field-hint" role="status"></p>
+            </div>
+            <button
+              type="button"
+              id="plannerSwap"
+              class="icon-button planner-swap"
+              aria-label="Wissel stations"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 20V4m-4 4 4-4 4 4m4-4v16m-4-4 4 4 4-4" />
+              </svg>
+            </button>
+            <div class="station-field">
+              <label
+                for="plannerToInput"
+                class="field-label"
+                data-i18n="toStation"
+                >Naar</label
+              >
+              <div class="autocomplete">
+                <div class="search-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 21s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12Z" />
+                    <circle cx="12" cy="9" r="2" />
+                  </svg>
+                  <input
+                    id="plannerToInput"
+                    type="text"
+                    maxlength="150"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="plannerToOptions"
+                    aria-describedby="plannerToStatus plannerSearchStatus"
+                    placeholder="Zoek een station…"
+                    spellcheck="false"
+                    enterkeyhint="search"
+                  />
+                  <button
+                    id="plannerToClear"
+                    class="clear-input"
+                    type="button"
+                    aria-label="Wis zoekveld"
+                    hidden
+                  >
+                    ×
+                  </button>
+                </div>
+                <div
+                  id="plannerToOptions"
+                  class="station-options"
+                  role="listbox"
+                  hidden
+                ></div>
+              </div>
+              <p id="plannerToStatus" class="field-hint" role="status"></p>
+            </div>
+          </div>
+          <div class="when-field">
+            <span class="field-label" data-i18n="when">Wanneer?</span>
+            <div
+              id="plannerWhenTabs"
+              class="segmented"
+              role="group"
+              aria-label="Wanneer"
+            >
+              <button
+                type="button"
+                id="plannerLiveMode"
+                aria-pressed="true"
+                data-i18n="now"
+              >
+                Nu
+              </button>
+              <button
+                type="button"
+                id="plannerPlanMode"
+                aria-pressed="false"
+                data-i18n="plan"
+              >
+                Andere tijd
+              </button>
+            </div>
+            <div
+              id="plannerTimeTabs"
+              class="segmented planner-time-tabs"
+              role="group"
+              aria-label="Vertrek of aankomst"
+            >
+              <button
+                type="button"
+                id="plannerDepartMode"
+                aria-pressed="true"
+                data-i18n="departure"
+              >
+                Vertrek
+              </button>
+              <button
+                type="button"
+                id="plannerArriveMode"
+                aria-pressed="false"
+                data-i18n="arrival"
+              >
+                Aankomst
+              </button>
+            </div>
+            <div id="plannerPlannedFields" class="date-fields" hidden>
+              <label
+                ><span class="field-label" data-i18n="date">Datum</span
+                ><input
+                  id="plannerDateInput"
+                  type="date"
+                  min="2000-01-01"
+                  max="2099-12-31"
+                  required
+                  disabled
+              /></label>
+              <label
+                ><span class="field-label" data-i18n="time">Tijd</span
+                ><input id="plannerTimeInput" type="time" required disabled
+              /></label>
+            </div>
+          </div>
+          <div class="submit-field">
+            <button type="submit" id="plannerSubmit" class="primary-button">
+              <span data-i18n="planJourney">Zoek een reis</span
+              ><span aria-hidden="true">→</span>
+            </button>
+            <p
+              id="plannerSearchStatus"
+              class="field-hint error"
+              role="status"
+            ></p>
+          </div>
+        </form>
+        <section
+          id="plannerResult"
+          class="board-panel planner-panel"
+          tabindex="-1"
+          aria-labelledby="plannerTitle"
+        >
+          <div class="board-heading">
+            <div>
+              <p class="eyebrow" data-i18n="plannerRoute">REISPLANNER</p>
+              <h2 id="plannerTitle">Planner</h2>
+              <p id="plannerSubtitle" class="board-subtitle"></p>
+            </div>
+            <div class="board-actions">
+              <button
+                type="button"
+                class="icon-button"
+                id="sharePlanner"
+                aria-label="Deel reis"
+                hidden
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-button"
+                id="refreshPlanner"
+                aria-label="Vernieuwen"
+                hidden
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div id="plannerNotice" class="notice" role="status" hidden></div>
+          <div id="plannerContent" class="planner-content"></div>
+          <div
+            id="plannerPagination"
+            class="planner-pagination"
+            role="group"
+            aria-label="Andere reizen"
+            hidden
+          >
+            <button type="button" id="plannerEarlier" class="text-button">
+              <span aria-hidden="true">←</span
+              ><span data-i18n="earlier">Eerder</span>
+            </button>
+            <button type="button" id="plannerLater" class="text-button">
+              <span data-i18n="later">Later</span
+              ><span aria-hidden="true">→</span>
+            </button>
+          </div>
+          <p
+            id="plannerFreshness"
+            class="freshness planner-freshness"
+            role="status"
+          ></p>
         </section>
       </div>
       <div id="trainView" class="train-workspace" hidden>
@@ -481,7 +737,7 @@
           ><span data-i18n="independent">Onafhankelijke dienst · data via</span>
           <a href="https://irail.be" target="_blank" rel="noopener noreferrer"
             >iRail</a
-          ><span class="footer-version">v0.9.5</span></span
+          ><span class="footer-version">v0.9.6</span></span
         >
       </footer>
     </main>

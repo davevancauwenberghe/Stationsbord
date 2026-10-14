@@ -12,6 +12,62 @@ import {
 
 const origin = "https://stationsbord.example";
 
+test("planner previews retain stations, departure/arrival timing and language without unrelated parameters", () => {
+  for (const lang of ["nl", "fr", "de", "en"]) {
+    const meta = pageMetadata(
+      new URLSearchParams({
+        view: "planner",
+        from: "BE.NMBS.008892007",
+        fromName: "Gent-Sint-Pieters",
+        to: "BE.NMBS.008821006",
+        toName: "Antwerpen-Centraal",
+        lang,
+        date: "2026-10-14",
+        time: "23:36",
+        timesel: "arrival",
+        train: "510",
+        station: "Ignored",
+        utm_source: "chat",
+      }),
+      origin,
+    );
+    const url = new URL(meta.url);
+    assert.equal(
+      meta.title,
+      "Gent-Sint-Pieters → Antwerpen-Centraal | Stationsbord",
+    );
+    assert.match(meta.description, /23:36/);
+    assert.equal(url.searchParams.get("view"), "planner");
+    assert.equal(url.searchParams.get("from"), "BE.NMBS.008892007");
+    assert.equal(url.searchParams.get("to"), "BE.NMBS.008821006");
+    assert.equal(url.searchParams.get("timesel"), "arrival");
+    assert.equal(url.searchParams.get("date"), "2026-10-14");
+    assert.equal(url.searchParams.get("lang"), lang);
+    assert.equal(url.searchParams.has("train"), false);
+    assert.equal(url.searchParams.has("station"), false);
+    assert.equal(url.searchParams.has("utm_source"), false);
+  }
+  const repeated = pageMetadata("view=planner&from=A&from=B&to=C", origin);
+  assert.equal(new URL(repeated.url).searchParams.has("from"), false);
+  const invalid = pageMetadata(
+    "view=planner&from=008892007&to=008821006&date=2026-02-30&time=25:00",
+    origin,
+  );
+  assert.equal(new URL(invalid.url).searchParams.has("date"), false);
+  const malicious = pageMetadata(
+    new URLSearchParams({
+      view: "planner",
+      from: "008892007",
+      fromName: '"><script>alert(1)</script>',
+      to: "008821006",
+      toName: "Antwerpen",
+    }),
+    origin,
+  );
+  assert.doesNotMatch(metadataMarkup(malicious), /<script/);
+  assert.match(metadataMarkup(malicious), /&lt;script&gt;/);
+});
+
 test("train previews retain the number and date alone, ignoring obsolete time parameters", () => {
   for (const lang of ["nl", "fr", "de", "en"]) {
     for (const time of ["", "&time=14:30", "&time=invalid"]) {

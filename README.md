@@ -10,6 +10,7 @@ A lightweight Belgian railway timetable powered by [iRail](https://irail.be), bu
 ## Features
 
 - Station arrivals and departures, live or for a chosen date/time.
+- Journey planner with departure/arrival searches, transfers, walking links and train details.
 - Train-number lookup by date, with stops, delays, cancellations and reported progress.
 - Train compositions, seats and amenities when available.
 - Favourites, shareable links, network disruptions and planned works.

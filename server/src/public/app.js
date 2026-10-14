@@ -2,14 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.5";
+} from "./composition.js?v=0.9.6";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
   stopEvents,
-} from "./train-details.js?v=0.9.5";
-import { languages, messages } from "./i18n.js?v=0.9.5";
+} from "./train-details.js?v=0.9.6";
+import { languages, messages } from "./i18n.js?v=0.9.6";
 import {
   asArray,
   escapeHtml as h,
@@ -26,9 +26,10 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.5";
+} from "./rail-utils.js?v=0.9.6";
 
-import { renderNetwork } from "./network.js?v=0.9.5";
+import { renderNetwork } from "./network.js?v=0.9.6";
+import { createPlanner } from "./planner.js?v=0.9.6";
 import {
   normalizeTrainId,
   trainStops,
@@ -37,14 +38,14 @@ import {
   previousServiceDate,
   journeyEndDate,
   trainLabel,
-} from "./train-lookup.js?v=0.9.5";
+} from "./train-lookup.js?v=0.9.6";
 
 import {
   trainProgress,
   renderProgress,
   activeService,
   currentServiceDay,
-} from "./train-progress.js?v=0.9.5";
+} from "./train-progress.js?v=0.9.6";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -75,7 +76,11 @@ const preferred = [
 ];
 const state = {
   screen:
-    params.has("train") || params.get("view") === "train" ? "train" : "station",
+    params.get("view") === "planner"
+      ? "planner"
+      : params.has("train") || params.get("view") === "train"
+        ? "train"
+        : "station",
   trainLive: true,
   trainView: null,
   trainData: null,
@@ -120,6 +125,7 @@ const popular = [
   "Brugge",
 ];
 let toastTimer;
+let planner;
 
 function toast(text) {
   $("toast").textContent = text;
@@ -266,6 +272,10 @@ $("saveStation").addEventListener("click", () => {
 });
 
 function updatePageTitle() {
+  if (state.screen === "planner") {
+    document.title = `${planner?.title || t("planner")} | Stationsbord`;
+    return;
+  }
   const view = state.screen === "train" ? state.trainView : state.view;
   document.title = !view
     ? `Stationsbord · ${t("eyebrow")}`
@@ -297,8 +307,13 @@ function applyLanguage() {
     .querySelector(".train-when-tabs")
     .setAttribute("aria-label", t("when"));
   updateTrainModeControls();
+  planner?.language();
   document.querySelector(".skip-link").textContent = t(
-    state.screen === "train" ? "skipTrain" : "skip",
+    state.screen === "planner"
+      ? "skipPlanner"
+      : state.screen === "train"
+        ? "skipTrain"
+        : "skip",
   );
   if (!state.trainView) renderTrainEmpty();
   updateBoardControls();
@@ -329,6 +344,7 @@ $("languageSelect").addEventListener("change", () => {
     loadBoard({ ...state.view, lang: state.lang });
   if (state.trainView && state.screen === "train")
     loadTrain({ ...state.trainView, lang: state.lang });
+  if (state.screen === "planner") planner.refresh({ force: true });
   refreshNetwork();
 });
 function updateClock() {
@@ -661,6 +677,23 @@ document.addEventListener("keydown", (event) => {
 });
 function syncURL() {
   updatePageTitle();
+  if (state.screen === "planner") {
+    const query = new URLSearchParams({ view: "planner", lang: state.lang });
+    const view = planner?.view;
+    if (view) {
+      query.set("from", view.from.id);
+      query.set("fromName", view.from.name);
+      query.set("to", view.to.id);
+      query.set("toName", view.to.name);
+      if (!view.live) {
+        query.set("date", view.date);
+        query.set("time", view.time);
+        query.set("timesel", view.timesel);
+      }
+    }
+    history.replaceState(null, "", `${location.pathname}?${query}`);
+    return;
+  }
   if (state.screen === "train") {
     const view = state.trainView;
     const query = new URLSearchParams({ view: "train", lang: state.lang });
@@ -730,7 +763,7 @@ function renderNotice() {
 }
 function renderEmpty(title = "emptyTitle", body = "emptyBody") {
   $("boardContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.5#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.6#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
 }
 function renderLoading() {
   $("boardContent").innerHTML =
@@ -962,10 +995,12 @@ $("detailsDialog").addEventListener("close", () => {
   state.dialogSequence++;
   state.dialogTrain = null;
   if (state.dialogReturnKey) {
-    const opener = [
-      ...$("boardContent").querySelectorAll("[data-train-key]"),
-    ].find((button) => button.dataset.trainKey === state.dialogReturnKey);
-    (opener || $("board")).focus({ preventScroll: true });
+    const opener = [...document.querySelectorAll("[data-train-key]")].find(
+      (button) => button.dataset.trainKey === state.dialogReturnKey,
+    );
+    (opener || $(state.screen === "planner" ? "plannerResult" : "board")).focus(
+      { preventScroll: true },
+    );
     state.dialogReturnKey = null;
   }
 });
@@ -1232,28 +1267,53 @@ function showCompositionFailure(id, { date, section, current, signal }) {
 
 function setScreen(screen, { focus = true, refresh = true } = {}) {
   state.screen = screen;
-  $("stationView").hidden = screen !== "station";
-  $("trainView").hidden = screen !== "train";
-  $("stationViewButton").setAttribute(
-    "aria-pressed",
-    String(screen === "station"),
-  );
-  $("trainViewButton").setAttribute("aria-pressed", String(screen === "train"));
-  document.querySelector(".skip-link").href =
-    screen === "train" ? "#trainResult" : "#board";
+  for (const view of ["station", "planner", "train"]) {
+    $(`${view}View`).hidden = screen !== view;
+    $(`${view}ViewButton`).setAttribute(
+      "aria-pressed",
+      String(screen === view),
+    );
+  }
+  const target =
+    screen === "planner"
+      ? "plannerResult"
+      : screen === "train"
+        ? "trainResult"
+        : "board";
+  document.querySelector(".skip-link").href = `#${target}`;
   document.querySelector(".skip-link").textContent = t(
-    screen === "train" ? "skipTrain" : "skip",
+    screen === "planner"
+      ? "skipPlanner"
+      : screen === "train"
+        ? "skipTrain"
+        : "skip",
   );
-  if (screen === "train") {
+  if (screen !== "station") {
     cancelSearch();
     closeOptions();
     if (state.focus) setFocusMode(false, { restoreFocus: false });
+    state.boardController?.abort();
+    state.boardSequence++;
+    state.boardController = null;
+    $("board").setAttribute("aria-busy", "false");
+  }
+  if (screen !== "train") {
+    state.trainController?.abort();
+    state.trainSequence++;
+    state.trainController = null;
+    $("trainResult").setAttribute("aria-busy", "false");
+  }
+  planner?.activate({ refresh });
+  if (screen === "planner")
+    planner.prefill(state.station || state.view?.station);
+  else if (screen === "train") {
     if (
       refresh &&
       state.trainView &&
       !state.trainController &&
       (state.trainView.live ||
         !state.trainData ||
+        $("trainComposition")?.dataset.loaded !== "true" ||
         state.trainView.lang !== state.lang)
     )
       loadTrain(
@@ -1261,10 +1321,6 @@ function setScreen(screen, { focus = true, refresh = true } = {}) {
         { background: !!state.trainData },
       );
   } else {
-    state.trainController?.abort();
-    state.trainSequence++;
-    state.trainController = null;
-    $("trainResult").setAttribute("aria-busy", "false");
     if (refresh && state.view && !state.boardController)
       loadBoard(
         { ...state.view, lang: state.lang },
@@ -1272,9 +1328,17 @@ function setScreen(screen, { focus = true, refresh = true } = {}) {
       );
   }
   syncURL();
-  if (focus) $(screen === "train" ? "trainInput" : "stationInput").focus();
+  if (focus)
+    $(
+      screen === "planner"
+        ? "plannerFromInput"
+        : screen === "train"
+          ? "trainInput"
+          : "stationInput",
+    ).focus();
 }
 $("stationViewButton").addEventListener("click", () => setScreen("station"));
+$("plannerViewButton").addEventListener("click", () => setScreen("planner"));
 $("trainViewButton").addEventListener("click", () => setScreen("train"));
 
 function updateTrainModeControls() {
@@ -1326,7 +1390,7 @@ function renderTrainEmpty() {
   $("trainTitle").textContent = t("trainLookup");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.5#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.6#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
@@ -1624,6 +1688,7 @@ function refreshVisible() {
     navigator.onLine
   )
     loadTrain(state.trainView, { background: true });
+  if (navigator.onLine) planner.refresh();
   if (!state.networkController && navigator.onLine) refreshNetwork();
 }
 window.addEventListener("offline", () => {
@@ -1661,6 +1726,7 @@ window.addEventListener("offline", () => {
   renderNotice();
   renderNetworkButton();
   renderTrainHeading();
+  planner.heading();
 });
 window.addEventListener("online", () => {
   if (state.dialogTrain?.view.live && !document.hidden)
@@ -1669,6 +1735,7 @@ window.addEventListener("online", () => {
     loadBoard(state.view, { background: true });
   if (state.screen === "train" && state.trainView && !document.hidden)
     loadTrain(state.trainView, { background: true });
+  if (!document.hidden) planner.refresh({ force: true });
   refreshNetwork();
 });
 document.addEventListener("visibilitychange", () => {
@@ -1677,6 +1744,17 @@ document.addEventListener("visibilitychange", () => {
 setInterval(refreshVisible, 60_000);
 
 // A shared link restores the displayed station, language, arrivals/departures and planned moment.
+planner = createPlanner({
+  request,
+  t,
+  getLang: () => state.lang,
+  isActive: () => state.screen === "planner",
+  readStations,
+  remember,
+  onViewChange: syncURL,
+  openTrain,
+  shareURL,
+});
 const initialStation = params.get("station");
 const date = params.get("date"),
   time = params.get("time");
@@ -1692,7 +1770,9 @@ if (
 applyLanguage();
 setScreen(state.screen, { focus: false });
 const initialTrain = normalizeTrainId(params.get("train"));
-if (state.screen === "train") {
+if (state.screen === "planner") {
+  planner.restore(params);
+} else if (state.screen === "train") {
   if (validDate(date || "")) {
     state.trainLive = false;
     $("trainDateInput").value = date;
