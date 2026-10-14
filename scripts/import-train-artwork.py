@@ -134,7 +134,7 @@ if __name__ == '__main__':
                     raise ValueError('Local artwork checksum differs: ' + key)
             catalog[key] = variants
     catalog = dict(sorted(catalog.items()))
-    manifest = {'creator':'Marc Le Gad / MLGTraffic; Stationsbord for locally created LIMAX adaptations',
+    manifest = {'creator':'Marc Le Gad / MLGTraffic; Stationsbord for local AI-assisted continuations',
                 'collection':BASE+'Coll_BNL_E.htm',
                 'license':'https://creativecommons.org/licenses/by-nc-sa/3.0/',
                 'changes':'MLGTraffic imports: lossless GIF to PNG conversion only, original dimensions and colours retained. Local adaptations: see each entry and local-artwork.json.',

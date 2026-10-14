@@ -92,14 +92,14 @@ test("complete numbered LIMAX formations orient outward without reordering carri
   );
   assert.ok(html.indexOf("limax-c-l.png") < html.indexOf("limax-b-r.png"));
   assert.ok(html.indexOf("limax-b-r.png") < html.indexOf("limax-a-r.png"));
-  assert.match(html, /Stationsbord \(LIMAX\)/);
+  assert.match(html, /Stationsbord · /);
   assert.match(html, /Marc Le Gad \/ MLGTraffic/);
   assert.match(html, /2nd class: 180 seats/);
   assert.match(html, /Toilet/);
   assert.doesNotMatch(html, /carriage-placeholder" >Drawing unavailable/);
 });
 
-test("local LIMAX artwork retains transparent masters and declared provenance", () => {
+test("local artwork retains transparent masters and declared provenance", () => {
   const root = new URL("../src/public/assets/trains/", import.meta.url);
   const local = JSON.parse(readFileSync(new URL("local-artwork.json", root)));
   assert.equal(local.referenceCreator, "Marc Le Gad / MLGTraffic");
@@ -131,6 +131,49 @@ test("local LIMAX artwork retains transparent masters and declared provenance", 
   }
   assert.ok(artwork["limax-b"].L.width < artwork["limax-a"].L.width);
   assert.ok(artwork["limax-b"].L.width < artwork["limax-c"].L.width);
+});
+
+test("enhanced AR41 preserves class matching, directions and original source drawings", () => {
+  for (const family of ["AR41", "MW41"]) {
+    const units = [
+      {
+        materialType: type(family, "AB", "RIGHT"),
+        materialNumber: "4101",
+        seatsFirstClass: 12,
+        seatsSecondClass: 50,
+      },
+      {
+        materialType: type(family, "B", "LEFT"),
+        materialNumber: "4101",
+        seatsSecondClass: 80,
+      },
+    ];
+    assert.deepEqual(formationDirections(units), ["L", "R"]);
+    assert.deepEqual(
+      units.map((unit) => matchArtwork(unit).key),
+      ["ar41-enhanced-first", "ar41-enhanced-second"],
+    );
+    const html = renderComposition(
+      {
+        composition: {
+          segments: { segment: { composition: { units: { unit: units } } } },
+        },
+      },
+      t,
+    );
+    assert.match(html, /ar41-enhanced-first-l\.png/);
+    assert.match(html, /ar41-enhanced-second-r\.png/);
+    assert.match(html, /1st class: 12 seats/);
+    assert.match(html, /2nd class: 130 seats/);
+    assert.match(html, /Stationsbord · /);
+    assert.match(html, /Marc Le Gad \/ MLGTraffic/);
+    assert.deepEqual(formationDirections(units.slice(0, 1)), [null]);
+    assert.equal(matchArtwork(units[0]).cabFacing, "R");
+  }
+  for (const key of ["ar41-first", "ar41-second"]) {
+    assert.equal(artwork[key].L.height, 41);
+    assert.equal(artwork[key].L.creator, undefined);
+  }
 });
 
 test("I11 AUH/BVUH aliases use service-specific liveries in every API type layout", () => {
@@ -433,7 +476,7 @@ test("all display PNGs match their declared dimensions and provenance hashes", (
   const manifest = JSON.parse(
     readFileSync(new URL("sources.json", root), "utf8"),
   );
-  assert.equal(Object.keys(artwork).length, 55);
+  assert.equal(Object.keys(artwork).length, 57);
   for (const [key, sides] of Object.entries(artwork)) {
     for (const side of ["L", "R"]) {
       const entry = sides[side],
@@ -447,7 +490,10 @@ test("all display PNGs match their declared dimensions and provenance hashes", (
         source.pngSha256,
       );
       if (source.creator === "Stationsbord") {
-        assert.match(source.source, /^limax-originals\/limax-[abc]\.png$/);
+        assert.match(
+          source.source,
+          /^(?:limax-originals\/limax-[abc]|ar41-originals\/ar41-(?:first|second))\.png$/,
+        );
       } else {
         assert.match(
           source.source,
@@ -581,8 +627,8 @@ test("all supported EMU and DMU cab drawings face the requested direction", () =
     ["AM86M", "b", { seatsFirstClass: 45 }, "am86-trailer", "L"],
     ["AM96P", "c", { seatsFirstClass: 45 }, "am96-first", "L"],
     ["AM96M", "a", { seatsSecondClass: 80 }, "am96-second", "R"],
-    ["AR41", "a", { seatsFirstClass: 45 }, "ar41-first", "L"],
-    ["MW41", "b", { seatsSecondClass: 80 }, "ar41-second", "L"],
+    ["AR41", "a", { seatsFirstClass: 45 }, "ar41-enhanced-first", "L"],
+    ["MW41", "b", { seatsSecondClass: 80 }, "ar41-enhanced-second", "L"],
     ["M7", "BMXH", {}, "m7-motor", "L"],
   ];
   for (const [parent, sub, fields, key, sourceLCab] of cases) {

@@ -1,4 +1,4 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.4-r2&art=limax-20261014";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.4-r2&art=ar41-20261014";
 import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.4-r2";
 
 const seats = (value) =>
@@ -109,7 +109,7 @@ export function matchArtwork(
     ["A", "B", "AB"].includes(subtype) &&
     (first || second)
   ) {
-    key = first ? "ar41-first" : "ar41-second";
+    key = first ? "ar41-enhanced-first" : "ar41-enhanced-second";
   } else if (family === "M4") {
     key = {
       A: "m4-first",
@@ -181,7 +181,7 @@ export function matchArtwork(
           : side
             ? "api"
             : "unknown",
-        src: `/assets/trains/${entry.file}?art=limax-20261014`,
+        src: `/assets/trains/${entry.file}?art=ar41-20261014`,
       }
     : null;
 }
@@ -321,7 +321,7 @@ export function renderComposition(data, t, context = {}) {
     })
     .join("");
   return result
-    ? `${result}${renderCompositionDisclaimer(t)}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: ${custom ? "Stationsbord (LIMAX) · " : ""}<a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
+    ? `${result}${renderCompositionDisclaimer(t)}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: ${custom ? "Stationsbord · " : ""}<a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
     : `<p class="muted">${h(t("compositionError"))}</p>${renderCompositionDisclaimer(t)}`;
 }
 

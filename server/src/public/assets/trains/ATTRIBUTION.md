@@ -14,7 +14,7 @@ They may be shared and adapted for noncommercial purposes with appropriate
 credit, a licence link, and an indication of adaptations. Adapted artwork is
 released under CC BY-NC-SA 3.0. The creator does not endorse Stationsbord.
 
-The local LIMAX adaptations described below are also distributed under
+The local LIMAX and AR41 continuations described below are also distributed under
 CC BY-NC-SA 3.0 and excluded from the code's MIT licence.
 
 ## Sources and changes
@@ -44,31 +44,49 @@ are distributed under the collection's CC BY-NC-SA 3.0 terms.
 ## Local LIMAX 550 adaptations
 
 Created for **Stationsbord on 2026-10-14**, with AI-assisted image generation.
-Marc Le Gad's `Arriva_FLIRT3_a_L.gif` from the [Arriva collection](http://www.mlgtraffic.net/NL_E_Arriva.xml)
-provided an illustration-style and vehicle-appearance reference. A user-provided
-Railer screenshot guided the three-car LIMAX layout and livery. The reference
-screenshot and original MLGTraffic GIF are not redistributed here. No Railer
-application files or HyperRail files/code were imported.
+These are a continuation based on Marc Le Gad / MLGTraffic's artwork.
+`Arriva_FLIRT3_a_L.gif` from the [Arriva collection](http://www.mlgtraffic.net/NL_E_Arriva.xml)
+provided an illustration-style and vehicle-appearance reference.
 
 These drawings are **Stationsbord adaptations**, not original MLGTraffic 550
-drawings. Neither Marc Le Gad, Railer, Arriva nor Stadler endorses them. They are
+drawings. Neither Marc Le Gad, Arriva nor Stadler endorses them. They are
 indicative and may differ in details from individual vehicles. Seats and
 amenities remain sourced from iRail.
 
 The three AI-generated transparent masters are retained under `limax-originals/`.
 The export script trims transparent padding, scales uniformly by the blue-body
 height, aligns the bottom edge and creates mirrored variants. This processing
-applies only to the local LIMAX set; imported MLGTraffic PNGs retain their
+applies only to the local set; imported MLGTraffic PNGs retain their
 original pixels. Sources, hashes, creator and changes are recorded per variant
-in `local-artwork.json` and merged into `sources.json`. The prompt set is in
-`scripts/limax-artwork-prompts.json`.
+in `local-artwork.json` and merged into `sources.json`. The current production
+brief is in `scripts/limax-artwork-brief.json`.
 
-Rebuild these six display PNGs with:
+## Enhanced AR41 / MW41 trial
 
-    python scripts/export-limax-artwork.py
+Created for **Stationsbord on 2026-10-14**, with AI-assisted image generation,
+as a continuation based on these **Marc Le Gad / MLGTraffic** drawings:
+
+- Mixed-class AB car: http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_AB_L.gif
+- Second-class B car: http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_B_R.gif
+
+The silver body, yellow cab, red doors, window arrangement and two conventional
+bogies follow the original drawings. The enhanced versions retain the flat AR41 drawing style, with cleaner outlines
+and window definition. They are indicative illustrations;
+classes and amenities remain sourced from iRail.
+
+The two transparent masters are retained under `ar41-originals/`, with generation
+prompts in `scripts/ar41-artwork-prompts.json`. Packaging trims transparent
+padding, uniformly fits each drawing to its original AR41 bounding box, aligns
+the bottom and mirrors the opposite direction. No horizontal stretching is
+applied. The original imported AR41 PNGs and their provenance remain unchanged.
+The enhanced display files use separate `ar41-enhanced-*` names.
+
+Rebuild all ten local display PNGs with:
+
+    python scripts/export-local-train-artwork.py
     python scripts/import-train-artwork.py --metadata-only
 
-The live composition credits Stationsbord for LIMAX and retains the MLGTraffic
+The live composition credits Stationsbord for local continuations and retains the MLGTraffic
 reference credit and CC BY-NC-SA 3.0 link.
 
 Reproduce the import from the repository root with:
@@ -87,7 +105,8 @@ amenities come from iRail/NMBS data, not from the drawings. Unknown types keep
 their textual information and display an explicit illustration fallback.
 
 Display sizing uses a common source-pixel scale for locomotives, EMUs and
-coaches. The stored artwork is unchanged. Cab orientation selects the matching
+coaches. Imported artwork retains its original pixels; local export steps are
+documented above. Cab orientation selects the matching
 original drawing by reviewed `cabFacing` metadata for each supported EMU/DMU
 cab and cab coach. AM96 BX, M4 ADx and M5 BDx have `L`/`R` filenames opposite
 to their visible cab direction. Intermediate vehicles are explicitly marked

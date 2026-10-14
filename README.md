@@ -151,10 +151,16 @@ LIMAX 550 uses a locally created, AI-assisted three-car Stadler FLIRT III set:
 `AMFLIRTMC` a/c select the cab drawings and b selects the shorter centre car.
 Both directions are stored as transparent PNGs. Complete numbered sets use the
 same outward-cab check as the other EMUs; partial sets retain iRail's direction.
-These are indicative Stationsbord adaptations with MLGTraffic drawing references,
-not original MLGTraffic 550 illustrations or assets extracted from Railer.
+These are indicative, AI-assisted Stationsbord continuations based on
+Marc Le Gad / MLGTraffic's artwork, distributed under the same artwork licence.
+They are adaptations, rather than original MLGTraffic 550 drawings.
 
-The 104 imported PNGs and six local LIMAX PNGs are committed under
+AR41/MW41 uses an enhanced two-car trial based on MLGTraffic's MW41 AB and B
+drawings. Mixed-class units select AB and second-class units select B. Both cab
+directions are available, with the existing complete-set orientation check.
+The original imported AR41 PNGs remain intact alongside the enhanced versions.
+
+The 104 imported PNGs and ten local LIMAX/AR41 PNGs are committed under
 `server/src/public/assets/trains/` and served from Stationsbord itself. Imports
 come directly from the [MLGTraffic Benelux
 collection](http://www.mlgtraffic.net/Coll_BNL_E.htm). No HyperRail code or assets
@@ -181,10 +187,12 @@ noncommercial purposes, and preserve the artwork licence for adaptations.
 source hashes and the lossless GIF-to-PNG conversion. Re-import with
 `python scripts/import-train-artwork.py` (development prerequisite: Pillow).
 
-For the local LIMAX set, `local-artwork.json` records its creator, references,
-processing steps and hashes separately. The three transparent master PNGs are
-retained in `limax-originals/`; export with `python scripts/export-limax-artwork.py`,
+For the local LIMAX and AR41 sets, `local-artwork.json` records their creator,
+references, processing steps and hashes separately. Transparent master PNGs are
+retained in `limax-originals/` and `ar41-originals/`; export with
+`python scripts/export-local-train-artwork.py`,
 then run `python scripts/import-train-artwork.py --metadata-only` to rebuild the
 shared catalogue and pixel-scale CSS. Normal MLGTraffic imports also retain and
-validate local artwork. The original generation/refinement prompts are stored
-in `scripts/limax-artwork-prompts.json`.
+validate local artwork. The LIMAX production brief is stored in
+`scripts/limax-artwork-brief.json`; AR41 generation prompts are stored in
+`scripts/ar41-artwork-prompts.json`.

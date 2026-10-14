@@ -10,8 +10,14 @@
       "role": "Illustration style and Arriva FLIRT III appearance reference"
     },
     {
-      "source": "User-provided Railer screenshot of FLIRT_550_LIMAX c/b/a",
-      "role": "Three-car layout, livery and carriage details reference; screenshot is not redistributed"
+      "url": "http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_AB_L.gif",
+      "collection": "http://www.mlgtraffic.net/SNCB_AD.htm?lang=E",
+      "role": "AR41 mixed-class car: geometry and livery reference"
+    },
+    {
+      "url": "http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_B_R.gif",
+      "collection": "http://www.mlgtraffic.net/SNCB_AD.htm?lang=E",
+      "role": "AR41 second-class car: geometry and livery reference"
     }
   ],
   "artwork": {
@@ -26,8 +32,8 @@
         "sourceSha256": "f79204ecad684dc6b99a3ead09144939da51f5ba09cc3904b41ca99479cbffc7",
         "pngSha256": "a0cd21c2718f7a0a8154fb25a80d1e5cf71e3c44d862c869fd1d93d0d7b68380",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
       },
       "R": {
         "file": "limax-a-r.png",
@@ -39,8 +45,8 @@
         "sourceSha256": "f79204ecad684dc6b99a3ead09144939da51f5ba09cc3904b41ca99479cbffc7",
         "pngSha256": "46da4b0e85f134bc1519b9024860c87cca31e058ea5603fc5d6ddd0cf65ce850",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
       }
     },
     "limax-b": {
@@ -54,8 +60,8 @@
         "sourceSha256": "d40a0932121af1617080962a6a89483059761cefbf2faf7977729e48a0cb5c47",
         "pngSha256": "aee6bf8c3d8676d4294cbdb9e982467cd0eda10af38162ca1edc8fae82974006",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
       },
       "R": {
         "file": "limax-b-r.png",
@@ -67,8 +73,8 @@
         "sourceSha256": "d40a0932121af1617080962a6a89483059761cefbf2faf7977729e48a0cb5c47",
         "pngSha256": "73ee692178925b89318cecd2094f079049048338d46ea96c090519a0a2b78cf6",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
       }
     },
     "limax-c": {
@@ -82,8 +88,8 @@
         "sourceSha256": "53021dbdc0c6cad19ad1bd65c01c67af2d8c504d263c912fff0c1fcb8f756100",
         "pngSha256": "1ebf81a249fec9142d5f0613298f6d5da2c980fc823b31f500ef76d122b832cd",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
       },
       "R": {
         "file": "limax-c-r.png",
@@ -95,8 +101,68 @@
         "sourceSha256": "53021dbdc0c6cad19ad1bd65c01c67af2d8c504d263c912fff0c1fcb8f756100",
         "pngSha256": "eb6d322edfadaaeb939fd123cbdd53c962697299a72a357560c4ce8daa88f7b5",
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
-        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
+      }
+    },
+    "ar41-enhanced-first": {
+      "L": {
+        "file": "ar41-enhanced-first-l.png",
+        "width": 252,
+        "height": 58,
+        "cabFacing": "L",
+        "creator": "Stationsbord",
+        "source": "ar41-originals/ar41-first.png",
+        "sourceSha256": "e183a6c70beb30779cc00d70989d1ee8138e89cd939b145f056d9f05b1b2e087",
+        "pngSha256": "bf778f62ed2772916e4a6ff636ed58dfcc05595ca9e8f39361721472b7739758",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
+        "reference": "ar41-first-l.png"
+      },
+      "R": {
+        "file": "ar41-enhanced-first-r.png",
+        "width": 252,
+        "height": 58,
+        "cabFacing": "R",
+        "creator": "Stationsbord",
+        "source": "ar41-originals/ar41-first.png",
+        "sourceSha256": "e183a6c70beb30779cc00d70989d1ee8138e89cd939b145f056d9f05b1b2e087",
+        "pngSha256": "9da948d0c2a219c5f2d516fecf003c8f0ae483b659b58b8379ffb2efd0dd83d4",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
+        "reference": "ar41-first-l.png"
+      }
+    },
+    "ar41-enhanced-second": {
+      "L": {
+        "file": "ar41-enhanced-second-l.png",
+        "width": 253,
+        "height": 58,
+        "cabFacing": "L",
+        "creator": "Stationsbord",
+        "source": "ar41-originals/ar41-second.png",
+        "sourceSha256": "8f5247c65af97bdeedc9df8b3f3a843b4e9cd3cbf6b801136a430040fa773334",
+        "pngSha256": "87132550d3bd4d8fa8d00b479075b0bcfee684ea1ccfa147d9f8f8e641ee4073",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
+        "reference": "ar41-second-r.png"
+      },
+      "R": {
+        "file": "ar41-enhanced-second-r.png",
+        "width": 253,
+        "height": 58,
+        "cabFacing": "R",
+        "creator": "Stationsbord",
+        "source": "ar41-originals/ar41-second.png",
+        "sourceSha256": "8f5247c65af97bdeedc9df8b3f3a843b4e9cd3cbf6b801136a430040fa773334",
+        "pngSha256": "4011a4947c8447cffceca71edac8409fc31d422758074e0ab5850c61b712462a",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
+        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
+        "reference": "ar41-second-r.png"
       }
     }
   }

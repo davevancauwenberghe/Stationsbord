@@ -2,7 +2,7 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.4-r2&art=limax-20261014";
+} from "./composition.js?v=0.9.4-r2&art=ar41-20261014";
 import {
   renderCrowding,
   renderTrainNotices,
