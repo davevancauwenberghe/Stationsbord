@@ -1,0 +1,103 @@
+{
+  "creator": "Stationsbord (AI-assisted)",
+  "created": "2026-10-14",
+  "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+  "referenceCreator": "Marc Le Gad / MLGTraffic",
+  "references": [
+    {
+      "url": "http://www.mlgtraffic.net/images/NL_P/Arriva_FLIRT3_a_L.gif",
+      "collection": "http://www.mlgtraffic.net/NL_E_Arriva.xml",
+      "role": "Illustration style and Arriva FLIRT III appearance reference"
+    },
+    {
+      "source": "User-provided Railer screenshot of FLIRT_550_LIMAX c/b/a",
+      "role": "Three-car layout, livery and carriage details reference; screenshot is not redistributed"
+    }
+  ],
+  "artwork": {
+    "limax-a": {
+      "L": {
+        "file": "limax-a-l.png",
+        "width": 255,
+        "height": 58,
+        "cabFacing": "L",
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-a.png",
+        "sourceSha256": "f79204ecad684dc6b99a3ead09144939da51f5ba09cc3904b41ca99479cbffc7",
+        "pngSha256": "a0cd21c2718f7a0a8154fb25a80d1e5cf71e3c44d862c869fd1d93d0d7b68380",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      },
+      "R": {
+        "file": "limax-a-r.png",
+        "width": 255,
+        "height": 58,
+        "cabFacing": "R",
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-a.png",
+        "sourceSha256": "f79204ecad684dc6b99a3ead09144939da51f5ba09cc3904b41ca99479cbffc7",
+        "pngSha256": "46da4b0e85f134bc1519b9024860c87cca31e058ea5603fc5d6ddd0cf65ce850",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      }
+    },
+    "limax-b": {
+      "L": {
+        "file": "limax-b-l.png",
+        "width": 205,
+        "height": 58,
+        "cabFacing": null,
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-b.png",
+        "sourceSha256": "d40a0932121af1617080962a6a89483059761cefbf2faf7977729e48a0cb5c47",
+        "pngSha256": "aee6bf8c3d8676d4294cbdb9e982467cd0eda10af38162ca1edc8fae82974006",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      },
+      "R": {
+        "file": "limax-b-r.png",
+        "width": 205,
+        "height": 58,
+        "cabFacing": null,
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-b.png",
+        "sourceSha256": "d40a0932121af1617080962a6a89483059761cefbf2faf7977729e48a0cb5c47",
+        "pngSha256": "73ee692178925b89318cecd2094f079049048338d46ea96c090519a0a2b78cf6",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      }
+    },
+    "limax-c": {
+      "L": {
+        "file": "limax-c-l.png",
+        "width": 269,
+        "height": 58,
+        "cabFacing": "L",
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-c.png",
+        "sourceSha256": "53021dbdc0c6cad19ad1bd65c01c67af2d8c504d263c912fff0c1fcb8f756100",
+        "pngSha256": "1ebf81a249fec9142d5f0613298f6d5da2c980fc823b31f500ef76d122b832cd",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      },
+      "R": {
+        "file": "limax-c-r.png",
+        "width": 269,
+        "height": 58,
+        "cabFacing": "R",
+        "creator": "Stationsbord",
+        "source": "limax-originals/limax-c.png",
+        "sourceSha256": "53021dbdc0c6cad19ad1bd65c01c67af2d8c504d263c912fff0c1fcb8f756100",
+        "pngSha256": "eb6d322edfadaaeb939fd123cbdd53c962697299a72a357560c4ce8daa88f7b5",
+        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+        "creation": "AI-assisted indicative adaptation with MLGTraffic drawing references.",
+        "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; opposite direction mirrored."
+      }
+    }
+  }
+}

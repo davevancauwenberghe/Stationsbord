@@ -147,12 +147,16 @@ and orientation may differ from the upstream data.
 
 M6 A/B/BD/Bx use MLGTraffic's revised drawings with the larger pictograms;
 M6 AUH also selects the A drawing. ABD retains the supplied original artwork.
-The collection's Arriva FLIRT entry currently depicts the two-car 450 series,
-not the three-car LIMAX 550 set, so `AMFLIRTMC` retains the illustration fallback
-until corresponding original drawings and their reuse terms are verified.
+LIMAX 550 uses a locally created, AI-assisted three-car Stadler FLIRT III set:
+`AMFLIRTMC` a/c select the cab drawings and b selects the shorter centre car.
+Both directions are stored as transparent PNGs. Complete numbered sets use the
+same outward-cab check as the other EMUs; partial sets retain iRail's direction.
+These are indicative Stationsbord adaptations with MLGTraffic drawing references,
+not original MLGTraffic 550 illustrations or assets extracted from Railer.
 
-The 104 PNGs are committed under `server/src/public/assets/trains/`, served from
-Stationsbord itself, and imported directly from the [MLGTraffic Benelux
+The 104 imported PNGs and six local LIMAX PNGs are committed under
+`server/src/public/assets/trains/` and served from Stationsbord itself. Imports
+come directly from the [MLGTraffic Benelux
 collection](http://www.mlgtraffic.net/Coll_BNL_E.htm). No HyperRail code or assets
 are used. `composition.js` contains Stationsbord's own field-based matching and
 rendering; labels, seats and amenities always use the API response. M5 units
@@ -176,3 +180,11 @@ noncommercial purposes, and preserve the artwork licence for adaptations.
 [sources.json](server/src/public/assets/trains/sources.json) record provenance,
 source hashes and the lossless GIF-to-PNG conversion. Re-import with
 `python scripts/import-train-artwork.py` (development prerequisite: Pillow).
+
+For the local LIMAX set, `local-artwork.json` records its creator, references,
+processing steps and hashes separately. The three transparent master PNGs are
+retained in `limax-originals/`; export with `python scripts/export-limax-artwork.py`,
+then run `python scripts/import-train-artwork.py --metadata-only` to rebuild the
+shared catalogue and pixel-scale CSS. Normal MLGTraffic imports also retain and
+validate local artwork. The original generation/refinement prompts are stored
+in `scripts/limax-artwork-prompts.json`.

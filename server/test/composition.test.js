@@ -6,6 +6,7 @@ import {
   matchArtwork,
   renderComposition,
   selectArtworkVariant,
+  formationDirections,
 } from "../src/public/composition.js";
 import { artwork } from "../src/public/assets/trains/catalog.js";
 import { messages } from "../src/public/i18n.js";
@@ -16,6 +17,121 @@ const type = (parent_type, sub_type, orientation = "LEFT") => ({
   orientation,
 });
 const t = (key) => messages.en[key];
+
+test("LIMAX maps a/b/c across API layouts and respects both cab directions", () => {
+  for (const car of ["a", "b", "c"]) {
+    for (const unit of [
+      { materialType: type("AMFLIRTMC", car) },
+      { materialType: type(`AMFLIRTMC${car}`, "unknown") },
+      { materialSubTypeName: `AMFLIRTMC ${car}` },
+      { materialSubTypeName: `FLIRT_550_LIMAX_${car}` },
+    ]) {
+      for (const [orientation, side] of [
+        ["LEFT", "L"],
+        ["RIGHT", "R"],
+      ]) {
+        const drawing = matchArtwork({
+          ...unit,
+          materialType: { ...unit.materialType, orientation },
+        });
+        assert.equal(drawing?.key, `limax-${car}`);
+        assert.equal(drawing.creator, "Stationsbord");
+        assert.equal(drawing.cabFacing, car === "b" ? null : side);
+        assert.equal(drawing.file, `limax-${car}-${side.toLowerCase()}.png`);
+      }
+    }
+  }
+  for (const parent of ["AMFLIRT", "FLIRT3_450", "FLIRT_550", "FUTUREFLIRT"])
+    assert.equal(matchArtwork({ materialType: type(parent, "a") }), null);
+  assert.equal(
+    matchArtwork({ materialType: type("AMFLIRTMC", "unknown") }),
+    null,
+  );
+});
+
+test("complete numbered LIMAX formations orient outward without reordering carriages", () => {
+  const units = ["c", "b", "a"].map((car) => ({
+    materialType: type("AMFLIRTMC", car, "RIGHT"),
+    materialNumber: "551",
+    materialSubTypeName: `AMFLIRTMC ${car}`,
+    seatsSecondClass: 60,
+    hasToilets: car === "b" ? "1" : "0",
+  }));
+  assert.deepEqual(formationDirections(units), ["L", null, "R"]);
+  assert.deepEqual(
+    formationDirections([
+      ...units,
+      ...units.map((unit) => ({
+        ...unit,
+        materialNumber: "552",
+      })),
+    ]),
+    ["L", null, "R", "L", null, "R"],
+  );
+  assert.deepEqual(formationDirections(units.slice(0, 2)), [null, null]);
+  assert.deepEqual(
+    formationDirections(
+      units.map((unit) => ({
+        ...unit,
+        materialNumber: "",
+      })),
+    ),
+    [null, null, null],
+  );
+  const html = renderComposition(
+    {
+      composition: {
+        segments: {
+          segment: {
+            composition: { units: { unit: units } },
+          },
+        },
+      },
+    },
+    t,
+  );
+  assert.ok(html.indexOf("limax-c-l.png") < html.indexOf("limax-b-r.png"));
+  assert.ok(html.indexOf("limax-b-r.png") < html.indexOf("limax-a-r.png"));
+  assert.match(html, /Stationsbord \(LIMAX\)/);
+  assert.match(html, /Marc Le Gad \/ MLGTraffic/);
+  assert.match(html, /2nd class: 180 seats/);
+  assert.match(html, /Toilet/);
+  assert.doesNotMatch(html, /carriage-placeholder" >Drawing unavailable/);
+});
+
+test("local LIMAX artwork retains transparent masters and declared provenance", () => {
+  const root = new URL("../src/public/assets/trains/", import.meta.url);
+  const local = JSON.parse(readFileSync(new URL("local-artwork.json", root)));
+  assert.equal(local.referenceCreator, "Marc Le Gad / MLGTraffic");
+  assert.equal(
+    local.license,
+    "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+  );
+  for (const [key, variants] of Object.entries(local.artwork)) {
+    for (const side of ["L", "R"]) {
+      const entry = variants[side];
+      assert.equal(entry.creator, "Stationsbord");
+      assert.match(entry.creation, /AI-assisted/);
+      assert.equal(
+        createHash("sha256")
+          .update(readFileSync(new URL(entry.source, root)))
+          .digest("hex"),
+        entry.sourceSha256,
+      );
+      assert.equal(
+        createHash("sha256")
+          .update(readFileSync(new URL(entry.file, root)))
+          .digest("hex"),
+        entry.pngSha256,
+      );
+      assert.equal(entry.height, 58);
+      assert.equal(artwork[key][side].width, entry.width);
+      assert.equal(artwork[key][side].creator, "Stationsbord");
+    }
+  }
+  assert.ok(artwork["limax-b"].L.width < artwork["limax-a"].L.width);
+  assert.ok(artwork["limax-b"].L.width < artwork["limax-c"].L.width);
+});
 
 test("I11 AUH/BVUH aliases use service-specific liveries in every API type layout", () => {
   for (const [subtype, drawing] of [
@@ -312,12 +428,12 @@ test("composition keeps seats and amenities while hiding standing capacity, leng
   assert.match(html, /by-nc-sa\/3\.0/);
 });
 
-test("all committed PNGs retain their imported dimensions and provenance hashes", () => {
+test("all display PNGs match their declared dimensions and provenance hashes", () => {
   const root = new URL("../src/public/assets/trains/", import.meta.url);
   const manifest = JSON.parse(
     readFileSync(new URL("sources.json", root), "utf8"),
   );
-  assert.equal(Object.keys(artwork).length, 52);
+  assert.equal(Object.keys(artwork).length, 55);
   for (const [key, sides] of Object.entries(artwork)) {
     for (const side of ["L", "R"]) {
       const entry = sides[side],
@@ -330,10 +446,14 @@ test("all committed PNGs retain their imported dimensions and provenance hashes"
         createHash("sha256").update(png).digest("hex"),
         source.pngSha256,
       );
-      assert.match(
-        source.source,
-        /^http:\/\/www\.mlgtraffic\.net\/images\/SNCB\/.+\.gif$/,
-      );
+      if (source.creator === "Stationsbord") {
+        assert.match(source.source, /^limax-originals\/limax-[abc]\.png$/);
+      } else {
+        assert.match(
+          source.source,
+          /^http:\/\/www\.mlgtraffic\.net\/images\/SNCB\/.+\.gif$/,
+        );
+      }
       assert.equal(source.sourceSha256.length, 64);
       assert.equal(entry.cabFacing, source.cabFacing);
     }

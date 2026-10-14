@@ -1,4 +1,4 @@
-import { artwork } from "./assets/trains/catalog.js?v=0.9.4-r2";
+import { artwork } from "./assets/trains/catalog.js?v=0.9.4-r2&art=limax-20261014";
 import { asArray, escapeHtml as h, flag } from "./rail-utils.js?v=0.9.4-r2";
 
 const seats = (value) =>
@@ -14,7 +14,7 @@ function parseMaterial(value) {
     .toUpperCase()
     .replace(/(?:[_\s]+UNKNOWN)$/, "")
     .match(
-      /^(HLE\d+(?:II)?|AM\d{2}[MP]?|AR41|MW41|M[4567]|I(?:6|10|11))(?:[_\s]?)(.*)$/,
+      /^(AMFLIRTMC|FLIRT_550_LIMAX|HLE\d+(?:II)?|AM\d{2}[MP]?|AR41|MW41|M[4567]|I(?:6|10|11))(?:[_\s]?)(.*)$/,
     );
 }
 function material(unit) {
@@ -64,7 +64,9 @@ export function matchArtwork(
   const second = secondSeats(unit) > 0 || flag(unit.isSecondClass);
   const number = Number(unit.materialNumber);
   let key;
-  if (/^HLE(?:13|18|19|21|27|28|29)(?:II)?$/.test(family)) {
+  if (["AMFLIRTMC", "FLIRT_550_LIMAX"].includes(family)) {
+    key = { A: "limax-a", B: "limax-b", C: "limax-c" }[subtype];
+  } else if (/^HLE(?:13|18|19|21|27|28|29)(?:II)?$/.test(family)) {
     const series = family.match(/\d+/)[0];
     key = "hle" + ({ 19: "18", 29: "28" }[series] || series);
   } else if (/^AM08[MP]?$/.test(family) && ["A", "B", "C"].includes(subtype)) {
@@ -179,7 +181,7 @@ export function matchArtwork(
           : side
             ? "api"
             : "unknown",
-        src: `/assets/trains/${entry.file}`,
+        src: `/assets/trains/${entry.file}?art=limax-20261014`,
       }
     : null;
 }
@@ -201,7 +203,8 @@ export function formationDirections(units) {
       end++;
     const count = /^AM75/.test(family)
       ? 4
-      : /^(?:AM08|AM80|AM96)/.test(family)
+      : /^(?:AM08|AM80|AM96)/.test(family) ||
+          ["AMFLIRTMC", "FLIRT_550_LIMAX"].includes(family)
         ? 3
         : /^(?:AM86|AR41|MW41)/.test(family)
           ? 2
@@ -289,6 +292,14 @@ export function renderCompositionDisclaimer(t) {
 
 export function renderComposition(data, t, context = {}) {
   const segments = asArray(data?.composition?.segments?.segment);
+  const custom = segments.some((segment) =>
+    asArray(segment.composition?.units?.unit).some(
+      (unit) =>
+        unit &&
+        typeof unit === "object" &&
+        matchArtwork(unit, context)?.creator === "Stationsbord",
+    ),
+  );
   const result = segments
     .map((segment, index) => {
       const units = asArray(segment.composition?.units?.unit).filter(
@@ -310,7 +321,7 @@ export function renderComposition(data, t, context = {}) {
     })
     .join("");
   return result
-    ? `${result}${renderCompositionDisclaimer(t)}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: <a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
+    ? `${result}${renderCompositionDisclaimer(t)}<p class="composition-note">${h(t("compositionIndicative"))}</p><p class="artwork-credit">${h(t("artworkCredit"))}: ${custom ? "Stationsbord (LIMAX) · " : ""}<a href="http://www.mlgtraffic.net/Coll_BNL_E.htm" target="_blank" rel="noopener noreferrer">Marc Le Gad / MLGTraffic</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer license">CC BY-NC-SA 3.0</a></p>`
     : `<p class="muted">${h(t("compositionError"))}</p>${renderCompositionDisclaimer(t)}`;
 }
 

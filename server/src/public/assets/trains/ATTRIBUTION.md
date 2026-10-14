@@ -1,4 +1,4 @@
-# MLGTraffic — Benelux train drawings
+# MLGTraffic and Stationsbord — Benelux train drawings
 
 Creator and collection publisher: **Marc Le Gad / MLGTraffic**.
 
@@ -13,6 +13,9 @@ These PNGs are third-party artwork, excluded from Stationsbord's MIT licence.
 They may be shared and adapted for noncommercial purposes with appropriate
 credit, a licence link, and an indication of adaptations. Adapted artwork is
 released under CC BY-NC-SA 3.0. The creator does not endorse Stationsbord.
+
+The local LIMAX adaptations described below are also distributed under
+CC BY-NC-SA 3.0 and excluded from the code's MIT licence.
 
 ## Sources and changes
 
@@ -37,6 +40,36 @@ and SHA-256 hashes of the source GIF and resulting PNG.
 The collection homepage links to CC BY-NC-SA 3.0. Some individual collection
 pages also retain an older CC BY-NC-SA 2.0 France notice; the PNG conversions
 are distributed under the collection's CC BY-NC-SA 3.0 terms.
+
+## Local LIMAX 550 adaptations
+
+Created for **Stationsbord on 2026-10-14**, with AI-assisted image generation.
+Marc Le Gad's `Arriva_FLIRT3_a_L.gif` from the [Arriva collection](http://www.mlgtraffic.net/NL_E_Arriva.xml)
+provided an illustration-style and vehicle-appearance reference. A user-provided
+Railer screenshot guided the three-car LIMAX layout and livery. The reference
+screenshot and original MLGTraffic GIF are not redistributed here. No Railer
+application files or HyperRail files/code were imported.
+
+These drawings are **Stationsbord adaptations**, not original MLGTraffic 550
+drawings. Neither Marc Le Gad, Railer, Arriva nor Stadler endorses them. They are
+indicative and may differ in details from individual vehicles. Seats and
+amenities remain sourced from iRail.
+
+The three AI-generated transparent masters are retained under `limax-originals/`.
+The export script trims transparent padding, scales uniformly by the blue-body
+height, aligns the bottom edge and creates mirrored variants. This processing
+applies only to the local LIMAX set; imported MLGTraffic PNGs retain their
+original pixels. Sources, hashes, creator and changes are recorded per variant
+in `local-artwork.json` and merged into `sources.json`. The prompt set is in
+`scripts/limax-artwork-prompts.json`.
+
+Rebuild these six display PNGs with:
+
+    python scripts/export-limax-artwork.py
+    python scripts/import-train-artwork.py --metadata-only
+
+The live composition credits Stationsbord for LIMAX and retains the MLGTraffic
+reference credit and CC BY-NC-SA 3.0 link.
 
 Reproduce the import from the repository root with:
 
