@@ -252,38 +252,6 @@ export const artwork = {
       cabFacing: "L",
     },
   },
-  "ar41-enhanced-first": {
-    L: {
-      file: "ar41-enhanced-first-l.png",
-      width: 252,
-      height: 58,
-      cabFacing: "L",
-      creator: "Stationsbord",
-    },
-    R: {
-      file: "ar41-enhanced-first-r.png",
-      width: 252,
-      height: 58,
-      cabFacing: "R",
-      creator: "Stationsbord",
-    },
-  },
-  "ar41-enhanced-second": {
-    L: {
-      file: "ar41-enhanced-second-l.png",
-      width: 253,
-      height: 58,
-      cabFacing: "L",
-      creator: "Stationsbord",
-    },
-    R: {
-      file: "ar41-enhanced-second-r.png",
-      width: 253,
-      height: 58,
-      cabFacing: "R",
-      creator: "Stationsbord",
-    },
-  },
   "ar41-first": {
     L: {
       file: "ar41-first-l.png",

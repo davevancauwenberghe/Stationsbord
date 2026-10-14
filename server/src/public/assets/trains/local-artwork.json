@@ -8,16 +8,6 @@
       "url": "http://www.mlgtraffic.net/images/NL_P/Arriva_FLIRT3_a_L.gif",
       "collection": "http://www.mlgtraffic.net/NL_E_Arriva.xml",
       "role": "Illustration style and Arriva FLIRT III appearance reference"
-    },
-    {
-      "url": "http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_AB_L.gif",
-      "collection": "http://www.mlgtraffic.net/SNCB_AD.htm?lang=E",
-      "role": "AR41 mixed-class car: geometry and livery reference"
-    },
-    {
-      "url": "http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_B_R.gif",
-      "collection": "http://www.mlgtraffic.net/SNCB_AD.htm?lang=E",
-      "role": "AR41 second-class car: geometry and livery reference"
     }
   ],
   "artwork": {
@@ -103,66 +93,6 @@
         "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
         "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
         "changes": "Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored."
-      }
-    },
-    "ar41-enhanced-first": {
-      "L": {
-        "file": "ar41-enhanced-first-l.png",
-        "width": 252,
-        "height": 58,
-        "cabFacing": "L",
-        "creator": "Stationsbord",
-        "source": "ar41-originals/ar41-first.png",
-        "sourceSha256": "e183a6c70beb30779cc00d70989d1ee8138e89cd939b145f056d9f05b1b2e087",
-        "pngSha256": "bf778f62ed2772916e4a6ff636ed58dfcc05595ca9e8f39361721472b7739758",
-        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
-        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
-        "reference": "ar41-first-l.png"
-      },
-      "R": {
-        "file": "ar41-enhanced-first-r.png",
-        "width": 252,
-        "height": 58,
-        "cabFacing": "R",
-        "creator": "Stationsbord",
-        "source": "ar41-originals/ar41-first.png",
-        "sourceSha256": "e183a6c70beb30779cc00d70989d1ee8138e89cd939b145f056d9f05b1b2e087",
-        "pngSha256": "9da948d0c2a219c5f2d516fecf003c8f0ae483b659b58b8379ffb2efd0dd83d4",
-        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
-        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
-        "reference": "ar41-first-l.png"
-      }
-    },
-    "ar41-enhanced-second": {
-      "L": {
-        "file": "ar41-enhanced-second-l.png",
-        "width": 253,
-        "height": 58,
-        "cabFacing": "L",
-        "creator": "Stationsbord",
-        "source": "ar41-originals/ar41-second.png",
-        "sourceSha256": "8f5247c65af97bdeedc9df8b3f3a843b4e9cd3cbf6b801136a430040fa773334",
-        "pngSha256": "87132550d3bd4d8fa8d00b479075b0bcfee684ea1ccfa147d9f8f8e641ee4073",
-        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
-        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
-        "reference": "ar41-second-r.png"
-      },
-      "R": {
-        "file": "ar41-enhanced-second-r.png",
-        "width": 253,
-        "height": 58,
-        "cabFacing": "R",
-        "creator": "Stationsbord",
-        "source": "ar41-originals/ar41-second.png",
-        "sourceSha256": "8f5247c65af97bdeedc9df8b3f3a843b4e9cd3cbf6b801136a430040fa773334",
-        "pngSha256": "4011a4947c8447cffceca71edac8409fc31d422758074e0ab5850c61b712462a",
-        "license": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
-        "creation": "AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.",
-        "changes": "Transparent padding trimmed; uniformly fitted to the original mlgtraffic ar41 bounding box; bottom aligned; opposite direction mirrored.",
-        "reference": "ar41-second-r.png"
       }
     }
   }

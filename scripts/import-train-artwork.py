@@ -104,6 +104,8 @@ if __name__ == '__main__':
     if args.metadata_only and not existing.exists():
         parser.error('--metadata-only requires the existing sources.json')
     catalog = json.loads(existing.read_text())['artwork'] if (args.only or args.metadata_only) and existing.exists() else {}
+    # Rebuild local entries from their current manifest, dropping removed artwork.
+    catalog = {key: sides for key, sides in catalog.items() if key in SOURCES}
     selected = {key: value for key, value in SOURCES.items() if not args.only or key in args.only}
     # Check all multiple-unit source entries before any download starts.
     for key in SOURCES:

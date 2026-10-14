@@ -2,7 +2,7 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.4-r2&art=ar41-20261014";
+} from "./composition.js?v=0.9.4-r2&art=limax-cleanup-20261014";
 import {
   renderCrowding,
   renderTrainNotices,
@@ -1661,7 +1661,6 @@ if (
 }
 applyLanguage();
 setScreen(state.screen, { focus: false });
-let initialLoad;
 const initialTrain = normalizeTrainId(params.get("train"));
 if (state.screen === "train") {
   if (validDate(date || "")) {
@@ -1671,7 +1670,7 @@ if (state.screen === "train") {
   }
   if (initialTrain) {
     $("trainInput").value = initialTrain;
-    initialLoad = submitTrain();
+    submitTrain();
   }
 } else if (initialStation && initialStation.length <= 150) {
   state.station = /^BE\.NMBS\.[A-Za-z0-9]+$/.test(initialStation)
@@ -1679,9 +1678,6 @@ if (state.screen === "train") {
     : { name: initialStation };
   $("stationInput").value = state.station.name;
   $("clearStation").hidden = false;
-  initialLoad = submitBoard();
+  submitBoard();
 }
 refreshNetwork();
-Promise.resolve(initialLoad).finally(() =>
-  window.dispatchEvent(new Event("stationsbord:ready")),
-);

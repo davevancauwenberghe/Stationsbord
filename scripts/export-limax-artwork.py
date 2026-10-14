@@ -1,4 +1,4 @@
-"""Export local MLGTraffic continuations at Stationsbord's display scale.
+"""Export the LIMAX continuation at Stationsbord's display scale.
 
 Development prerequisite: Pillow. Source illustrations were created with the
 built-in image-generation tool; this script only packages the finished artwork.
@@ -39,13 +39,11 @@ def sha(data):
 if __name__ == '__main__':
     catalog = {}
     drawings = [
-        ('limax-a', 'limax-originals/limax-a.png', 'R', None),
-        ('limax-b', 'limax-originals/limax-b.png', 'L', None),
-        ('limax-c', 'limax-originals/limax-c.png', 'L', None),
-        ('ar41-enhanced-first', 'ar41-originals/ar41-first.png', 'L', 'ar41-first-l.png'),
-        ('ar41-enhanced-second', 'ar41-originals/ar41-second.png', 'R', 'ar41-second-r.png'),
+        ('limax-a', 'limax-originals/limax-a.png', 'R'),
+        ('limax-b', 'limax-originals/limax-b.png', 'L'),
+        ('limax-c', 'limax-originals/limax-c.png', 'L'),
     ]
-    for key, source_path, original_direction, reference in drawings:
+    for key, source_path, original_direction in drawings:
         source_file = ROOT / source_path
         source_bytes = source_file.read_bytes()
         with Image.open(source_file) as source:
@@ -55,18 +53,8 @@ if __name__ == '__main__':
         if not bounds or alpha.getextrema()[0] != 0:
             raise ValueError('Expected an illustration on a transparent background')
         drawing = image.crop(bounds)
-        if reference:
-            # Fit the original DMU's bounding box, without stretching its wheels.
-            with Image.open(ROOT / reference) as original:
-                bounds = original.convert('RGBA').getchannel('A').getbbox()
-            reference_width = bounds[2] - bounds[0]
-            reference_height = bounds[3] - bounds[1]
-            scale = min(reference_width / drawing.width, reference_height / drawing.height)
-            sizing = 'Uniformly fitted to the original MLGTraffic AR41 bounding box'
-        else:
-            scale = min(BODY_HEIGHT / blue_body_height(drawing),
-                        (FRAME_HEIGHT - MARGIN * 2) / drawing.height)
-            sizing = 'Uniformly scaled to a common blue-body height'
+        scale = min(BODY_HEIGHT / blue_body_height(drawing),
+                    (FRAME_HEIGHT - MARGIN * 2) / drawing.height)
         size = (round(drawing.width * scale), round(drawing.height * scale))
         drawing = drawing.resize(size, Image.Resampling.LANCZOS)
         canvas = Image.new('RGBA', (size[0] + MARGIN * 2, FRAME_HEIGHT))
@@ -85,10 +73,8 @@ if __name__ == '__main__':
                 'pngSha256': sha((ROOT / filename).read_bytes()),
                 'license': LICENSE,
                 'creation': 'AI-assisted indicative continuation based on Marc Le Gad / MLGTraffic artwork.',
-                'changes': f'Transparent padding trimmed; {sizing.lower()}; bottom aligned; opposite direction mirrored.',
+                'changes': 'Transparent padding trimmed; uniformly scaled to a common blue-body height; bottom aligned; opposite direction mirrored.',
             }
-            if reference:
-                variants[side]['reference'] = reference
         catalog[key] = variants
     manifest = {
         'creator': 'Stationsbord (AI-assisted)', 'created': '2026-10-14',
@@ -98,14 +84,8 @@ if __name__ == '__main__':
             {'url': 'http://www.mlgtraffic.net/images/NL_P/Arriva_FLIRT3_a_L.gif',
              'collection': 'http://www.mlgtraffic.net/NL_E_Arriva.xml',
              'role': 'Illustration style and Arriva FLIRT III appearance reference'},
-            {'url': 'http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_AB_L.gif',
-             'collection': 'http://www.mlgtraffic.net/SNCB_AD.htm?lang=E',
-             'role': 'AR41 mixed-class car: geometry and livery reference'},
-            {'url': 'http://www.mlgtraffic.net/images/SNCB/AED/SNCB_MW41_B_R.gif',
-             'collection': 'http://www.mlgtraffic.net/SNCB_AD.htm?lang=E',
-             'role': 'AR41 second-class car: geometry and livery reference'},
         ],
         'artwork': catalog,
     }
     (ROOT / 'local-artwork.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    print('Exported ten transparent LIMAX/AR41 carriage PNGs with master-source hashes.')
+    print('Exported six transparent LIMAX carriage PNGs with master-source hashes.')
