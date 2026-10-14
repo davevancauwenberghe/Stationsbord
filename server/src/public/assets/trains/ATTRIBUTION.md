@@ -1,56 +1,33 @@
-# MLGTraffic — Benelux train drawings
+# Train artwork attribution
 
-Creator and collection publisher: **Marc Le Gad / MLGTraffic**.
+Original drawings: **Marc Le Gad / MLGTraffic**.
+Collection: http://www.mlgtraffic.net/Coll_BNL_E.htm
+Homepage and licence notice: http://www.mlgtraffic.net/index.html
 
-Original collection: http://www.mlgtraffic.net/Coll_BNL_E.htm
+All train artwork is distributed under **[CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/)**, excluded from Stationsbord’s MIT licence. Redistribution and adaptations require credit, a licence link, noncommercial use and the same artwork licence. The original creator does not endorse Stationsbord.
 
-Collection homepage and licence notice: http://www.mlgtraffic.net/index.html
+## Imported MLGTraffic drawings
 
-Licence: **Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported**
-(CC BY-NC-SA 3.0): https://creativecommons.org/licenses/by-nc-sa/3.0/
+Original GIFs are converted losslessly to PNG without changing their dimensions, colours or transparency. Both original sides are retained. `sources.json` records source URLs, collection pages and source/PNG SHA-256 hashes.
 
-These PNGs are third-party artwork, excluded from Stationsbord's MIT licence.
-They may be shared and adapted for noncommercial purposes with appropriate
-credit, a licence link, and an indication of adaptations. Adapted artwork is
-released under CC BY-NC-SA 3.0. The creator does not endorse Stationsbord.
+The original collection was imported on 2026-10-09; M5 and Ouigo I11 drawings were added on 2026-10-10. Revised M6 A/B/BD/Bx drawings were imported on 2026-10-14; ABD retains the supplied original. AR41 uses the original MLGTraffic MW41 AB/B drawings. No HyperRail code or assets are used.
 
-## Sources and changes
+The collection homepage links to CC BY-NC-SA 3.0; some individual pages retain an older CC BY-NC-SA 2.0 France notice. These conversions use the collection’s CC BY-NC-SA 3.0 terms.
 
-Initial collection downloaded directly from MLGTraffic on 2026-10-09;
-M5 and Ouigo I11 A/B drawings added directly on 2026-10-10. No HyperRail files, assets,
-code, mappings, or image transformations were copied into this project.
+## LIMAX EMU continuation
 
-Each static GIF was converted losslessly to PNG, preserving its original
-pixel dimensions, colours and transparency. No rescaling, redrawing, cropping,
-flipping or visual changes were applied to the stored artwork. Both original
-left and right side drawings are retained. Filename changes are recorded in
-`sources.json`, alongside the exact source URL, collection page, dimensions,
-and SHA-256 hashes of the source GIF and resulting PNG.
+Artwork credit: **Dave Van Cauwenberghe / Stationsbord**, based on Marc Le Gad / MLGTraffic’s `Arriva_FLIRT3_a_L.gif` ([Arriva collection](http://www.mlgtraffic.net/NL_E_Arriva.xml)).
 
-The collection homepage links to CC BY-NC-SA 3.0. Some individual collection
-pages also retain an older CC BY-NC-SA 2.0 France notice; the PNG conversions
-are distributed under the collection's CC BY-NC-SA 3.0 terms.
+Created on 2026-10-14 with AI-assisted image generation. These are indicative adaptations, not original MLGTraffic LIMAX drawings. The three transparent PNG masters are retained in `limax-originals/`. Display export trims transparent padding, scales uniformly, aligns the bottom and mirrors the opposite direction. `local-artwork.json` records creator, references, processing and hashes.
 
-Reproduce the import from the repository root with:
+## Train-asset maintenance
 
-    python -m pip install Pillow
-    python scripts/import-train-artwork.py
+Development prerequisite: Pillow. From the repository root:
 
-Pillow is needed only for this development task. The running website uses the
-committed PNGs and never requests images from MLGTraffic or another application.
+```sh
+python scripts/import-train-artwork.py
+python scripts/export-limax-artwork.py
+python scripts/import-train-artwork.py --metadata-only
+```
 
-## Representation
-
-Artwork depicts representative rolling-stock types, not a guarantee of the
-actual vehicle's livery, orientation or platform position. Seat counts and
-amenities come from iRail/NMBS data, not from the drawings. Unknown types keep
-their textual information and display an explicit illustration fallback.
-
-Display sizing uses a common source-pixel scale for locomotives, EMUs and
-coaches. The stored artwork is unchanged. Cab orientation selects the matching
-original drawing by reviewed `cabFacing` metadata for each supported EMU/DMU
-cab and cab coach. AM96 BX, M4 ADx and M5 BDx have `L`/`R` filenames opposite
-to their visible cab direction. Intermediate vehicles are explicitly marked
-with a null cab direction. Metadata changes do not alter the original artwork. M5 is matched as M5; historical M4
-records keep M4 illustrations. Only OTC services select Ouigo I11 A/B drawings;
-I11 cab cars use the standard I11 BDx artwork.
+The website serves the committed PNGs locally. Illustrations are representative; actual livery, order and orientation may differ. Seats and amenities come from iRail.

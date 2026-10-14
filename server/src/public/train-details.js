@@ -8,7 +8,7 @@ import {
   delayMinutes,
   occupancy,
   safeLink,
-} from "./rail-utils.js?v=0.9.4-r2";
+} from "./rail-utils.js?v=0.9.5";
 
 const number = (value) =>
   ["number", "string"].includes(typeof value) &&

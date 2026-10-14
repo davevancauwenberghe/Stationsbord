@@ -2,14 +2,14 @@ import {
   renderComposition,
   renderCompositionDisclaimer,
   installArtworkFallbacks,
-} from "./composition.js?v=0.9.4-r2";
+} from "./composition.js?v=0.9.5";
 import {
   renderCrowding,
   renderTrainNotices,
   renderStopList,
   stopEvents,
-} from "./train-details.js?v=0.9.4-r2";
-import { languages, messages } from "./i18n.js?v=0.9.4-r2";
+} from "./train-details.js?v=0.9.5";
+import { languages, messages } from "./i18n.js?v=0.9.5";
 import {
   asArray,
   escapeHtml as h,
@@ -26,9 +26,9 @@ import {
   serviceDate,
   delayMinutes,
   filterBoardRows,
-} from "./rail-utils.js?v=0.9.4-r2";
+} from "./rail-utils.js?v=0.9.5";
 
-import { renderNetwork } from "./network.js?v=0.9.4-r2";
+import { renderNetwork } from "./network.js?v=0.9.5";
 import {
   normalizeTrainId,
   trainStops,
@@ -37,14 +37,14 @@ import {
   previousServiceDate,
   journeyEndDate,
   trainLabel,
-} from "./train-lookup.js?v=0.9.4-r2";
+} from "./train-lookup.js?v=0.9.5";
 
 import {
   trainProgress,
   renderProgress,
   activeService,
   currentServiceDay,
-} from "./train-progress.js?v=0.9.4-r2";
+} from "./train-progress.js?v=0.9.5";
 
 const $ = (id) => document.getElementById(id);
 const storage = {
@@ -151,7 +151,11 @@ function remember(station) {
   renderShortcuts();
 }
 function renderShortcuts() {
+  const focused = document.activeElement;
+  const focusKey = focused?.dataset.stationKey;
+  const focusAction = focused?.dataset.shortcutAction;
   const saved = readStations("savedStations");
+  if (!saved.length) state.editingSaved = false;
   $("savedSection").hidden = !saved.length;
   renderStationList($("savedStations"), saved, true);
   $("popularSection").hidden = saved.length > 0;
@@ -165,6 +169,18 @@ function renderShortcuts() {
   $("manageSaved").textContent = t(
     state.editingSaved ? "doneEditing" : "manageSaved",
   );
+  if (focusKey)
+    [
+      ...document.querySelectorAll(
+        "#savedStations button, #stationShortcuts button",
+      ),
+    ]
+      .find(
+        (button) =>
+          button.dataset.stationKey === focusKey &&
+          button.dataset.shortcutAction === focusAction,
+      )
+      ?.focus({ preventScroll: true });
 }
 function renderStationList(container, stations, removable) {
   container.replaceChildren();
@@ -174,6 +190,8 @@ function renderStationList(container, stations, removable) {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = station.name;
+    button.dataset.stationKey = station.id || station.name;
+    button.dataset.shortcutAction = "select";
     button.addEventListener("click", () => selectStation(station));
     if (removable) {
       button.setAttribute(
@@ -185,6 +203,8 @@ function renderStationList(container, stations, removable) {
     if (removable && state.editingSaved) {
       const remove = document.createElement("button");
       remove.type = "button";
+      remove.dataset.stationKey = station.id;
+      remove.dataset.shortcutAction = "remove";
       remove.className = "remove-saved";
       remove.textContent = "×";
       remove.setAttribute("aria-label", `${t("removeSaved")}: ${station.name}`);
@@ -245,9 +265,17 @@ $("saveStation").addEventListener("click", () => {
   toast(t(exists ? "stationRemoved" : "stationSaved"));
 });
 
+function updatePageTitle() {
+  const view = state.screen === "train" ? state.trainView : state.view;
+  document.title = !view
+    ? `Stationsbord · ${t("eyebrow")}`
+    : state.screen === "train"
+      ? `${trainLabel(state.trainData, `${t("train")} ${view.id}`)} | Stationsbord`
+      : `${state.data?.station || view.station.name} · ${t(view.mode === "arrival" ? "arrivals" : "departures")} | Stationsbord`;
+}
 function applyLanguage() {
   document.documentElement.lang = state.lang;
-  document.title = `Stationsbord · ${t("eyebrow")}`;
+  updatePageTitle();
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     el.textContent = t(el.dataset.i18n);
   });
@@ -632,6 +660,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 function syncURL() {
+  updatePageTitle();
   if (state.screen === "train") {
     const view = state.trainView;
     const query = new URLSearchParams({ view: "train", lang: state.lang });
@@ -701,7 +730,7 @@ function renderNotice() {
 }
 function renderEmpty(title = "emptyTitle", body = "emptyBody") {
   $("boardContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r2#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.5#station" /></svg><h3>${h(t(title))}</h3><p>${h(t(body))}</p></div>`;
 }
 function renderLoading() {
   $("boardContent").innerHTML =
@@ -1297,12 +1326,13 @@ function renderTrainEmpty() {
   $("trainTitle").textContent = t("trainLookup");
   $("trainSubtitle").textContent = "";
   $("trainContent").innerHTML =
-    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.4-r2#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
+    `<div class="empty-state"><svg class="empty-sign" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg?v=0.9.5#train" /></svg><h3>${h(t("trainEmptyTitle"))}</h3><p>${h(t("trainEmptyBody"))}</p></div>`;
 }
 function renderTrainHeading() {
   const view = state.trainView;
   if (!view) return;
   const data = state.trainData;
+  updatePageTitle();
   $("trainTitle").textContent = trainLabel(data, view.id);
   const stops = trainStops(data);
   $("trainSubtitle").textContent = stops.length
@@ -1661,7 +1691,6 @@ if (
 }
 applyLanguage();
 setScreen(state.screen, { focus: false });
-let initialLoad;
 const initialTrain = normalizeTrainId(params.get("train"));
 if (state.screen === "train") {
   if (validDate(date || "")) {
@@ -1671,7 +1700,7 @@ if (state.screen === "train") {
   }
   if (initialTrain) {
     $("trainInput").value = initialTrain;
-    initialLoad = submitTrain();
+    submitTrain();
   }
 } else if (initialStation && initialStation.length <= 150) {
   state.station = /^BE\.NMBS\.[A-Za-z0-9]+$/.test(initialStation)
@@ -1679,9 +1708,6 @@ if (state.screen === "train") {
     : { name: initialStation };
   $("stationInput").value = state.station.name;
   $("clearStation").hidden = false;
-  initialLoad = submitBoard();
+  submitBoard();
 }
 refreshNetwork();
-Promise.resolve(initialLoad).finally(() =>
-  window.dispatchEvent(new Event("stationsbord:ready")),
-);

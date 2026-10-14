@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+const releaseVersion = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+).version;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("proxy coalesces requests, revalidates ETags, labels stale data and validates input", async () => {
@@ -44,6 +48,7 @@ test("proxy coalesces requests, revalidates ETags, labels stale data and validat
       ...process.env,
       PORT: String(port),
       APP_NAME: "Stationsbord-test",
+      APP_VERSION: "",
       IRAIL_BASE_URL: `http://127.0.0.1:${upstream.address().port}`,
     },
     stdio: "ignore",
@@ -61,6 +66,10 @@ test("proxy coalesces requests, revalidates ETags, labels stale data and validat
       }
     }
     assert.ok(ready, "Server started");
+    assert.equal(
+      (await (await fetch(`${base}/health`)).json()).version,
+      releaseVersion,
+    );
     const url = `${base}/api/liveboard?id=BE.NMBS.008892007&lang=nl`;
     const responses = await Promise.all(
       Array.from({ length: 6 }, () => fetch(url)),

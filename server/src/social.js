@@ -153,7 +153,7 @@ export function pageMetadata(search, origin) {
     description,
     url: url.href,
     locale: text.locale,
-    image: new URL("/social-card.png?v=0.9.2", origin).href,
+    image: new URL("/social-card.png?v=0.9.5", origin).href,
     imageAlt: text.imageAlt,
   };
 }

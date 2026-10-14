@@ -2,7 +2,7 @@ import {
   escapeHtml as h,
   isPlanned,
   safeLink,
-} from "./rail-utils.js?v=0.9.4-r2";
+} from "./rail-utils.js?v=0.9.5";
 
 function renderNotice(item, t) {
   const link = safeLink(item.link),

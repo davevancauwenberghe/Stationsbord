@@ -3,8 +3,8 @@ import {
   belgianParts,
   escapeHtml as h,
   fmtTime,
-} from "./rail-utils.js?v=0.9.4-r2";
-import { stopEvents } from "./train-details.js?v=0.9.4-r2";
+} from "./rail-utils.js?v=0.9.5";
+import { stopEvents } from "./train-details.js?v=0.9.5";
 
 export function nextStopIndex(stops, { now = Date.now() / 1000 } = {}) {
   return stops.findIndex((stop, index) => {
