@@ -164,6 +164,7 @@ export function createPlanner({
         const retry = document.createElement("button");
         retry.type = "button";
         retry.textContent = t("retry");
+        retry.disabled = !!state.controller;
         retry.addEventListener("click", () =>
           load(state.view, { background: !!state.result }),
         );
@@ -229,11 +230,11 @@ export function createPlanner({
       to: { ...view.to },
       ...(view.live ? belgianParts() : {}),
     };
-    state.failed = false;
-    state.stale = false;
     if (!same) {
       state.result = null;
       state.list = [];
+      state.failed = false;
+      state.stale = false;
     }
     dismiss();
     heading();
@@ -271,6 +272,7 @@ export function createPlanner({
         throw new Error("Invalid journey response");
       state.result = result.data;
       state.list = list;
+      state.failed = false;
       state.stale = result.stale;
       for (const kind of ["from", "to"]) {
         const station = list[0]?.[kind].station;
