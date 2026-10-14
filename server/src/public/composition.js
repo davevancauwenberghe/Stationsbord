@@ -133,7 +133,7 @@ export function matchArtwork(
       key = "m6-luggage-mixed";
     else if (["BD", "BDH", "BDU", "BDUH", "BDYU"].includes(subtype))
       key = "m6-luggage-second";
-    else if (["A", "AU"].includes(subtype)) key = "m6-first";
+    else if (["A", "AU", "AUH"].includes(subtype)) key = "m6-first";
     else if (["B", "BU", "BUH", "BYU", "BAU"].includes(subtype))
       key = first ? "m6-first" : "m6-second";
   } else if (family === "M7") {

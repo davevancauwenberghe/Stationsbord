@@ -20,6 +20,13 @@ Initial collection downloaded directly from MLGTraffic on 2026-10-09;
 M5 and Ouigo I11 A/B drawings added directly on 2026-10-10. No HyperRail files, assets,
 code, mappings, or image transformations were copied into this project.
 
+M6 A, B, BD and Bx drawings were replaced on 2026-10-14 with MLGTraffic's
+refurbished `M6_RG_*` originals, including their larger pictograms. Both source
+sides were imported directly. The supplied M6 ABD drawing retains its existing
+original: the collection does not list a revised ABD asset. `M6 AUH` records
+select the first-class A drawing. This is a representative illustration, not a
+claim that the individual coach has been refurbished.
+
 Each static GIF was converted losslessly to PNG, preserving its original
 pixel dimensions, colours and transparency. No rescaling, redrawing, cropping,
 flipping or visual changes were applied to the stored artwork. Both original

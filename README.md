@@ -145,6 +145,12 @@ labelled fallback. Each composition segment has its own horizontally scrollable,
 keyboard-focusable train strip. Drawings are indicative: actual livery, order
 and orientation may differ from the upstream data.
 
+M6 A/B/BD/Bx use MLGTraffic's revised drawings with the larger pictograms;
+M6 AUH also selects the A drawing. ABD retains the supplied original artwork.
+The collection's Arriva FLIRT entry currently depicts the two-car 450 series,
+not the three-car LIMAX 550 set, so `AMFLIRTMC` retains the illustration fallback
+until corresponding original drawings and their reuse terms are verified.
+
 The 104 PNGs are committed under `server/src/public/assets/trains/`, served from
 Stationsbord itself, and imported directly from the [MLGTraffic Benelux
 collection](http://www.mlgtraffic.net/Coll_BNL_E.htm). No HyperRail code or assets

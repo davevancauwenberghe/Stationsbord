@@ -136,6 +136,61 @@ test("unknown and ambiguous types fall back instead of claiming a specific drawi
   assert.equal(matchArtwork({ materialSubTypeName: "M6_weird" }), null);
 });
 
+test("M6 AUH uses first-class artwork in split and combined API type layouts", () => {
+  for (const unit of [
+    { materialType: type("M6", "AUH") },
+    { materialType: type("M6AUH", "unknown") },
+    { materialSubTypeName: "M6AUH unknown" },
+  ]) {
+    for (const [orientation, side] of [
+      ["LEFT", "l"],
+      ["RIGHT", "r"],
+    ]) {
+      const drawing = matchArtwork({
+        ...unit,
+        materialType: { ...unit.materialType, orientation },
+      });
+      assert.equal(drawing?.key, "m6-first");
+      assert.equal(drawing.file, `m6-first-${side}.png`);
+    }
+  }
+  assert.equal(
+    matchArtwork({
+      materialType: type("M6", "AUH"),
+      seatsFirstClass: "0",
+      seatsSecondClass: "0",
+    }).key,
+    "m6-first",
+  );
+  assert.equal(matchArtwork({ materialType: type("M6", "unreviewed") }), null);
+});
+
+test("M6 catalogue imports the revised original A/B/BD/Bx and keeps the supplied ABD", () => {
+  const sources = JSON.parse(
+    readFileSync(
+      new URL("../src/public/assets/trains/sources.json", import.meta.url),
+    ),
+  );
+  for (const [key, name] of [
+    ["m6-first", "M6_RG_A"],
+    ["m6-second", "M6_RG_B"],
+    ["m6-luggage-second", "M6_RG_BD"],
+    ["m6-cab", "M6_RG_Bx"],
+    ["m6-luggage-mixed", "M6_ABD"],
+  ]) {
+    for (const side of ["L", "R"]) {
+      assert.equal(
+        sources.artwork[key][side].source,
+        `http://www.mlgtraffic.net/images/SNCB/V/SNCB_${name}_${side}.gif`,
+      );
+      assert.equal(
+        artwork[key][side].cabFacing,
+        key === "m6-cab" ? side : null,
+      );
+    }
+  }
+});
+
 test("separate formations preserve order, seats and real amenities, and escape upstream text", () => {
   const data = {
     composition: {

@@ -34,8 +34,8 @@ add({'ar41-first':'MW41_AB','ar41-second':'MW41_B'},'AED','SNCB_AD.htm')
 add({'m4-first':'M4_B_A','m4-second':'M4_B_B','m4-luggage-first':'M4_B_AD',
      'm4-luggage-second':'M4_B_BD','m4-cab':'M4_B_ADx',
      'm5-first':'M5_B_A','m5-second':'M5_B_B','m5-cab':'M5_B_BDx',
-     'm6-first':'M6_A','m6-second':'M6_B','m6-luggage-mixed':'M6_ABD',
-     'm6-luggage-second':'M6_BD','m6-cab':'M6_Bx',
+     'm6-first':'M6_RG_A','m6-second':'M6_RG_B','m6-luggage-mixed':'M6_ABD',
+     'm6-luggage-second':'M6_RG_BD','m6-cab':'M6_RG_Bx',
      'm7-mixed':'M7_AB','m7-second':'M7_B','m7-luggage':'M7_BD','m7-cab':'M7_BDx'},'V','SNCB_VM.htm')
 add({'i6-first':'I6_B2_A','i6-second':'I6_B2_B',
      'i10-first':'I10_B_A','i10-second':'I10_B_B',
