@@ -302,6 +302,55 @@ app.get("/api/stations/search", async (req, res) => {
   }
 });
 
+/* Journey planning shares the existing cache, revalidation and rate limits. */
+app.get("/api/connections", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    const from = String(req.query.from || "").trim();
+    const to = String(req.query.to || "").trim();
+    if (!from || !to || from.toLowerCase() === to.toLowerCase())
+      return res.status(400).json({ error: "Choose two different stations." });
+
+    const date = normalizeDateDDMMYY(req.query.date);
+    const time = normalizeTimeHHMM(req.query.time);
+    if (
+      (req.query.date !== undefined || req.query.time !== undefined) &&
+      (!date || !time)
+    )
+      return res.status(400).json({
+        error: "Provide a valid date (DDMMYY) and time (HHMM) together.",
+      });
+    const timesel = req.query.timesel ?? "departure";
+    if (!["departure", "arrival"].includes(timesel))
+      return res
+        .status(400)
+        .json({ error: "Invalid timesel. Use departure or arrival." });
+
+    const params = new URLSearchParams({
+      from,
+      to,
+      format: "json",
+      lang: normalizeLang(req.query.lang),
+      timesel,
+      typeOfTransport: "automatic",
+      alerts: "true",
+      results: "6",
+    });
+    if (date) {
+      params.set("date", date);
+      params.set("time", time);
+    }
+    return await cachedProxy(req, res, {
+      keyPrefix: "connections",
+      pathQ: `/connections/?${params}`,
+      params,
+      timeoutMs: 25_000,
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
 /* Liveboard proxy (cached) */
 app.get("/api/liveboard", async (req, res) => {
   try {

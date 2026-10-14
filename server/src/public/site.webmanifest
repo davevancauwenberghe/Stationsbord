@@ -10,13 +10,13 @@
   "theme_color": "#284c60",
   "icons": [
     {
-      "src": "/mark.svg?v=0.9.5",
+      "src": "/mark.svg?v=0.9.6",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png?v=0.9.5",
+      "src": "/favicon.png?v=0.9.6",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

@@ -3,9 +3,9 @@ import {
   serviceDate,
   belgianParts,
   validDate,
-} from "./rail-utils.js?v=0.9.5";
-import { stopEvents } from "./train-details.js?v=0.9.5";
-export { nextStopIndex } from "./train-progress.js?v=0.9.5";
+} from "./rail-utils.js?v=0.9.6";
+import { stopEvents } from "./train-details.js?v=0.9.6";
+export { nextStopIndex } from "./train-progress.js?v=0.9.6";
 
 // iRail resolves the service type from its number. Keep that distinction in the
 // API response for composition artwork, without requiring it in the search.
