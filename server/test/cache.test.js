@@ -32,6 +32,32 @@ test("max-age zero is respected rather than replaced by the fallback TTL", () =>
     60_000,
   );
 });
+test("zero-lifetime responses are immediately stale, even in the same millisecond", (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: 1000 });
+  const cache = new MemoryCache({ staleMs: 500 });
+  cache.set("a", { ttlMs: 0, value: { ok: true }, etag: "x" });
+  assert.equal(cache.get("a"), null);
+  assert.equal(
+    cache.peek("a").etag,
+    "x",
+    "ETag remains available for revalidation",
+  );
+  t.mock.timers.tick(500);
+  assert.equal(cache.peek("a"), null, "Stale data stops at its exact deadline");
+});
+test("fresh and stale lifetimes expire at their exact boundaries", (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: 1000 });
+  const cache = new MemoryCache({ staleMs: 500 });
+  cache.set("a", { ttlMs: 100, value: "value" });
+  t.mock.timers.tick(99);
+  assert.equal(cache.get("a").value, "value");
+  t.mock.timers.tick(1);
+  assert.equal(cache.get("a"), null);
+  assert.equal(cache.peek("a").value, "value");
+  t.mock.timers.tick(500);
+  cache.pruneExpired();
+  assert.equal(cache.map.size, 0);
+});
 test("idle rate limiter entries are pruned", (t) => {
   t.mock.timers.enable({ apis: ["Date"], now: 1000 });
   const map = new Map([["old", createSimpleRateLimiter()]]);

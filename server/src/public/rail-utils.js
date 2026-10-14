@@ -1,4 +1,23 @@
 export const ZONE = "Europe/Brussels";
+const belgianFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+const timeFormatters = new Map();
+const dateFormatters = new Map();
+function formatter(cache, language, options) {
+  if (!cache.has(language)) {
+    const value = new Intl.DateTimeFormat(language, options);
+    if (cache.size >= 8) cache.clear();
+    cache.set(language, value);
+  }
+  return cache.get(language);
+}
 export const asArray = (value) =>
   value == null ? [] : Array.isArray(value) ? value : [value];
 export const escapeHtml = (value) =>
@@ -12,17 +31,7 @@ export const escapeHtml = (value) =>
 export const flag = (value) => String(value) === "1" || value === true;
 export function belgianParts(date = new Date()) {
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: ZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    })
-      .formatToParts(date)
-      .map((p) => [p.type, p.value]),
+    belgianFormatter.formatToParts(date).map((p) => [p.type, p.value]),
   );
   return {
     date: `${parts.year}-${parts.month}-${parts.day}`,
@@ -43,17 +52,18 @@ export function apiDate(iso) {
     : "";
 }
 export function fmtTime(seconds, language = "nl") {
-  if (!Number.isFinite(Number(seconds)) || Number(seconds) <= 0) return "—";
-  return new Intl.DateTimeFormat(language, {
+  const date = new Date(Number(seconds) * 1000);
+  if (!Number.isFinite(+date) || Number(seconds) <= 0) return "—";
+  return formatter(timeFormatters, language, {
     timeZone: ZONE,
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-  }).format(new Date(Number(seconds) * 1000));
+  }).format(date);
 }
 export function fmtDate(iso, language = "nl") {
   if (!validDate(iso)) return "";
-  return new Intl.DateTimeFormat(language, {
+  return formatter(dateFormatters, language, {
     timeZone: ZONE,
     weekday: "short",
     day: "numeric",

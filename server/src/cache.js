@@ -11,7 +11,7 @@ export class MemoryCache {
   get(key) {
     const v = this.map.get(key);
     if (!v) return null;
-    if (Date.now() > v.expiresAt) return null;
+    if (Date.now() >= v.expiresAt) return null;
     return v;
   }
 
@@ -21,7 +21,7 @@ export class MemoryCache {
     while (this.map.size >= this.maxEntries)
       this.map.delete(this.map.keys().next().value);
     this.map.set(key, {
-      expiresAt: Date.now() + Math.max(1, safeTtl),
+      expiresAt: Date.now() + Math.max(0, safeTtl),
       etag,
       value,
     });
@@ -30,7 +30,7 @@ export class MemoryCache {
   // Returns even expired entries (stale).
   peek(key) {
     const entry = this.map.get(key);
-    if (!entry || Date.now() > entry.expiresAt + this.staleMs) {
+    if (!entry || Date.now() >= entry.expiresAt + this.staleMs) {
       this.map.delete(key);
       return null;
     }
@@ -41,7 +41,7 @@ export class MemoryCache {
   pruneExpired() {
     const now = Date.now();
     for (const [k, v] of this.map) {
-      if (now > v.expiresAt + this.staleMs) this.map.delete(k);
+      if (now >= v.expiresAt + this.staleMs) this.map.delete(k);
     }
   }
 }

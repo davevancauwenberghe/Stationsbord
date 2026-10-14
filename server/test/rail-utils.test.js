@@ -49,6 +49,20 @@ test("date conversion rejects impossible dates and out-of-range times", () => {
   for (const value of ["24:00", "11:60", "1:30", ""])
     assert.equal(validTime(value), false, value);
 });
+test("invalid or out-of-range upstream timestamps render as unknown instead of breaking the board", () => {
+  for (const value of [undefined, null, "", 0, -1, NaN, Infinity, 1e20])
+    assert.equal(fmtTime(value), "—");
+  for (const language of ["nl", "fr", "de", "en"]) {
+    assert.equal(
+      fmtTime(Date.parse("2026-03-29T00:59:00Z") / 1000, language),
+      "01:59",
+    );
+    assert.equal(
+      fmtTime(Date.parse("2026-03-29T01:00:00Z") / 1000, language),
+      "03:00",
+    );
+  }
+});
 test("connection calendar dates are extracted and invalid dates use the fallback", () => {
   assert.equal(
     serviceDate(
